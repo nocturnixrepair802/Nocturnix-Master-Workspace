@@ -1,0 +1,40 @@
+/*
+=========================================================
+Nocturnix Business Portal
+
+Variables
+Colors
+Fonts
+Spacing
+
+Version 0.7.0 Alpha
+=========================================================
+*/
+
+:root {
+
+    --primary: #081630;
+    --secondary: #10254A;
+    --accent: #00DAB7;
+    --accent-light: #3DD6FF;
+
+    --text: #FFFFFF;
+    --text-secondary: #C7D2E3;
+
+    --border: #233A5E;
+
+    --success: #2ECC71;
+    --warning: #F39C12;
+    --danger: #E74C3C;
+
+    --font-heading: "League Spartan", Arial, sans-serif;
+    --font-subheading: "Montserrat", Arial, sans-serif;
+    --font-body: "Open Sans", Arial, sans-serif;
+
+    --radius-small: 6px;
+    --radius-medium: 10px;
+    --radius-large: 16px;
+
+    --transition-fast: .25s ease;
+
+}
