@@ -1,0 +1,26 @@
+# Visual Studio Code
+.vscode/settings.json
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Node modules (future)
+node_modules/
+
+# Environment variables (future)
+.env
+
+# Build folders (future)
+dist/
+build/
