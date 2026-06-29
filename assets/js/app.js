@@ -37,3 +37,6 @@ alert("Welcome to the Nocturnix Business Portal!");
 /* ==========================================================
    Notifications
 ========================================================== */
+document.addEventListener("DOMContentLoaded", () => {
+  loadModule("dashboard");
+});
