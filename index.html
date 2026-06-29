@@ -1,130 +1,162 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nocturnix Business Portal</title>
-    <link rel="stylesheet" href="assets/css/layout.css" />
-    <link rel="stylesheet" href="assets/css/components.css" />
-    <link rel="stylesheet" href="assets/css/dashboard.css" />
-    <link rel="stylesheet" href="assets/css/responsive.css" />
-    <link rel="stylesheet" href="assets/css/style.css" />
-  </head>
+<head>
+  <!-- ======================================================
+      Meta Information
+  ======================================================= -->
+  <meta charset="UTF-8">
 
-  <body>
-    <body>
-      <!-- ======================================================
-         Header
-    ======================================================= -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-      <header>
-        <div class="logo">Nocturnix Business Portal</div>
+  <title>Nocturnix Business Portal</title>
 
-        <div class="header-right">Version 0.2.0 Alpha</div>
-      </header>
+  <!-- ======================================================
+      Stylesheets
+  ======================================================= -->
 
-      <!-- ======================================================
-         Portal Layout
-    ======================================================= -->
+  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="stylesheet" href="assets/css/layout.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+  <link rel="stylesheet" href="assets/css/style.css">
 
-      <div class="portal-container">
-        <!-- Sidebar -->
+</head>
+<body>
 
-        <aside class="sidebar">
-          <h2>Navigation</h2>
+  <!-- ======================================================
+        Header
+  ======================================================= -->
 
-          <nav>
-            <ul>
-              <li><a href="#">🏠 Dashboard</a></li>
-
-              <li><a href="#">🎨 Brand Center</a></li>
-
-              <li><a href="#">🌐 Website Manager</a></li>
-
-              <li><a href="#">📱 Repair Operations</a></li>
-
-              <li><a href="#">📦 Inventory</a></li>
-
-              <li><a href="#">👥 Customers</a></li>
-
-              <li><a href="#">📚 Operations Manual</a></li>
-
-              <li><a href="#">📋 SOP Library</a></li>
-
-              <li><a href="#">📄 Forms Library</a></li>
-
-              <li><a href="#">🤖 AI Tools</a></li>
-
-              <li><a href="#">⚙️ Settings</a></li>
-            </ul>
-          </nav>
-        </aside>
-
-        <!-- Main Workspace -->
-
-        <main class="workspace">
-          <h1>Dashboard</h1>
-
-          <p>Welcome back, Ryan.</p>
-
-          <div class="dashboard-grid">
-            <div class="card">
-              <h3>Brand Center</h3>
-
-              <p>Manage logos, colors, fonts, and brand assets.</p>
-            </div>
-
-            <div class="card">
-              <h3>Operations Manuals</h3>
-
-              <p>Access business manuals and procedures.</p>
-            </div>
-
-            <div class="card">
-              <h3>SOP Library</h3>
-
-              <p>View and manage standard operating procedures.</p>
-            </div>
-
-            <div class="card">
-              <h3>Website Manager</h3>
-
-              <p>Maintain the Nocturnix website.</p>
-            </div>
-
-            <div class="card">
-              <h3>AI Workspace</h3>
-
-              <p>Launch AI tools and assistants.</p>
-            </div>
-
-            <div class="card">
-              <h3>Business Reports</h3>
-
-              <p>View statistics and business metrics.</p>
-            </div>
-          </div>
-        </main>
+    <header>
+      <div class="header-left">
+        <div class="logo">
+            🛠
+        </div>
+        <div class="title-group">
+            <h1>Nocturnix Business Portal</h1>
+            <span>Business Management System</span>
+        </div>
       </div>
+    <div class="header-center">
+      <input
+          type="search"
+          placeholder="Search the Portal..."
+          class="search-box">
+    </div>
+    <div class="header-right">
+        <span class="version">
+            v0.4.0 Alpha
+        </span>
+        <button class="profile-button">
+            Ryan
+        </button>
+      </div>
+    </header>
 
-      <!-- Footer -->
+  <!-- ======================================================
+        Portal Container
+  ======================================================= -->
 
-      <footer>© 2026 Nocturnix Mobile Repair • Version 0.2.0 Alpha</footer>
-    </body>
-  </body>
+  <div class="portal-container">
+
+    <!-- ======================================================
+        Sidebar
+    ======================================================= -->
+      <aside class="sidebar">
+        <h2>Navigation</h2>
+
+        <nav>
+          <ul>
+            <li><a href="#">🏠 Dashboard</a></li>
+
+            <li><a href="#">🎨 Brand Center</a></li>
+
+            <li><a href="#">🌐 Website Manager</a></li>
+
+            <li><a href="#">📱 Repair Operations</a></li>
+
+            <li><a href="#">📦 Inventory</a></li>
+
+            <li><a href="#">👥 Customers</a></li>
+
+            <li><a href="#">📚 Operations Manual</a></li>
+
+            <li><a href="#">📋 SOP Library</a></li>
+
+            <li><a href="#">📄 Forms Library</a></li>
+
+            <li><a href="#">🤖 AI Tools</a></li>
+
+            <li><a href="#">⚙️ Settings</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+    <!-- ====================================================
+          Main Workspace
+    ===================================================== -->
+
+    <main class="workspace">
+
+          <!-- ====================================================
+                Dashboard
+          ===================================================== -->
+
+          <section class="dashboard">
+            <h1>Dashboard</h1>
+            <p>Welcome back, Ryan.</p>
+              <div class="dashboard-grid">
+                <div class="card">
+                  <h3>Brand Center</h3>
+                  <p>Manage logos, colors, fonts, and brand assets.</p>
+                </div>
+
+                <div class="card">
+                  <h3>Operations Manuals</h3>
+                  <p>Access business manuals and procedures.</p>
+                </div>
+
+                <div class="card">
+                  <h3>SOP Library</h3>
+                  <p>View and manage standard operating procedures.</p>
+                </div>
+
+                <div class="card">
+                  <h3>Website Manager</h3>
+                  <p>Maintain the Nocturnix website.</p>
+                </div>
+
+                <div class="card">
+                  <h3>AI Workspace</h3>
+                  <p>Launch AI tools and assistants.</p>
+                </div>
+
+                <div class="card">
+                  <h3>Business Reports</h3>
+                  <p>View statistics and business metrics.</p>
+                </div>
+              </div>
+          </section>
+      </main>
+  </div>
+
+    <!-- ======================================================
+        Footer
+    ======================================================= -->
+
+    <footer>
+
+        © 2026 Nocturnix Mobile Repair • Version 0.4.0 Alpha
+
+    </footer>
+
+    <!-- ======================================================
+        JavaScript
+    ======================================================= -->
+
+    <script src="assets/js/app.js"></script>
+
+</body>
+
 </html>
-<!-- =====================================================
-     Header
-===================================================== -->
-
-<header>...</header>
-<!-- =====================================================
-     Sidebar
-===================================================== -->
-
-<aside>...</aside>
-<!-- =====================================================
-     Footer
-===================================================== -->
-
-<footer>...</footer>
