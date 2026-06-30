@@ -1,8 +1,11 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {}
+  "folders": [
+    {
+      "path": ".",
+    },
+  ],
+  "settings": {
+    "git.addAICoAuthor": "chatAndAgent",
+    "path-intellisense.autoTriggerNextSuggestion": true,
+  },
 }

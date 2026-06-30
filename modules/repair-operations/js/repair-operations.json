@@ -1,8 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
-
     const button = document.getElementById("newRepairButton");
 
-    if(button){
+    if(button)}
 
         button.addEventListener("click", openRepairForm);
 
