@@ -1,10 +1,3 @@
-/*
-=========================================================
-Nocturnix Business Portal
-
-Router
-
-Reserved for Future Development
-
-=========================================================
-*/
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("Router Loaded");
+});

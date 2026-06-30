@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Repair Operations</title>
+
+    <link rel="stylesheet" href="../../assets/css/variables.css" />
+    <link rel="stylesheet" href="../../assets/css/style.css" />
+    <link rel="stylesheet" href="repair-operations.css" />
+  </head>
+
+  <body>
+    <main class="workspace">
+      <h1>Repair Intake</h1>
+
+      <p>Create a new repair ticket.</p>
+
+      <form class="repair-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Customer Name</label>
+            <input type="text" placeholder="John Smith" />
+          </div>
+
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" placeholder="(555) 555-5555" />
+          </div>
+
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" placeholder="customer@email.com" />
+          </div>
+
+          <div class="form-group">
+            <label>Manufacturer</label>
+            <select>
+              <option>Apple</option>
+              <option>Samsung</option>
+              <option>Google</option>
+              <option>Motorola</option>
+              <option>OnePlus</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Model</label>
+            <input type="text" />
+          </div>
+
+          <div class="form-group">
+            <label>IMEI / Serial Number</label>
+            <input type="text" />
+          </div>
+
+          <div class="form-group">
+            <label>Repair Status</label>
+
+            <select>
+              <option>New Intake</option>
+
+              <option>Diagnosing</option>
+
+              <option>Waiting on Parts</option>
+
+              <option>Repairing</option>
+
+              <option>Ready for Pickup</option>
+
+              <option>Completed</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Estimated Cost</label>
+
+            <input type="number" />
+          </div>
+
+          <div class="form-group full-width">
+            <label>Problem Description</label>
+
+            <textarea rows="5"></textarea>
+          </div>
+
+          <div class="form-group full-width">
+            <label>Technician Notes</label>
+
+            <textarea rows="5"></textarea>
+          </div>
+        </div>
+
+        <button class="save-button">Save Repair</button>
+      </form>
+    </main>
+  </body>
+</html>

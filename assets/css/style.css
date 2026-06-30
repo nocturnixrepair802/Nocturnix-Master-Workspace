@@ -405,3 +405,112 @@ footer {
 
   padding: var(--spacing-md);
 }
+/* ==========================================================
+   Quick Actions
+========================================================== */
+
+.quick-actions {
+  margin: var(--spacing-3xl) 0;
+}
+
+.quick-actions-grid {
+  display: grid;
+
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+
+  gap: var(--spacing-lg);
+}
+
+.action-button {
+  background: var(--accent);
+
+  color: var(--primary);
+
+  padding: var(--spacing-lg);
+
+  border: none;
+
+  border-radius: var(--radius-medium);
+
+  font-size: 1rem;
+
+  font-weight: bold;
+
+  cursor: pointer;
+
+  transition: var(--transition-fast);
+}
+
+.action-button:hover {
+  transform: translateY(-3px);
+
+  background: var(--accent-light);
+}
+/* ==========================================================
+   Recent Repairs
+========================================================== */
+
+.recent-repairs {
+  margin: var(--spacing-3xl) 0;
+}
+
+.repair-card {
+  background: var(--background-card);
+
+  border-left: 5px solid var(--accent);
+
+  border-radius: var(--radius-medium);
+
+  padding: var(--spacing-xl);
+
+  margin-bottom: var(--spacing-lg);
+
+  transition: var(--transition-fast);
+}
+
+.repair-card:hover {
+  transform: translateX(6px);
+
+  box-shadow: var(--shadow-medium);
+}
+
+.repair-card h3 {
+  color: var(--accent);
+
+  margin-bottom: var(--spacing-sm);
+}
+/* ==========================================================
+   Business Snapshot
+========================================================== */
+
+.business-snapshot {
+  margin: var(--spacing-3xl) 0;
+}
+
+.snapshot-grid {
+  display: grid;
+
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+
+  gap: var(--spacing-lg);
+}
+
+.snapshot-card {
+  background: var(--background-card);
+
+  border: 1px solid var(--border);
+
+  border-top: 5px solid var(--accent);
+
+  border-radius: var(--radius-medium);
+
+  padding: var(--spacing-xl);
+
+  transition: var(--transition-fast);
+}
+
+.snapshot-card:hover {
+  transform: translateY(-4px);
+
+  box-shadow: var(--shadow-medium);
+}
