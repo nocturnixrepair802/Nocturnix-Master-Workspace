@@ -12,28 +12,6 @@ Version 0.8.0 Alpha
    Brand Colors
 ========================================================== */
 
-:root {
-  --primary: #081630;
-
-  --secondary: #10254a;
-
-  --accent: #00dab7;
-
-  --accent-light: #3dd6ff;
-
-  --text: #ffffff;
-
-  --text-secondary: #c7d2e3;
-
-  --border: #233a5e;
-
-  --success: #2ecc71;
-
-  --warning: #f39c12;
-
-  --danger: #e74c3c;
-}
-
 /* ==========================================================
    Reset
 ========================================================== */
@@ -49,8 +27,7 @@ Version 0.8.0 Alpha
 ========================================================== */
 
 body {
-
-  background-color: var(--primary);
+  background: var(--secondary);
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
   line-height: 1.6;
@@ -62,18 +39,18 @@ Headings
 ============================= */
 
 h1 {
-  color: #00dab7;
+  color: var(--accent);
   font-size: 2.5rem;
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-lg);
 }
 
 h2 {
-  color: #00dab7;
-  margin-bottom: 15px;
+  color: var(--accent);
+  margin-bottom: var(--spacing-md);
 }
 
 h3 {
-  color: #00dab7;
+  color: var(--accent);
 }
 
 /* ==========================
@@ -81,7 +58,7 @@ Paragraphs
 ============================= */
 
 p {
-  margin-bottom: 15px;
+  margin-bottom: var(--spacing-md);
 }
 
 /* ==========================
@@ -89,7 +66,7 @@ Links
 ============================= */
 
 a {
-  color: #00dab7;
+  color: var(--accent);
   text-decoration: none;
 }
 
@@ -103,8 +80,8 @@ Lists
 
 ul,
 ol {
-  margin-left: 25px;
-  margin-bottom: 20px;
+  margin-left: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
 }
 
 /* ==========================
@@ -121,11 +98,11 @@ Buttons
 ============================= */
 
 button {
-  background-color: #00dab7;
-  color: #081630;
+  background: var(--secondary);
+  color: var(--primary);
   border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-small);
   cursor: pointer;
   font-weight: bold;
 }
@@ -137,24 +114,6 @@ button:hover {
 /* ==========================================================
    Header
 ========================================================== */
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 30px;
-  background-color: #0b1d3a;
-  border-bottom: 2px solid #00dab7;
-}
-.logo {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #00dab7;
-}
-.header-right {
-  font-size: 0.9rem;
-  color: #c7d2e3;
-}
 
 /* ==========================================================
    Portal Layout
@@ -173,17 +132,17 @@ header {
 .sidebar {
   width: 280px;
 
-  background: #10254a;
+  background: var(--secondary);
 
-  border-right: 2px solid #00dab7;
+  border-right: 2px solid var(--accent);
 
-  padding: 30px;
+  padding: var(--spacing-2xl);
 }
 
 .sidebar h2 {
-  color: #00dab7;
+  color: var(--accent);
 
-  margin-bottom: 25px;
+  margin-bottom: var(--spacing-xl);
 }
 
 .sidebar ul {
@@ -191,7 +150,7 @@ header {
 }
 
 .sidebar li {
-  margin-bottom: 10px;
+  margin-bottom: var(--spacing-sm);
 }
 
 .sidebar a {
@@ -199,19 +158,19 @@ header {
 
   padding: 12px 16px;
 
-  color: white;
+  color: var(--text);
 
   text-decoration: none;
 
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 
-  transition: all 0.25s ease;
+  transition: var(--transition-fast);
 }
 
 .sidebar a:hover {
-  background: #00dab7;
+  background: var(--secondary);
 
-  color: #081630;
+  color: var(--primary);
 }
 
 /* ==========================================================
@@ -236,9 +195,9 @@ Future Layout
 */
 
 .nav-icon {
-  width: 20px;
+  width: var(--spacing-lg);
 
-  height: 20px;
+  height: var(--spacing-lg);
 
   margin-right: 12px;
 
@@ -252,15 +211,15 @@ Future Layout
 .workspace {
   flex: 1;
 
-  padding: 40px;
+  padding: var(--spacing-3xl);
 }
 
 .dashboard {
   max-width: 1000px;
 }
 
-.dashboard hr {
-  border: 1px solid #233a5e;
+.dashboard {
+  border: 1px solid var(--border);
 
   margin: 35px 0;
 }
@@ -276,11 +235,11 @@ header {
 
   align-items: center;
 
-  padding: 20px 35px;
+  padding: var(--spacing-lg) 35px;
 
-  background: #0b1d3a;
+  background: var(--background-header);
 
-  border-bottom: 2px solid #00dab7;
+  border-bottom: 2px var(--accent);
 }
 
 .logo {
@@ -288,11 +247,7 @@ header {
 
   font-weight: bold;
 
-  color: #00dab7;
-}
-
-.header-right {
-  color: #c7d2e3;
+  color: var(--accent);
 }
 
 /* ==========================================================
@@ -304,7 +259,7 @@ header {
 
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 
-  gap: 25px;
+  gap: var(--spacing-xl);
 
   margin-top: 35px;
 }
@@ -314,17 +269,17 @@ header {
 ========================================================== */
 
 .card {
-  background: #10254a;
+  background: var(--secondary);
 
-  border: 1px solid #233a5e;
+  border: 1px solid var(--border);
 
-  border-left: 5px solid #00dab7;
+  border-left: var(--spacing-sm) solid var(--accent);
 
-  border-radius: 10px;
+  border-radius: var(--radius-medium);
 
-  padding: 25px;
+  padding: var(--spacing-xl);
 
-  transition: all 0.25s ease;
+  transition: all var(--transition-fast);
 
   cursor: pointer;
 }
@@ -332,17 +287,17 @@ header {
 .card:hover {
   transform: translateY(-6px);
 
-  border-color: #00dab7;
+  border-color: var(--accent);
 
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-large);
 }
 
 .card h3 {
-  margin-bottom: 15px;
+  margin-bottom: var(--spacing-md);
 }
 
 .card p {
-  color: #c7d2e3;
+  color: var(--text-secondary);
 }
 
 /* ==========================================================
@@ -354,7 +309,7 @@ header {
 
   align-items: center;
 
-  gap: 18px;
+  gap: var(--spacing-lg);
 }
 
 .title-group {
@@ -370,7 +325,7 @@ header {
 }
 
 .title-group span {
-  color: #c7d2e3;
+  color: var(--text-secondary);
 
   font-size: 0.85rem;
 }
@@ -394,13 +349,13 @@ header {
 
   border: none;
 
-  background: #10254a;
+  background: var(--secondary);
 
-  color: white;
+  color: var(--text);
 }
 
 .search-box::placeholder {
-  color: #c7d2e3;
+  color: var(--text-secondary);
 }
 
 .header-right {
@@ -408,23 +363,23 @@ header {
 
   align-items: center;
 
-  gap: 20px;
+  gap: var(--spacing-lg);
 }
 
 .version {
-  color: #c7d2e3;
+  color: var(--text-secondary);
 }
 
 .profile-button {
-  background: #00dab7;
+  background: var(--background-header);
 
-  color: #081630;
+  color: var(--primary);
 
   border: none;
 
-  padding: 10px 20px;
+  padding: var(--spacing-sm) var(--spacing-lg);
 
-  border-radius: 8px;
+  border-radius: var(--radius-medium);
 
   font-weight: bold;
 
@@ -432,7 +387,7 @@ header {
 }
 
 .profile-button:hover {
-  background: white;
+  background: var(--text);
 }
 
 /* ==========================================================
@@ -440,13 +395,13 @@ header {
 ========================================================== */
 
 footer {
-  background: #0b1d3a;
+  background: var(--background-header);
 
-  border-top: 2px solid #00dab7;
+  border-top: 2px solid var(--accent);
 
-  color: #c7d2e3;
+  color: var(--text-secondary);
 
   text-align: center;
 
-  padding: 15px;
+  padding: var(--spacing-md);
 }

@@ -2,39 +2,118 @@
 =========================================================
 Nocturnix Business Portal
 
-Variables
-Colors
-Fonts
-Spacing
+Design System
 
-Version 0.7.0 Alpha
+Color Variables
+
+Version 1.0.0 Alpha
 =========================================================
 */
 
 :root {
+
+    /* =====================================================
+       Brand Colors
+    ====================================================== */
 
     --primary: #081630;
     --secondary: #10254A;
     --accent: #00DAB7;
     --accent-light: #3DD6FF;
 
+    /* =====================================================
+       Text
+    ====================================================== */
+
     --text: #FFFFFF;
     --text-secondary: #C7D2E3;
 
+    /* =====================================================
+       Borders
+    ====================================================== */
+
     --border: #233A5E;
+
+    /* =====================================================
+       Status Colors
+    ====================================================== */
 
     --success: #2ECC71;
     --warning: #F39C12;
     --danger: #E74C3C;
 
-    --font-heading: "League Spartan", Arial, sans-serif;
-    --font-subheading: "Montserrat", Arial, sans-serif;
-    --font-body: "Open Sans", Arial, sans-serif;
+    /* =====================================================
+       Backgrounds
+    ====================================================== */
+
+    --background-main: var(--primary);
+    --background-panel: var(--secondary);
+    --background-card: var(--secondary);
+    --background-header: #0B1D3A;
+    --background-sidebar: var(--secondary);
+
+    /* =====================================================
+       Buttons
+    ====================================================== */
+
+    --button-primary: var(--accent);
+    --button-primary-hover: #26F0D0;
+
+    --button-text: var(--primary);
+
+    /* =====================================================
+       Inputs
+    ====================================================== */
+
+    --input-background: var(--secondary);
+    --input-border: var(--border);
+    --input-text: var(--text);
+    --input-placeholder: var(--text-secondary);
+
+    /* =====================================================
+       Shadows
+    ====================================================== */
+
+    --shadow-small: 0 2px 5px rgba(0,0,0,.20);
+
+    --shadow-medium: 0 5px 12px rgba(0,0,0,.30);
+
+    --shadow-large: 0 10px 25px rgba(0,0,0,.40);
+
+    /* =====================================================
+       Border Radius
+    ====================================================== */
 
     --radius-small: 6px;
     --radius-medium: 10px;
-    --radius-large: 16px;
+    --radius-large: 15px;
 
-    --transition-fast: .25s ease;
+    /* =====================================================
+        Spacing
+    ===================================================== */
+
+    --spacing-xs: 5px;
+
+    --spacing-sm: 10px;
+
+    --spacing-md: 15px;
+
+    --spacing-lg: 20px;
+
+    --spacing-xl: 25px;
+
+    --spacing-2xl: 30px;
+
+    --spacing-3xl: 40px;
+
+
+
+    /* =====================================================
+       Animation
+    ====================================================== */
+
+    --transition-fast: .20s ease;
+
+    --transition-normal: .30s ease;
 
 }
