@@ -1,0 +1,9 @@
+.repair-details {
+  background: var(--secondary);
+
+  border-radius: 10px;
+
+  padding: 25px;
+
+  min-height: 350px;
+}
