@@ -1,0 +1,9 @@
+DATE_FORMAT = "%Y-%m-%d"
+
+TIME_FORMAT = "%H:%M:%S"
+
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+DEFAULT_CURRENCY = "USD"
+
+DEFAULT_COUNTRY = "US"

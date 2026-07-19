@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Nocturnix GUI",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/Source/run_gui.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Run Console Version",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/Source/main.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}
