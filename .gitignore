@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual Environment
+.venv/
+
+# VS Code
+.vscode/settings.json
+
+# Logs
+*.log
+
+# Build Output
+Output/
+
+# Python Cache
+.pytest_cache/
+
+# OS Files
+Thumbs.db
+.DS_Store
