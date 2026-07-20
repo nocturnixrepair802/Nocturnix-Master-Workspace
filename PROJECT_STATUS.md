@@ -1,32 +1,41 @@
 # Nocturnix Repair Platform
 
-Current Version:
-0.2.0 Alpha
+## Current Sprint
+Sprint 4
 
-Current Sprint:
-Sprint 1 – Customer Module
+## Overall Progress
+Architecture: 80%
+Database: 90%
+Customer Module: 60%
+Device Module: 30%
+Repair Module: 5%
+Overall Project: 35%
 
-Completed
-✔ Architecture
-✔ Database
-✔ Repository Layer
-✔ Service Layer
-✔ Console Interface
-✔ GUI Shell
+## Completed
+- Customer repository
+- Customer service
+- Customer management page
+- Customer dialog
+- Customer table
+- Device repository foundation
+- Device service foundation
+- Device page framework
+- Main window integration
+- Manager architecture
+- Dynamic table loading
 
-In Progress
-▶ Customer Module
+## In Progress
+- Device Module integration
+- Manufacturer lookup
+- Device Family lookup
 
-Upcoming
-□ Device Module
-□ Repair Intake
-□ Inventory
-□ Estimates
-□ Reports
+## Next Sprint
+- Manufacturer repository
+- Device family repository
+- Device lookup service
+- Customer Device relationships
+- Repair Intake Wizard
 
-Known Issues
-- Customer table not yet connected to live data
-- Navigation manager needs completion
-
-Next Milestone
-Customer CRUD complete
+## Known Issues
+- DeviceRepository assumes descriptive columns instead of normalized codes.
+- Device Module needs lookup tables.

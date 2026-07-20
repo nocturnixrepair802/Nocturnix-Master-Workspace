@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *.pyo
+*.pyd
 
 # Virtual Environment
 .venv/
@@ -10,14 +11,20 @@ __pycache__/
 .vscode/settings.json
 
 # Logs
-*.log
+Logs/
+logs/
 
-# Build Output
-Output/
-
-# Python Cache
-.pytest_cache/
+# Build Files
+dist/
+build/
 
 # OS Files
-Thumbs.db
 .DS_Store
+Thumbs.db
+
+# Temporary Files
+*.tmp
+*.bak
+
+# Excel Lock Files
+~$*.xls*

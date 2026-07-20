@@ -1,24 +1,32 @@
-Nocturnix Repair Platform
+# Nocturnix Repair Platform
 
-Version
-Current Status
-Project Description
+Desktop repair management platform built with Python and PySide6.
 
-Folder Structure
+## Features
 
-Requirements
-- Python
-- Required Packages
+- Customer Management
+- Device Catalog
+- Repair Tracking
+- Inventory
+- Pricing
+- Diagnostics
+- Reporting
 
-How to Run
-python main.py
+## Technologies
 
-Testing
-python -m tests.test_customer_service
-python -m tests.test_repository
+- Python 3.14
+- PySide6
+- pandas
+- openpyxl
 
-Architecture
+## Database
 
-Future Roadmap
+Nocturnix_Master_Database.xlsm
 
-Author
+## Current Version
+
+Sprint 4 Development
+
+## Status
+
+Under Active Development
