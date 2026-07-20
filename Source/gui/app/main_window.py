@@ -16,41 +16,29 @@ from app import Application
 
 from gui.pages.dashboard_page import DashboardPage
 from gui.pages.customer_page import CustomerPage
+from gui.pages.device_page import DevicePage
 
 
 class MainWindow(QMainWindow):
 
     def __init__(self):
+
         super().__init__()
 
-        # ----------------------------------
-        # Backend Application
-        # ----------------------------------
-
         self.application = Application()
-
-        # ----------------------------------
-        # Window Configuration
-        # ----------------------------------
 
         self.setWindowTitle("Nocturnix Repair Platform")
 
         self.resize(1600, 900)
         self.setMinimumSize(1200, 800)
-
-        # Open Maximized
         self.showMaximized()
-
-        # ----------------------------------
-        # Build UI
-        # ----------------------------------
 
         self.build_menu()
         self.build_statusbar()
         self.build_ui()
 
     # ==========================================================
-    # Menu Bar
+    # Menu
     # ==========================================================
 
     def build_menu(self):
@@ -79,7 +67,7 @@ class MainWindow(QMainWindow):
         self.setStatusBar(status)
 
     # ==========================================================
-    # Main Interface
+    # UI
     # ==========================================================
 
     def build_ui(self):
@@ -88,13 +76,11 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(central)
 
-        main_layout = QHBoxLayout()
+        main_layout = QHBoxLayout(central)
 
-        central.setLayout(main_layout)
-
-        # ----------------------------------
-        # Navigation Panel
-        # ----------------------------------
+        # ------------------------------------------------------
+        # Navigation
+        # ------------------------------------------------------
 
         self.navigation = QListWidget()
 
@@ -114,51 +100,51 @@ class MainWindow(QMainWindow):
 
         self.navigation.currentRowChanged.connect(self.change_page)
 
-        # ----------------------------------
-        # Content Area
-        # ----------------------------------
+        # ------------------------------------------------------
+        # Content
+        # ------------------------------------------------------
 
         content = QFrame()
 
-        content_layout = QVBoxLayout()
-
-        content.setLayout(content_layout)
-
-        # ----------------------------------
-        # Page Stack
-        # ----------------------------------
+        content_layout = QVBoxLayout(content)
 
         self.page_stack = QStackedWidget()
 
-        # Create Pages
+        # ------------------------------------------------------
+        # Pages
+        # ------------------------------------------------------
 
         self.dashboard_page = DashboardPage()
 
         self.customer_page = CustomerPage(self.application)
 
-        # Load Initial Data
+        self.device_page = DevicePage(self.application)
+
+        # ------------------------------------------------------
+        # Load Data
+        # ------------------------------------------------------
 
         self.customer_page.load_data()
 
-        # Add Pages
+        self.device_page.load_data()
+
+        # ------------------------------------------------------
+        # Page Stack
+        # ------------------------------------------------------
 
         self.page_stack.addWidget(self.dashboard_page)
 
         self.page_stack.addWidget(self.customer_page)
 
-        # Add Page Stack
+        self.page_stack.addWidget(self.device_page)
 
         content_layout.addWidget(self.page_stack)
 
-        # ----------------------------------
-        # Assemble Window
-        # ----------------------------------
+        # ------------------------------------------------------
 
         main_layout.addWidget(self.navigation)
 
         main_layout.addWidget(content)
-
-        # Dashboard on Startup
 
         self.navigation.setCurrentRow(0)
 
@@ -168,14 +154,14 @@ class MainWindow(QMainWindow):
 
     def change_page(self, index):
 
-        if 0 <= index < self.page_stack.count():
+        if index < self.page_stack.count():
 
             self.page_stack.setCurrentIndex(index)
 
 
-# ==============================================================
-# Application Entry Point
-# ==============================================================
+# ==========================================================
+# Entry Point
+# ==========================================================
 
 
 def main():

@@ -5,28 +5,28 @@ from workflow.invoice_workflow import InvoiceWorkflow
 
 class WorkflowManager:
 
-    def __init__(
+    def __init__(self, repair_manager):
 
-        self,
+        self.repair_manager = repair_manager
 
-        repair_manager
+        # ======================================================
+        # Business Workflows
+        # ======================================================
 
-    ):
+        self.repairs = RepairWorkflow(repair_manager)
 
-        self.repair = RepairWorkflow(
+        self.estimates = EstimateWorkflow(repair_manager)
 
-            repair_manager
+        self.invoices = InvoiceWorkflow(repair_manager)
 
-        )
+    # ======================================================
+    # Utility
+    # ======================================================
 
-        self.estimate = EstimateWorkflow(
+    def all(self):
 
-            repair_manager
-
-        )
-
-        self.invoice = InvoiceWorkflow(
-
-            repair_manager
-
-        )
+        return {
+            "repairs": self.repairs,
+            "estimates": self.estimates,
+            "invoices": self.invoices,
+        }

@@ -1,5 +1,9 @@
+from datetime import datetime
+
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
+    QDateTimeEdit,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -19,7 +23,7 @@ class CustomerDialog(QDialog):
 
         self.setWindowTitle("Customer")
 
-        self.resize(650, 700)
+        self.resize(700, 750)
 
         self.build_ui()
 
@@ -45,12 +49,14 @@ class CustomerDialog(QDialog):
         self.first_name = QLineEdit()
         self.last_name = QLineEdit()
         self.business_name = QLineEdit()
+
         self.email = QLineEdit()
+
         self.mobile_phone = QLineEdit()
         self.home_phone = QLineEdit()
         self.work_phone = QLineEdit()
-        self.preferred_contact = QComboBox()
 
+        self.preferred_contact = QComboBox()
         self.preferred_contact.addItems(
             [
                 "Mobile Phone",
@@ -62,6 +68,18 @@ class CustomerDialog(QDialog):
 
         self.billing_address = QTextEdit()
         self.shipping_address = QTextEdit()
+
+        self.tax_exempt = QCheckBox("Tax Exempt")
+        self.active = QCheckBox("Active")
+
+        self.active.setChecked(True)
+
+        self.created = QDateTimeEdit()
+        self.modified = QDateTimeEdit()
+
+        self.created.setReadOnly(True)
+        self.modified.setReadOnly(True)
+
         self.notes = QTextEdit()
 
         form.addRow("Customer Type", self.customer_type)
@@ -75,6 +93,10 @@ class CustomerDialog(QDialog):
         form.addRow("Preferred Contact", self.preferred_contact)
         form.addRow("Billing Address", self.billing_address)
         form.addRow("Shipping Address", self.shipping_address)
+        form.addRow("", self.tax_exempt)
+        form.addRow("", self.active)
+        form.addRow("Date Created", self.created)
+        form.addRow("Last Modified", self.modified)
         form.addRow("Notes", self.notes)
 
         layout.addLayout(form)
@@ -86,6 +108,11 @@ class CustomerDialog(QDialog):
 
         layout.addWidget(buttons)
 
+        now = datetime.now()
+
+        self.created.setDateTime(now)
+        self.modified.setDateTime(now)
+
     # ==========================================================
 
     def load_customer(self):
@@ -95,19 +122,12 @@ class CustomerDialog(QDialog):
         self.customer_type.setCurrentText(
             str(customer.get("Customer Type", "Residential"))
         )
-
         self.first_name.setText(str(customer.get("First Name", "")))
-
         self.last_name.setText(str(customer.get("Last Name", "")))
-
         self.business_name.setText(str(customer.get("Business Name", "")))
-
         self.email.setText(str(customer.get("Email", "")))
-
         self.mobile_phone.setText(str(customer.get("Mobile Phone", "")))
-
         self.home_phone.setText(str(customer.get("Home Phone", "")))
-
         self.work_phone.setText(str(customer.get("Work Phone", "")))
 
         self.preferred_contact.setCurrentText(
@@ -117,6 +137,10 @@ class CustomerDialog(QDialog):
         self.billing_address.setPlainText(str(customer.get("Billing Address", "")))
 
         self.shipping_address.setPlainText(str(customer.get("Shipping Address", "")))
+
+        self.tax_exempt.setChecked(bool(customer.get("Tax Exempt", False)))
+
+        self.active.setChecked(bool(customer.get("Active", True)))
 
         self.notes.setPlainText(str(customer.get("Notes", "")))
 
@@ -136,5 +160,7 @@ class CustomerDialog(QDialog):
             "Preferred Contact": self.preferred_contact.currentText(),
             "Billing Address": self.billing_address.toPlainText(),
             "Shipping Address": self.shipping_address.toPlainText(),
+            "Tax Exempt": self.tax_exempt.isChecked(),
+            "Active": self.active.isChecked(),
             "Notes": self.notes.toPlainText(),
         }

@@ -1,103 +1,55 @@
-from managers.repository_manager import RepositoryManager
-
-from engines.compatibility_engine import CompatibilityEngine
+from engines.quote_engine import QuoteEngine
 from engines.pricing_engine import PricingEngine
 from engines.inventory_engine import InventoryEngine
-from engines.quote_engine import QuoteEngine
+from engines.compatibility_engine import CompatibilityEngine
 
 
 class RepairManager:
 
     def __init__(self, database):
 
-        self.repositories = RepositoryManager(database)
+        self.database = database
 
-        self.compatibility = CompatibilityEngine(database)
+        # ======================================================
+        # Business Engines
+        # ======================================================
+
+        self.quote = QuoteEngine(database)
 
         self.pricing = PricingEngine(database)
 
         self.inventory = InventoryEngine(database)
 
-        self.quote = QuoteEngine(database)
+        self.compatibility = CompatibilityEngine(database)
 
-    def customer(self, customer_id):
+    # ======================================================
+    # Repair Quote
+    # ======================================================
 
-        return self.repositories.customers.get(customer_id)
+    def build_quote(self, device, service, parts=None):
 
-    def device(self, device_id):
+        return self.quote.generate(device=device, service=service, parts=parts or [])
 
-        return self.repositories.devices.get(device_id)
+    # ======================================================
+    # Pricing
+    # ======================================================
 
-    def service(self, service_id):
+    def calculate_price(self, service, parts=None):
 
-        return self.repositories.services.get(service_id)
+        return self.pricing.calculate(service, parts or [])
 
-    def supplier(self, supplier_id):
+    # ======================================================
+    # Inventory
+    # ======================================================
 
-        return self.repositories.suppliers.get(supplier_id)
+    def check_inventory(self, sku, quantity=1):
 
-    def part_available(self, sku):
+        return self.inventory.available(sku, quantity)
 
-        return self.inventory.part_available(sku)
+    # ======================================================
+    # Compatibility
+    # ======================================================
 
-    def calculate_price(
+    def validate_part(self, device, part):
 
-        self,
-
-        labor_hours,
-
-        parts_cost
-
-    ):
-
-        return self.pricing.calculate_price(
-
-            labor_hours,
-
-            parts_cost
-
-        )
-
-    def check_repair(
-
-        self,
-
-        device_family,
-
-        service_id
-
-    ):
-
-        return self.compatibility.validate_repair(
-
-            device_family,
-
-            service_id
-
-        )
-
-    def create_quote(
-
-        self,
-
-        device_family,
-
-        service_id,
-
-        labor,
-
-        parts
-
-    ):
-
-        return self.quote.generate_quote(
-
-            device_family,
-
-            service_id,
-
-            labor,
-
-            parts
-
-        )
+        return self.compatibility.validate(device, part)

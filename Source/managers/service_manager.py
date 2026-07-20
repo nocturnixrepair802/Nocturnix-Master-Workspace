@@ -8,18 +8,29 @@ class ServiceManager:
 
     def __init__(self, repositories):
 
-        self.customers = CustomerService(
-            repositories.customers
-        )
+        self.repositories = repositories
 
-        self.devices = DeviceService(
-            repositories.devices
-        )
+        # ======================================================
+        # Core Services
+        # ======================================================
 
-        self.repairs = RepairService(
-            repositories.services
-        )
+        self.customers = CustomerService(repositories.customers)
 
-        self.suppliers = SupplierService(
-            repositories.suppliers
-        )
+        self.devices = DeviceService(repositories.devices)
+
+        self.repairs = RepairService(repositories)
+
+        self.suppliers = SupplierService(repositories.suppliers)
+
+    # ======================================================
+    # Utility
+    # ======================================================
+
+    def all(self):
+
+        return {
+            "customers": self.customers,
+            "devices": self.devices,
+            "repairs": self.repairs,
+            "suppliers": self.suppliers,
+        }

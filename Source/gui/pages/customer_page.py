@@ -113,9 +113,16 @@ class CustomerPage(BasePage):
 
     # ==========================================================
 
+
     def load_data(self):
 
         self.current_customers = self.service.all_customers()
+
+        print("\n========== CUSTOMER DATA ==========")
+        print(self.current_customers.head())
+        print("\nColumns:")
+        print(self.current_customers.columns.tolist())
+        print("===================================\n")
 
         self.table.load_customers(self.current_customers)
 
@@ -149,7 +156,7 @@ class CustomerPage(BasePage):
 
     def add_customer(self):
 
-        dialog = CustomerDialog(self)
+        dialog = CustomerDialog(parent=self)
 
         if dialog.exec():
 
