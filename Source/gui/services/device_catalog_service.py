@@ -1,6 +1,3 @@
-from services.device_service import DeviceService
-
-
 class DeviceCatalogService:
 
     def __init__(self, application):

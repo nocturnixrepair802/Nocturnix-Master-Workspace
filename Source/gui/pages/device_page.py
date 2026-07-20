@@ -3,11 +3,9 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QHBoxLayout,
-    QVBoxLayout,
     QLineEdit,
     QComboBox,
-    QMessageBox,
-)
+   )
 
 from gui.pages.base_page import BasePage
 from gui.widgets.device_table import DeviceTable
@@ -168,7 +166,7 @@ class DevicePage(BasePage):
 
     def filter_devices(self):
 
-        self.search_devices()
+        pass
 
     # ==========================================================
     # Add

@@ -61,7 +61,7 @@ class DeviceTable(QTableWidget):
 
             manufacturer = device.get("Manufacturer", "")
             family = device.get("Device Family", "")
-            name = device.get("Device", "")
+            name = device.get("Device Model", "")
             model = device.get("Model Number", "")
             year = device.get("Release Year", "")
             active = device.get("Active", True)

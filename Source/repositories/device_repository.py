@@ -1,5 +1,4 @@
 from repositories.repository_base import RepositoryBase
-from models.device import Device
 
 
 class DeviceRepository(RepositoryBase):
@@ -7,31 +6,6 @@ class DeviceRepository(RepositoryBase):
     def __init__(self, database):
 
         super().__init__(database, "master_devices")
-        print("\n===== MASTER DEVICES COLUMNS =====")
-        print(self.table.columns.tolist())
-        print("==================================\n")
-
-    # ======================================================
-    # Single Device
-    # ======================================================
-
-    def get(self, device_id):
-
-        row = self.first("Device ID", device_id)
-
-        if row is None:
-            return None
-
-        return Device(
-            device_id=row.get("Device ID"),
-            manufacturer=row.get("Manufacturer"),
-            device_family=row.get("Device Family"),
-            device_name=row.get("Device"),
-            model_number=row.get("Model Number", ""),
-            color=row.get("Color", ""),
-            storage=row.get("Storage", ""),
-            active=row.get("Active", True),
-        )
 
     # ======================================================
     # Collections
@@ -41,39 +15,11 @@ class DeviceRepository(RepositoryBase):
 
         return self.table.copy()
 
-    def manufacturers(self):
-
-        return sorted(self.table["Manufacturer"].dropna().unique().tolist())
-
-    def families(self, manufacturer):
-
-        df = self.table
-
-        return sorted(
-            df[df["Manufacturer"] == manufacturer]["Device Family"]
-            .dropna()
-            .unique()
-            .tolist()
-        )
-
-    def devices(self, manufacturer, family):
-
-        df = self.table
-
-        return sorted(
-            df[(df["Manufacturer"] == manufacturer) & (df["Device Family"] == family)][
-                "Device"
-            ]
-            .dropna()
-            .unique()
-            .tolist()
-        )
-
     # ======================================================
     # Search
     # ======================================================
 
-    def search(self, text):
+    def search(self, text=""):
 
         if not text:
             return self.table.copy()
@@ -81,9 +27,46 @@ class DeviceRepository(RepositoryBase):
         text = str(text).lower()
 
         mask = (
-            self.table["Manufacturer"].fillna("").str.lower().str.contains(text)
-            | self.table["Device"].fillna("").str.lower().str.contains(text)
-            | self.table["Device Family"].fillna("").str.lower().str.contains(text)
+            self.table["Device Model"].fillna("").str.lower().str.contains(text)
+            | self.table["Model Number"].fillna("").str.lower().str.contains(text)
+            | self.table["Manufacturer Code"].fillna("").str.lower().str.contains(text)
+            | self.table["Device Family Code"].fillna("").str.lower().str.contains(text)
         )
 
-        return self.table[mask].copy()
+        return self.table.loc[mask].copy()
+
+    # ======================================================
+    # Filters
+    # ======================================================
+
+    def manufacturers(self):
+
+        return sorted(self.table["Manufacturer Code"].dropna().unique().tolist())
+
+    def families(self, manufacturer_code):
+
+        df = self.table[self.table["Manufacturer Code"] == manufacturer_code]
+
+        return sorted(df["Device Family Code"].dropna().unique().tolist())
+
+    def devices(self, manufacturer_code, family_code):
+
+        df = self.table[
+            (self.table["Manufacturer Code"] == manufacturer_code)
+            & (self.table["Device Family Code"] == family_code)
+        ]
+
+        return sorted(df["Device Model"].dropna().unique().tolist())
+
+    # ======================================================
+    # Single Record
+    # ======================================================
+
+    def get(self, device_id):
+
+        row = self.first("Device ID", device_id)
+
+        if row is None:
+            return None
+
+        return row

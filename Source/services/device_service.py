@@ -1,8 +1,14 @@
 class DeviceService:
 
-    def __init__(self, repository):
+    def __init__(self, repositories):
 
-        self.repository = repository
+        self.repository = repositories.devices
+
+        self.repository = repositories.devices
+
+        self.manufacturer_repository = repositories.manufacturers
+
+        self.device_family_repository = repositories.device_families
 
     # ======================================================
     # READ
@@ -26,11 +32,11 @@ class DeviceService:
 
     def manufacturers(self):
 
-        return self.repository.manufacturers()
+        return self.manufacturer_repository.names()
 
     def families(self, manufacturer):
 
-        return self.repository.families(manufacturer)
+        return self.device_family_repository.names()
 
     def devices(self, manufacturer, family):
 
@@ -42,7 +48,17 @@ class DeviceService:
 
     def search(self, text):
 
-        return self.repository.search(text)
+        df = self.repository.search(text).copy()
+
+        manufacturer_lookup = self.manufacturer_repository.lookup()
+
+        family_lookup = self.device_family_repository.lookup()
+
+        df["Manufacturer"] = df["Manufacturer Code"].map(manufacturer_lookup)
+
+        df["Device Family"] = df["Device Family Code"].map(family_lookup)
+
+        return df
 
     # ======================================================
     # Filtering
@@ -50,11 +66,33 @@ class DeviceService:
 
     def by_manufacturer(self, manufacturer):
 
-        return self.repository.filter("Manufacturer", manufacturer)
+        if manufacturer == "All Manufacturers":
 
-    def by_family(self, family):
+            return self.search("")
 
-        return self.repository.filter("Device Family", family)
+        manufacturer_id = self.manufacturer_repository.name_to_id(
+            manufacturer
+        )
+
+        df = self.repository.table.copy()
+
+        df = df[
+            df["Manufacturer Code"] == manufacturer_id
+        ]
+
+        manufacturer_lookup = self.manufacturer_repository.lookup()
+
+        family_lookup = self.device_family_repository.lookup()
+
+        df["Manufacturer"] = df["Manufacturer Code"].map(
+            manufacturer_lookup
+        )
+
+        df["Device Family"] = df["Device Family Code"].map(
+            family_lookup
+        )
+
+        return df
 
     # ======================================================
     # Validation
