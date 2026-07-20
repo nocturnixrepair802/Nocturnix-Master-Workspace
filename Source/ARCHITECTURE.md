@@ -226,3 +226,42 @@ Customer Portal
 POS Integration
 
 AI Assistant
+
+
+
+Development Session Notes
+July 20, 2026
+Architecture Decisions
+
+The project officially transitioned from feature-first development to architecture-first development.
+
+Major architectural decisions include:
+
+Repository pattern adopted throughout the application.
+One repository per database table.
+Services responsible for business logic.
+GUI responsible only for presentation.
+Excel workbook remains the single source of truth.
+Lookup tables remain normalized and are translated within the Service layer.
+Development Standards
+
+Development now follows the following workflow:
+
+Small targeted code changes.
+Test after every modification.
+Avoid replacing entire files whenever possible.
+Use Git checkpoints regularly.
+Update project documentation at the end of each development session.
+Repository Responsibilities
+
+Repositories should only access their assigned database table.
+
+Business logic belongs in the Service layer.
+
+GUI components must never directly access repositories.
+
+Qt Development Standards
+Avoid recursive signal connections.
+Block signals during combo-box population.
+Connect signals only after initialization.
+Test every GUI change immediately.
