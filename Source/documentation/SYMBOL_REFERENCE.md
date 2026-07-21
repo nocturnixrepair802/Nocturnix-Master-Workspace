@@ -1,55 +1,61 @@
-## ---------------------
-       SYMBOLS
-## ---------------------
+# SYMBOL_REFERENCE.md
 
-# ---------------------
-# STATUS
-# ---------------------
+## Project Status
+
 ✅ Complete
 🔄 In Progress
 ⏳ Planned
 ⚠ Needs Review
 ❌ Not Started
+🚫 Blocked
+🧪 Testing
+📦 Released
 
+---
 
-# ---------------------
-# PRIORITY
-# ---------------------
+## Priority
+
 🔴 Critical
 🟠 High
 🟡 Medium
 🟢 Low
+⚪ Future
 
+---
 
-# ---------------------
-# DOCUMENTATION
-# ---------------------
+## Documentation
+
 📝 Notes
+📖 Documentation
+📋 Checklist
 📌 Important
 💡 Idea
-📋 Checklist
-📖 Documentation
+📚 Reference
+🗂 Archive
 
+---
 
-# ---------------------
-# DEVELOPMENT
-# ---------------------
+## Development
+
 🏗 Architecture
+💻 GUI
+🗄 Database
+⚙ Configuration
+🔒 Security
 🧪 Testing
 🐞 Bug
 🚀 Milestone
-⚙ Configuration
-🔒 Security
-🗄 Database
-💻 GUI
+🔄 Refactor
+📈 Performance
 
+---
 
-# ---------------------
-# GIT
-# ---------------------
+## Git
+
 🌿 Branch
 📦 Release
 🏷 Tag
 📤 Push
 📥 Pull
-
+🔀 Merge
+📝 Commit
