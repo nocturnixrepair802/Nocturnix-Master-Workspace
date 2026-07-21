@@ -70,7 +70,13 @@ class DeviceTable(QTableWidget):
             family = "" if pd.isna(family) else str(family)
             name = "" if pd.isna(name) else str(name)
             model = "" if pd.isna(model) else str(model)
-            year = "" if pd.isna(year) else str(year)
+            if pd.isna(year):
+
+                year = ""
+
+            else:
+
+                year = str(int(year))
 
             if pd.isna(active):
                 active = True

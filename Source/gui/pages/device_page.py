@@ -5,7 +5,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
     QComboBox,
-   )
+    QMessageBox,
+)
 
 from gui.pages.base_page import BasePage
 from gui.widgets.device_table import DeviceTable
@@ -108,7 +109,25 @@ class DevicePage(BasePage):
 
         self.family.currentTextChanged.connect(self.filter_devices)
 
+        # ------------------------------------------------------
+        # Signals
+        # ------------------------------------------------------
+
+        self.refresh_button.clicked.connect(self.load_data)
+
+        self.search.textChanged.connect(self.search_devices)
+
+        self.manufacturer.currentTextChanged.connect(self.load_families)
+
+        self.family.currentTextChanged.connect(self.filter_devices)
+
         self.add_button.clicked.connect(self.add_device)
+
+        self.view_button.clicked.connect(self.view_device)
+
+        self.edit_button.clicked.connect(self.edit_device)
+
+        self.delete_button.clicked.connect(self.delete_device)
 
     # ==========================================================
     # Load
@@ -120,13 +139,33 @@ class DevicePage(BasePage):
 
         self.table.load_devices(self.current_devices)
 
+        self.manufacturer.blockSignals(True)
+
         self.manufacturer.clear()
 
         self.manufacturer.addItem("All Manufacturers")
 
-        self.manufacturer.addItems(self.catalog.manufacturers())
+        self.manufacturer.addItems(
+            self.catalog.manufacturers()
+        )
 
-        self.status.setText(f"{len(self.current_devices)} Devices")
+        self.manufacturer.setCurrentIndex(0)
+
+        self.manufacturer.blockSignals(False)
+
+        self.family.blockSignals(True)
+
+        self.family.clear()
+
+        self.family.addItem("All Families")
+
+        self.family.setCurrentIndex(0)
+
+        self.family.blockSignals(False)
+
+        self.status.setText(
+            f"{len(self.current_devices)} Devices"
+        )
 
     # ==========================================================
     # Search
@@ -166,7 +205,27 @@ class DevicePage(BasePage):
 
     def filter_devices(self):
 
-        pass
+        manufacturer = self.manufacturer.currentText()
+
+        family = self.family.currentText()
+
+        self.current_devices = self.catalog.search("")
+
+        if manufacturer != "All Manufacturers":
+
+            self.current_devices = self.current_devices[
+                self.current_devices["Manufacturer"] == manufacturer
+            ]
+
+        if family != "All Families":
+
+            self.current_devices = self.current_devices[
+                self.current_devices["Device Family"] == family
+            ]
+
+        self.table.load_devices(self.current_devices)
+
+        self.status.setText(f"{len(self.current_devices)} Devices")
 
     # ==========================================================
     # Add
@@ -177,3 +236,61 @@ class DevicePage(BasePage):
         dialog = DeviceDialog(self.application, self)
 
         dialog.exec()
+
+    # ==========================================================
+    # View
+    # ==========================================================
+
+    def view_device(self):
+
+        selected = self.table.selected_device()
+
+        if selected is None:
+
+            QMessageBox.information(
+                self, "View Device", "Please select a device first."
+            )
+
+            return
+
+        QMessageBox.information(self, "View Device", f"Selected Device:\n\n{selected}")
+
+    # ==========================================================
+    # Edit
+    # ==========================================================
+
+    def edit_device(self):
+
+        selected = self.table.selected_device()
+
+        if selected is None:
+
+            QMessageBox.information(
+                self, "Edit Device", "Please select a device first."
+            )
+
+            return
+
+        QMessageBox.information(
+            self, "Edit Device", f"Edit functionality coming next.\n\n{selected}"
+        )
+
+    # ==========================================================
+    # Delete
+    # ==========================================================
+
+    def delete_device(self):
+
+        selected = self.table.selected_device()
+
+        if selected is None:
+
+            QMessageBox.information(
+                self, "Delete Device", "Please select a device first."
+            )
+
+            return
+
+        QMessageBox.information(
+            self, "Delete Device", f"Delete functionality coming next.\n\n{selected}"
+        )
