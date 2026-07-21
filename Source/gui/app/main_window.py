@@ -17,7 +17,7 @@ from app import Application
 from gui.pages.dashboard_page import DashboardPage
 from gui.pages.customer_page import CustomerPage
 from gui.pages.device_page import DevicePage
-
+from gui.pages.repair_page import RepairPage
 
 class MainWindow(QMainWindow):
 
@@ -120,6 +120,8 @@ class MainWindow(QMainWindow):
 
         self.device_page = DevicePage(self.application)
 
+        self.repair_page = RepairPage(self.application)
+
         # ------------------------------------------------------
         # Load Data
         # ------------------------------------------------------
@@ -137,6 +139,8 @@ class MainWindow(QMainWindow):
         self.page_stack.addWidget(self.customer_page)
 
         self.page_stack.addWidget(self.device_page)
+
+        self.page_stack.addWidget(self.repair_page)
 
         content_layout.addWidget(self.page_stack)
 

@@ -2,7 +2,8 @@ from repositories.customer_repository import CustomerRepository
 from repositories.device_repository import DeviceRepository
 from repositories.manufacturer_repository import ManufacturerRepository
 from repositories.device_family_repository import DeviceFamilyRepository
-
+from repositories.repair_repository import RepairRepository
+from repositories.customer_device_repository import CustomerDeviceRepository
 
 class RepositoryManager:
 
@@ -16,6 +17,8 @@ class RepositoryManager:
 
         self.customers = CustomerRepository(database)
 
+        self.customer_devices = CustomerDeviceRepository(database)
+
         # ==================================================
         # Device Repositories
         # ==================================================
@@ -25,3 +28,9 @@ class RepositoryManager:
         self.manufacturers = ManufacturerRepository(database)
 
         self.device_families = DeviceFamilyRepository(database)
+
+        # ==================================================
+        # Repair Repositories
+        # ==================================================
+
+        self.repairs = RepairRepository(database)
