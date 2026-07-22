@@ -1,5 +1,4 @@
-from datetime import datetime
-
+from PySide6.QtCore import QDateTime
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -38,7 +37,7 @@ class CustomerDialog(QDialog):
 
         form = QFormLayout()
 
-        self.customer_type = QComboBox()
+        self.customer_type: QComboBox = QComboBox()
         self.customer_type.addItems(
             [
                 "Residential",
@@ -101,14 +100,17 @@ class CustomerDialog(QDialog):
 
         layout.addLayout(form)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Save
+            | QDialogButtonBox.StandardButton.Cancel
+        )
 
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
 
         layout.addWidget(buttons)
 
-        now = datetime.now()
+        now = QDateTime.currentDateTime()
 
         self.created.setDateTime(now)
         self.modified.setDateTime(now)
@@ -117,32 +119,34 @@ class CustomerDialog(QDialog):
 
     def load_customer(self):
 
-        customer = self.customer
+       if self.customer is None:
+            return
+       customer = self.customer
 
-        self.customer_type.setCurrentText(
+       self.customer_type.setCurrentText(
             str(customer.get("Customer Type", "Residential"))
         )
-        self.first_name.setText(str(customer.get("First Name", "")))
-        self.last_name.setText(str(customer.get("Last Name", "")))
-        self.business_name.setText(str(customer.get("Business Name", "")))
-        self.email.setText(str(customer.get("Email", "")))
-        self.mobile_phone.setText(str(customer.get("Mobile Phone", "")))
-        self.home_phone.setText(str(customer.get("Home Phone", "")))
-        self.work_phone.setText(str(customer.get("Work Phone", "")))
+       self.first_name: QLineEdit = QLineEdit()
+       self.last_name: QLineEdit = QLineEdit()
+       self.business_name.setText(str(customer.get("Business Name", "")))
+       self.email: QLineEdit = QLineEdit()
+       self.mobile_phone.setText(str(customer.get("Mobile Phone", "")))
+       self.home_phone.setText(str(customer.get("Home Phone", "")))
+       self.work_phone.setText(str(customer.get("Work Phone", "")))
 
-        self.preferred_contact.setCurrentText(
-            str(customer.get("Preferred Contact", "Mobile Phone"))
+       self.preferred_contact.setCurrentText(
+         str(customer.get("Preferred Contact", "Mobile Phone"))
         )
 
-        self.billing_address.setPlainText(str(customer.get("Billing Address", "")))
+       self.billing_address.setPlainText(str(customer.get("Billing Address", "")))
 
-        self.shipping_address.setPlainText(str(customer.get("Shipping Address", "")))
+       self.shipping_address.setPlainText(str(customer.get("Shipping Address", "")))
 
-        self.tax_exempt.setChecked(bool(customer.get("Tax Exempt", False)))
+       self.tax_exempt.setChecked(bool(customer.get("Tax Exempt", False)))
 
-        self.active.setChecked(bool(customer.get("Active", True)))
+       self.active.setChecked(bool(customer.get("Active", True)))
 
-        self.notes.setPlainText(str(customer.get("Notes", "")))
+       self.notes.setPlainText(str(customer.get("Notes", "")))
 
     # ==========================================================
 

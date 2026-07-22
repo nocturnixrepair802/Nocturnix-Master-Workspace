@@ -3,7 +3,7 @@ from engines.engine_base import EngineBase
 
 class PricingEngine(EngineBase):
 
-    def calculate_price(
+    def calculate(
         self,
         labor_hours,
         parts_cost

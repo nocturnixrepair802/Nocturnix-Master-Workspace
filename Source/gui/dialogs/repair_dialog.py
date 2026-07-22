@@ -17,6 +17,8 @@ class RepairDialog(QDialog):
 
         self.gui_service = gui_service
 
+        self.device_data = {}
+
         self.setWindowTitle("Repair Ticket")
 
         self.resize(500, 450)
@@ -25,9 +27,9 @@ class RepairDialog(QDialog):
 
         self.load_data()
 
-        self.customer.currentIndexChanged.connect(
-            self.load_devices
-        )
+        self.customer.currentIndexChanged.connect(self.load_devices)
+
+        self.device.currentIndexChanged.connect(self.load_services)
 
     # ======================================================
     # Load Data
@@ -61,6 +63,8 @@ class RepairDialog(QDialog):
 
         self.device.clear()
 
+        self.device_data = {}
+
         customer_id = self.selected_customer_id()
 
         if customer_id is None:
@@ -69,9 +73,37 @@ class RepairDialog(QDialog):
 
         devices = self.gui_service.devices_list(customer_id)
 
+        self.device.addItem("-- Select Device --")
+
         for _, row in devices.iterrows():
 
-            self.device.addItem(row["Device Model"])
+            device_name = row["Device Model"]
+
+            device_id = row["Device ID"]
+
+            self.device.addItem(device_name)
+
+            self.device_data[device_name] = device_id
+
+    # ======================================================
+    # Load Services
+    # ======================================================
+
+    def load_services(self):
+
+        self.service.clear()
+
+        device_id = self.selected_device_id()
+
+        if device_id is None:
+
+            return
+
+        services = self.gui_service.compatible_services(device_id)
+
+        self.service.addItem("-- Select Service --")
+
+        self.service.addItems(services)
 
     # ======================================================
     # Selected Customer
@@ -82,6 +114,16 @@ class RepairDialog(QDialog):
         name = self.customer.currentText()
 
         return self.customer_data.get(name)
+
+    # ======================================================
+    # Selected Device
+    # ======================================================
+
+    def selected_device_id(self):
+
+        device = self.device.currentText()
+
+        return self.device_data.get(device)
 
     # ======================================================
     # UI
@@ -98,6 +140,8 @@ class RepairDialog(QDialog):
         self.customer = QComboBox()
 
         self.device = QComboBox()
+
+        self.service = QComboBox()
 
         self.status = QComboBox()
 
@@ -124,6 +168,8 @@ class RepairDialog(QDialog):
 
         form.addRow("Device", self.device)
 
+        form.addRow("Service", self.service)
+
         form.addRow("Status", self.status)
 
         form.addRow("Technician", self.technician)
@@ -132,7 +178,9 @@ class RepairDialog(QDialog):
 
         layout.addLayout(form)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
 
         buttons.accepted.connect(self.accept)
 

@@ -6,7 +6,11 @@ class CustomerController:
 
     def __init__(self, services: ServiceManager):
 
-        self.editor = CustomerEditor()
+        self.services = services
+
+        self.editor = CustomerEditor(
+            services.repositories.customers
+    )
 
     def list_customers(self):
 
@@ -70,26 +74,28 @@ class CustomerController:
 
     def add_customer(self):
 
-            print()
+        print()
 
-            print("=" * 70)
-            print("ADD CUSTOMER")
-            print("=" * 70)
+        print("=" * 70)
+        print("ADD CUSTOMER")
+        print("=" * 70)
 
-            customer_id = input("Customer ID : ")
-            customer_type = input("Customer Type : ")
-            first_name = input("First Name : ")
-            last_name = input("Last Name : ")
-            business_name = input("Business Name : ")
-            email = input("Email : ")
-            mobile_phone = input("Mobile Phone : ")
+        customer_id = input("Customer ID : ")
+        customer_type = input("Customer Type : ")
+        first_name = input("First Name : ")
+        last_name = input("Last Name : ")
+        business_name = input("Business Name : ")
+        email = input("Email : ")
+        mobile_phone = input("Mobile Phone : ")
 
-            self.editor.add_customer(
-                customer_id,
-                customer_type,
-                first_name,
-                last_name,
-                business_name,
-                email,
-                mobile_phone
-            )
+        customer = {
+            "Customer ID": customer_id,
+            "Customer Type": customer_type,
+            "First Name": first_name,
+            "Last Name": last_name,
+            "Business Name": business_name,
+            "Email": email,
+            "Mobile Phone": mobile_phone,
+        }
+
+        self.editor.add(customer)

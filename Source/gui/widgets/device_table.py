@@ -20,10 +20,11 @@ class DeviceTable(QTableWidget):
 
     def setup_table(self):
 
-        self.setColumnCount(6)
+        self.setColumnCount(7)
 
         self.setHorizontalHeaderLabels(
             [
+                "Device ID",
                 "Manufacturer",
                 "Family",
                 "Device",
@@ -47,6 +48,8 @@ class DeviceTable(QTableWidget):
 
         self.setSortingEnabled(True)
 
+        self.setColumnHidden(0, True)
+
     # ======================================================
 
     def load_devices(self, dataframe):
@@ -59,6 +62,7 @@ class DeviceTable(QTableWidget):
 
         for row, (_, device) in enumerate(dataframe.iterrows()):
 
+            device_id = device.get("Device ID", "")
             manufacturer = device.get("Manufacturer", "")
             family = device.get("Device Family", "")
             name = device.get("Device Model", "")
@@ -83,21 +87,18 @@ class DeviceTable(QTableWidget):
 
             active_text = "✔ Active" if bool(active) else "✖ Inactive"
 
-            self.setItem(row, 0, QTableWidgetItem(manufacturer))
-
-            self.setItem(row, 1, QTableWidgetItem(family))
-
-            self.setItem(row, 2, QTableWidgetItem(name))
-
-            self.setItem(row, 3, QTableWidgetItem(model))
-
-            self.setItem(row, 4, QTableWidgetItem(year))
-
-            self.setItem(row, 5, QTableWidgetItem(active_text))
+            self.setItem(row, 0, QTableWidgetItem(str(device_id)))
+            self.setItem(row, 1, QTableWidgetItem(manufacturer))
+            self.setItem(row, 2, QTableWidgetItem(family))
+            self.setItem(row, 3, QTableWidgetItem(name))
+            self.setItem(row, 4, QTableWidgetItem(model))
+            self.setItem(row, 5, QTableWidgetItem(year))
+            self.setItem(row, 6, QTableWidgetItem(active_text))
 
         self.setSortingEnabled(True)
 
     # ======================================================
+
 
     def selected_device(self):
 
@@ -106,7 +107,7 @@ class DeviceTable(QTableWidget):
         if row < 0:
             return None
 
-        item = self.item(row, 2)
+        item = self.item(row, 0)
 
         if item is None:
             return None

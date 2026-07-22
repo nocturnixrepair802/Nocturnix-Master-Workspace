@@ -1,22 +1,25 @@
-class RepairService:
+from core.base_service import BaseService
+import pandas as pd
+
+class RepairService(BaseService):
 
     def __init__(self, repository):
 
-        self.repository = repository
+        super().__init__(repository)
 
     # ======================================================
     # READ
     # ======================================================
 
-    def all(self):
+    def all(self) -> pd.DataFrame:
 
-        return self.repository.all_repairs()
+        return self.repository.all()
 
-    def get(self, ticket_id):
+    def get(self, ticket_id) -> pd.Series | None:
 
         return self.repository.get(ticket_id)
 
-    def count(self):
+    def count(self) -> int:
 
         return self.repository.count()
 
@@ -24,6 +27,13 @@ class RepairService:
     # Search
     # ======================================================
 
-    def search(self, text=""):
+    def search(self, text: str = "") -> pd.DataFrame:
 
         return self.repository.search(text)
+
+    def exists(self, ticket_id) -> bool:
+
+        return self.repository.exists(
+            "Ticket ID",
+            ticket_id
+        )

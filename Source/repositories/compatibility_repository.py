@@ -1,58 +1,45 @@
 from repositories.repository_base import RepositoryBase
-from models.compatibility import Compatibility
 
 
 class CompatibilityRepository(RepositoryBase):
 
     def __init__(self, database):
 
-        super().__init__(
-            database,
-            "compatibility"
-        )
+        super().__init__(database, "compatibility")
+
+    # ======================================================
+    # Collections
+    # ======================================================
+
+    def all(self):
+
+        return super().all()
+
+    # ======================================================
+    # Single Record
+    # ======================================================
 
     def get(self, compatibility_id):
 
-        row = self.first(
-            "Compatibility ID",
-            compatibility_id
-        )
+        return self.first("Compatibility ID", compatibility_id)
 
-        if row is None:
-            return None
+    # ======================================================
+    # Search
+    # ======================================================
 
-        return Compatibility(
-
-            compatibility_id=row["Compatibility ID"],
-
-            device_family=row["Device Family"],
-
-            service_id=row["Service ID"],
-
-            supported=row["Supported"],
-
-            required_capability=row["Requires Capability"],
-
-            notes=row["Notes"]
-
-        )
-
-    def find_repair(
-
-        self,
-
-        device_family,
-
-        service_id
-
-    ):
+    def find_repair(self, device_family, service_id):
 
         return self.table[
-
             (self.table["Device Family"] == device_family)
-
-            &
-
-            (self.table["Service ID"] == service_id)
-
+            & (self.table["Service ID"] == service_id)
         ]
+
+    def services_for_family(self, family_code):
+
+        return self.filter("Device Family", family_code)
+
+    def supported_services(self, family_code):
+
+        df = self.services_for_family(family_code)
+
+        return df[df["Supported"].fillna(False)]

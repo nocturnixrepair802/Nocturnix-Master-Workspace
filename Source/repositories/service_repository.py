@@ -1,5 +1,4 @@
 from repositories.repository_base import RepositoryBase
-from models.service import Service
 
 
 class ServiceRepository(RepositoryBase):
@@ -13,29 +12,8 @@ class ServiceRepository(RepositoryBase):
 
     def get(self, service_id):
 
-        row = self.first(
-            "Service ID",
-            service_id
-        )
+        return self.first("Service ID", service_id)
 
-        if row is None:
-            return None
-
-        return Service(
-
-            service_id=row["Service ID"],
-
-            service_name=row["Service Name"],
-
-            category=row["Service Category"],
-
-            repair_type=row["Repair Type"],
-
-            estimated_hours=row["Estimated Labor (hrs)"],
-
-            active=row["Active"]
-
-        )
 
     def by_category(self, category):
 
@@ -50,3 +28,12 @@ class ServiceRepository(RepositoryBase):
             "Active",
             True
         )
+
+    # ======================================================
+    # Collections
+    # ======================================================
+
+
+    def all(self):
+
+        return super().all()

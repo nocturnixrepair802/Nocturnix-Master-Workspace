@@ -30,7 +30,7 @@ class CustomerDetailsDialog(QDialog):
 
         title = QLabel(f"{self.customer['First Name']} {self.customer['Last Name']}")
 
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         title.setStyleSheet("""
             font-size:24px;

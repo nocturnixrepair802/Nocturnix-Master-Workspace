@@ -1,17 +1,30 @@
-class SupplierService:
+from core.base_service import BaseService
+
+import pandas as pd
+
+
+class SupplierService(BaseService):
 
     def __init__(self, repository):
 
-        self.repository = repository
+        super().__init__(repository)
 
-    def all(self):
+    # ======================================================
+    # Collections
+    # ======================================================
+
+    def all(self) -> pd.DataFrame:
 
         return self.repository.all()
 
-    def get(self, supplier_id):
+    def get(self, supplier_id) -> pd.Series | None:
 
         return self.repository.get(supplier_id)
 
-    def count(self):
+    def count(self) -> int:
 
         return self.repository.count()
+
+    def exists(self, supplier_id) -> bool:
+
+        return self.repository.exists("Supplier ID", supplier_id)

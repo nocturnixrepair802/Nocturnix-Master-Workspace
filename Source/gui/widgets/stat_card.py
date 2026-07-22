@@ -24,7 +24,7 @@ class StatCard(QFrame):
 
         title_label = QLabel(title)
 
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         title_label.setStyleSheet("""
             font-size:16px;
@@ -33,7 +33,7 @@ class StatCard(QFrame):
 
         value_label = QLabel(str(value))
 
-        value_label.setAlignment(Qt.AlignCenter)
+        value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         value_label.setStyleSheet("""
             font-size:30px;

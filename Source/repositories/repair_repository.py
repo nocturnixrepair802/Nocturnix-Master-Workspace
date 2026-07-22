@@ -11,14 +11,13 @@ class RepairRepository(RepositoryBase):
     # Collections
     # ======================================================
 
-    def all_repairs(self):
+    def all(self):
 
-        return self.table.copy()
+        return super().all()
 
     # ======================================================
     # Search
     # ======================================================
-
 
     def search(self, text=""):
 
@@ -56,13 +55,7 @@ class RepairRepository(RepositoryBase):
 
     def get(self, ticket_id):
 
-        row = self.first("Ticket ID", ticket_id)
-
-        if row is None:
-
-            return None
-
-        return row
+        return self.first("Ticket ID", ticket_id)
 
     # ======================================================
     # Count
@@ -70,4 +63,4 @@ class RepairRepository(RepositoryBase):
 
     def count(self):
 
-        return len(self.table)
+        return super().count()

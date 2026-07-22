@@ -3,7 +3,7 @@ from engines.engine_base import EngineBase
 
 class CompatibilityEngine(EngineBase):
 
-    def validate_repair(
+    def validate(
         self,
         device_family,
         service_id

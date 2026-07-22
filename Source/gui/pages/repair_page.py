@@ -5,8 +5,9 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
     QComboBox,
-)
 
+)
+import pandas as pd
 from gui.pages.base_page import BasePage
 from gui.widgets.repair_table import RepairTable
 from gui.services.repair_gui_service import RepairGuiService
@@ -22,7 +23,7 @@ class RepairPage(BasePage):
 
         self.repairs = RepairGuiService(application)
 
-        self.current_repairs = None
+        self.current_repairs: pd.DataFrame = pd.DataFrame()
 
         self.build_page()
 
@@ -40,7 +41,7 @@ class RepairPage(BasePage):
 
         title = QLabel("Repair Management")
 
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         title.setStyleSheet("""
             font-size:28px;
@@ -163,7 +164,7 @@ class RepairPage(BasePage):
 
         self.table.load_repairs(self.current_repairs)
 
-        self.status.setText(f"{len(self.current_repairs)} Repairs")
+        self.status.setText(f"{len(self.current_repairs.index)} Repairs")
 
     # ======================================================
     # Search
@@ -181,11 +182,12 @@ class RepairPage(BasePage):
     # Filter
     # ======================================================
 
+
     def filter_repairs(self):
 
-        status = self.status_filter.currentText()
+        dataframe: pd.DataFrame = self.current_repairs.copy()
 
-        dataframe = self.current_repairs
+        status = self.status_filter.currentText()
 
         if status != "All Repairs":
 
@@ -193,11 +195,12 @@ class RepairPage(BasePage):
 
         self.table.load_repairs(dataframe)
 
-        self.status.setText(f"{len(dataframe)} Repairs")
+        self.status.setText(f"{len(dataframe.index)} Repairs")
+
+        
     # ======================================================
     # Add Repair
     # ======================================================
-
 
     def add_repair(self):
 
@@ -205,5 +208,3 @@ class RepairPage(BasePage):
             self.repairs,
             self
         )
-
-        

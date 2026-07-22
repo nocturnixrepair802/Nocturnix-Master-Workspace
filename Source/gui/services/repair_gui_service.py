@@ -10,6 +10,12 @@ class RepairGuiService:
 
         self.customer_devices = application.services.customer_devices
 
+        self.devices = application.services.devices
+
+        self.compatibility = application.repositories.compatibility
+
+        self.master_services = application.database["master_services"]
+
     # ======================================================
     # Search
     # ======================================================
@@ -38,7 +44,6 @@ class RepairGuiService:
     # Devices
     # ======================================================
 
-
     def devices_list(self, customer_id=None):
 
         if customer_id is None:
@@ -48,3 +53,46 @@ class RepairGuiService:
         return self.customer_devices.customer_devices(
             customer_id
         )
+
+    # ======================================================
+    # Customer Device
+    # ======================================================
+
+    def customer_device(self, device_id):
+
+        return self.customer_devices.get(device_id)
+
+    # ======================================================
+    # Compatible Services
+    # ======================================================
+
+
+    def compatible_services(self, device_id):
+
+        device = self.devices.get(device_id)
+
+        if device is None:
+
+            return []
+
+        family = device["Device Family Code"]
+
+        compatibility = self.compatibility.supported_services(family)
+
+        if compatibility.empty:
+
+            return []
+
+        services = []
+
+        for _, row in compatibility.iterrows():
+
+            service_id = row["Service ID"]
+
+            match = self.master_services[self.master_services["Service ID"] == service_id]
+
+            if not match.empty:
+
+                services.append(match.iloc[0]["Service Name"])
+
+        return sorted(set(services))

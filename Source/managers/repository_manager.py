@@ -4,10 +4,15 @@ from repositories.manufacturer_repository import ManufacturerRepository
 from repositories.device_family_repository import DeviceFamilyRepository
 from repositories.repair_repository import RepairRepository
 from repositories.customer_device_repository import CustomerDeviceRepository
+from repositories.guide_repository import GuideRepository
+
 
 class RepositoryManager:
+    """
+    Creates and owns all repository instances.
+    """
 
-    def __init__(self, database):
+    def __init__(self, database: dict):
 
         self.database = database
 
@@ -34,3 +39,9 @@ class RepositoryManager:
         # ==================================================
 
         self.repairs = RepairRepository(database)
+
+        # ==================================================
+        # Technical Knowledge Repositories
+        # ==================================================
+
+        self.guides = GuideRepository(database)

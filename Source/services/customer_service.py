@@ -1,22 +1,25 @@
-class CustomerService:
+from core.base_service import BaseService
+import pandas as pd
+
+class CustomerService(BaseService):
 
     def __init__(self, repository):
 
-        self.repository = repository
+        super().__init__(repository)
 
     # ==========================================================
     # Basic Operations
     # ==========================================================
 
-    def all(self):
+    def all(self) -> pd.DataFrame:
 
         return self.repository.all()
 
-    def get(self, customer_id):
+    def get(self, customer_id) -> pd.Series | None:
 
         return self.repository.get(customer_id)
 
-    def count(self):
+    def count(self) -> int:
 
         return self.repository.count()
 
@@ -24,7 +27,7 @@ class CustomerService:
     # Search Methods
     # ==========================================================
 
-    def search(self, text):
+    def search(self, text: str = "") -> pd.DataFrame:
 
         customers = self.repository.all()
 
@@ -49,7 +52,7 @@ class CustomerService:
 
         return customers[mask]
 
-    def search_last_name(self, last_name):
+    def search_last_name(self, last_name: str) -> pd.DataFrame:
 
         customers = self.repository.all()
 
@@ -63,7 +66,7 @@ class CustomerService:
             )
         ]
 
-    def search_phone(self, phone):
+    def search_phone(self, phone: str) -> pd.DataFrame:
 
         customers = self.repository.all()
 
@@ -76,3 +79,11 @@ class CustomerService:
                 na=False,
             )
         ]
+
+
+    def exists(self, customer_id) -> bool:
+
+        return self.repository.exists(
+            "Customer ID",
+            customer_id
+        )

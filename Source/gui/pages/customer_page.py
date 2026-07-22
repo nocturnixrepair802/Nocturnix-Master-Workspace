@@ -36,7 +36,7 @@ class CustomerPage(BasePage):
 
         title = QLabel("Customer Management")
 
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         title.setStyleSheet("""
             font-size:28px;
@@ -112,7 +112,6 @@ class CustomerPage(BasePage):
         self.table.doubleClicked.connect(self.edit_customer)
 
     # ==========================================================
-
 
     def load_data(self):
 

@@ -3,9 +3,10 @@ from engines.engine_base import EngineBase
 
 class InventoryEngine(EngineBase):
 
-    def part_available(
+    def available(
         self,
-        sku
+        sku,
+        requested_quantity=1
     ):
 
         inventory = self.get_table(
@@ -20,8 +21,6 @@ class InventoryEngine(EngineBase):
 
             return False
 
-        quantity = int(
-            match.iloc[0]["Quantity"]
-        )
+        stock = int(match.iloc[0]["Quantity"])
 
-        return quantity > 0
+        return stock >= requested_quantity

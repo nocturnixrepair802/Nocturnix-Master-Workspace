@@ -11,9 +11,9 @@ class DeviceFamilyRepository(RepositoryBase):
     # Collections
     # ======================================================
 
-    def all_families(self):
+    def all(self):
 
-        return self.table.copy()
+        return super().all()
 
     def codes(self):
 
@@ -31,19 +31,13 @@ class DeviceFamilyRepository(RepositoryBase):
 
         row = self.first("Device Family Code", code)
 
-        if row is None:
-            return code
-
-        return row["Device Family"]
+        return code if row is None else row["Device Family"]
 
     def name_to_code(self, family):
 
         row = self.first("Device Family", family)
 
-        if row is None:
-            return None
-
-        return row["Device Family Code"]
+        return None if row is None else row["Device Family Code"]
 
     def lookup(self):
 

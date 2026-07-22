@@ -1,25 +1,58 @@
+"""
+============================================================
+Nocturnix Repair Platform
+Table Loader
+============================================================
+
+Author: Nocturnix Mobile Repair
+Version: 1.0.0 Alpha
+
+Purpose:
+    Loads all Excel Tables from the Nocturnix Master
+    Database into pandas DataFrames for use throughout
+    the application.
+
+============================================================
+"""
+
 from pathlib import Path
+from typing import Dict
 
 import pandas as pd
 from openpyxl import load_workbook
+from openpyxl.utils.cell import range_boundaries
+from openpyxl.worksheet.table import Table
 
-from config.database import TABLES, MASTER_DATABASE
+from config.database import TABLES
 
 
 class TableLoader:
+    """
+    Loads Excel Tables into pandas DataFrames.
+    """
 
-    def __init__(self, workbook_path):
+    def __init__(self, workbook_path: str | Path):
 
         self.workbook_path = Path(workbook_path)
 
-        self.workbook = load_workbook(
-            self.workbook_path,
-            data_only=True
-        )
+        if not self.workbook_path.exists():
 
-    def list_tables(self):
+            raise FileNotFoundError(f"Workbook not found: {self.workbook_path}")
 
-        print("\nWorkbook Tables")
+        self.workbook = load_workbook(self.workbook_path, data_only=True)
+
+    # ======================================================
+    # Information
+    # ======================================================
+
+    def list_tables(self) -> None:
+        """
+        Prints every Excel Table found in the workbook.
+        """
+
+        print()
+        print("=" * 70)
+        print("Workbook Tables")
         print("=" * 70)
 
         for worksheet in self.workbook.worksheets:
@@ -30,41 +63,72 @@ class TableLoader:
 
                 for table in worksheet.tables.values():
 
-                    print(f"  {table.name}")
+                    print(f"  • {table.name}")
 
-    def load_table(self, table_name):
+    # ======================================================
+    # Load Single Table
+    # ======================================================
+
+    def load_table(
+        self,
+        table_name: str,
+    ) -> pd.DataFrame:
+        """
+        Loads a single Excel Table into a DataFrame.
+        """
 
         for worksheet in self.workbook.worksheets:
 
-            if table_name in worksheet.tables:
+            if table_name not in worksheet.tables:
+                continue
 
-                table = worksheet.tables[table_name]
+            table: Table = worksheet.tables[table_name]
 
-                table_range = table.ref
+            min_col, min_row, max_col, max_row = range_boundaries(table.ref)
 
-                rows = list(worksheet[table_range])
-
-                headers = [cell.value for cell in rows[0]]
-
-                records = [
-                    [cell.value for cell in row]
-                    for row in rows[1:]
-                ]
-
-                return pd.DataFrame(
-                    records,
-                    columns=headers
+            rows = list(
+                worksheet.iter_rows(
+                    min_row=min_row,
+                    max_row=max_row,
+                    min_col=min_col,
+                    max_col=max_col,
                 )
+            )
+
+            if not rows:
+
+                return pd.DataFrame()
+
+            headers = [cell.value for cell in rows[0]]
+
+            records = [[cell.value for cell in row] for row in rows[1:]]
+
+            return pd.DataFrame(
+                records,
+                columns=headers,
+            )
 
         raise ValueError(
-            f"Table '{table_name}' not found."
+            f"Excel table '{table_name}' was not found "
+            f"in workbook '{self.workbook_path.name}'."
         )
 
-    def load_all_tables(self):
+    # ======================================================
+    # Load Entire Database
+    # ======================================================
 
-        data = {}
+    def load_all_tables(
+        self,
+    ) -> Dict[str, pd.DataFrame]:
+        """
+        Loads every configured table from the workbook.
+        """
 
-        print("\nLoading Database Tables")
+        data: Dict[str, pd.DataFrame] = {}
+
+        print()
+        print("=" * 70)
+        print("Loading Database Tables")
         print("=" * 70)
 
         for key, table_name in TABLES.items():
@@ -75,14 +139,14 @@ class TableLoader:
 
                 data[key] = dataframe
 
-                print(
-                    f"✓ {table_name:<30}"
-                    f"{len(dataframe):>6} rows"
-                )
+                print(f"✓ {table_name:<35}" f"{len(dataframe):>6} rows")
 
             except Exception as error:
 
                 print(f"✗ {table_name}")
                 print(f"   {error}")
+
+        print()
+        print(f"Loaded {len(data)} of " f"{len(TABLES)} tables.")
 
         return data

@@ -1,37 +1,19 @@
 from repositories.repository_base import RepositoryBase
-from models.inventory_item import InventoryItem
 
 
 class InventoryRepository(RepositoryBase):
 
     def __init__(self, database):
 
-        super().__init__(
-            database,
-            "parts_catalog"
-        )
+        super().__init__(database, "parts_catalog")
+
+    def all(self):
+
+        return super().all()
 
     def get(self, sku):
 
-        row = self.first(
-            "SKU",
-            sku
-        )
-
-        if row is None:
-            return None
-
-        return InventoryItem(
-
-            sku=row["SKU"],
-
-            description=row["Description"],
-
-            quantity=row["Quantity"],
-
-            location=row["Location"]
-
-        )
+        return self.first("SKU", sku)
 
     def in_stock(self, sku):
 
@@ -40,4 +22,4 @@ class InventoryRepository(RepositoryBase):
         if item is None:
             return False
 
-        return item.quantity > 0
+        return int(item["Quantity"]) > 0

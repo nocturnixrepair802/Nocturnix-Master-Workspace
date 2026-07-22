@@ -26,9 +26,20 @@ class RepairManager:
     # Repair Quote
     # ======================================================
 
-    def build_quote(self, device, service, parts=None):
+    def build_quote(
+        self,
+        device_family,
+        service_id,
+        labor_hours,
+        parts_cost,
+    ):
 
-        return self.quote.generate(device=device, service=service, parts=parts or [])
+        return self.quote.generate(
+            device_family=device_family,
+            service_id=service_id,
+            labor_hours=labor_hours,
+            parts_cost=parts_cost,
+        )
 
     # ======================================================
     # Pricing

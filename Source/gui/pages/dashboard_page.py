@@ -21,7 +21,7 @@ class DashboardPage(BasePage):
 
         title = QLabel("Dashboard")
 
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         title.setStyleSheet("""
             font-size:30px;

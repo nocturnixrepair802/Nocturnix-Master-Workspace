@@ -1,5 +1,9 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 
+"""
+Base class for all application pages.
+Provides a standard vertical layout.
+"""
 
 class BasePage(QWidget):
 
@@ -7,6 +11,6 @@ class BasePage(QWidget):
 
         super().__init__()
 
-        self.layout = QVBoxLayout()
+        self.layout: QVBoxLayout = QVBoxLayout()
 
         self.setLayout(self.layout)

@@ -11,9 +11,9 @@ class ManufacturerRepository(RepositoryBase):
     # Collections
     # ======================================================
 
-    def all_manufacturers(self):
+    def all(self):
 
-        return self.table.copy()
+        return super().all()
 
     def ids(self):
 
@@ -31,19 +31,13 @@ class ManufacturerRepository(RepositoryBase):
 
         row = self.first("Manufacturer ID", manufacturer_id)
 
-        if row is None:
-            return manufacturer_id
-
-        return row["Manufacturer"]
+        return manufacturer_id if row is None else row["Manufacturer"]
 
     def name_to_id(self, manufacturer):
 
         row = self.first("Manufacturer", manufacturer)
 
-        if row is None:
-            return None
-
-        return row["Manufacturer ID"]
+        return None if row is None else row["Manufacturer ID"]
 
     def lookup(self):
 

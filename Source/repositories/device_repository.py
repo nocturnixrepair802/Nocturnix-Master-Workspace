@@ -11,18 +11,15 @@ class DeviceRepository(RepositoryBase):
     # Collections
     # ======================================================
 
-    def all_devices(self):
+    def all(self):
 
-        return self.table.copy()
+        return super().all()
 
     # ======================================================
     # Search
     # ======================================================
 
     def search(self, text=""):
-
-        if not text:
-            return self.table.copy()
 
         text = str(text).lower()
 
@@ -62,11 +59,7 @@ class DeviceRepository(RepositoryBase):
     # Single Record
     # ======================================================
 
+
     def get(self, device_id):
 
-        row = self.first("Device ID", device_id)
-
-        if row is None:
-            return None
-
-        return row
+        return self.first("Device ID", device_id)

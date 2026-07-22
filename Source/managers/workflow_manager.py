@@ -1,13 +1,16 @@
 from workflow.repair_workflow import RepairWorkflow
 from workflow.estimate_workflow import EstimateWorkflow
 from workflow.invoice_workflow import InvoiceWorkflow
-
+from managers.repair_manager import RepairManager
 
 class WorkflowManager:
+    """
+    Creates and owns all business workflows.
+    """
 
-    def __init__(self, repair_manager):
+    def __init__(self, repair_manager: RepairManager):
 
-        self.repair_manager = repair_manager
+        self.repair_manager: RepairManager = repair_manager
 
         # ======================================================
         # Business Workflows
@@ -23,7 +26,7 @@ class WorkflowManager:
     # Utility
     # ======================================================
 
-    def all(self):
+    def all(self) -> dict:
 
         return {
             "repairs": self.repairs,

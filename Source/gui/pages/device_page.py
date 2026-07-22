@@ -12,7 +12,7 @@ from gui.pages.base_page import BasePage
 from gui.widgets.device_table import DeviceTable
 from gui.dialogs.device_dialog import DeviceDialog
 from gui.services.device_catalog_service import DeviceCatalogService
-
+from gui.dialogs.device_details_dialog import DeviceDetailsDialog
 
 class DevicePage(BasePage):
 
@@ -38,7 +38,7 @@ class DevicePage(BasePage):
 
         title = QLabel("Device Catalog")
 
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         title.setStyleSheet("""
             font-size:28px;
@@ -109,18 +109,6 @@ class DevicePage(BasePage):
 
         self.family.currentTextChanged.connect(self.filter_devices)
 
-        # ------------------------------------------------------
-        # Signals
-        # ------------------------------------------------------
-
-        self.refresh_button.clicked.connect(self.load_data)
-
-        self.search.textChanged.connect(self.search_devices)
-
-        self.manufacturer.currentTextChanged.connect(self.load_families)
-
-        self.family.currentTextChanged.connect(self.filter_devices)
-
         self.add_button.clicked.connect(self.add_device)
 
         self.view_button.clicked.connect(self.view_device)
@@ -129,6 +117,8 @@ class DevicePage(BasePage):
 
         self.delete_button.clicked.connect(self.delete_device)
 
+        # Open device details when a row is double-clicked
+        self.table.doubleClicked.connect(self.view_device)
     # ==========================================================
     # Load
     # ==========================================================
@@ -145,9 +135,7 @@ class DevicePage(BasePage):
 
         self.manufacturer.addItem("All Manufacturers")
 
-        self.manufacturer.addItems(
-            self.catalog.manufacturers()
-        )
+        self.manufacturer.addItems(self.catalog.manufacturers())
 
         self.manufacturer.setCurrentIndex(0)
 
@@ -163,9 +151,7 @@ class DevicePage(BasePage):
 
         self.family.blockSignals(False)
 
-        self.status.setText(
-            f"{len(self.current_devices)} Devices"
-        )
+        self.status.setText(f"{len(self.current_devices)} Devices")
 
     # ==========================================================
     # Search
@@ -235,7 +221,9 @@ class DevicePage(BasePage):
 
         dialog = DeviceDialog(self.application, self)
 
-        dialog.exec()
+        if dialog.exec():
+
+            self.load_data()
 
     # ==========================================================
     # View
@@ -243,9 +231,9 @@ class DevicePage(BasePage):
 
     def view_device(self):
 
-        selected = self.table.selected_device()
+        device_id = self.table.selected_device()
 
-        if selected is None:
+        if device_id is None:
 
             QMessageBox.information(
                 self, "View Device", "Please select a device first."
@@ -253,7 +241,41 @@ class DevicePage(BasePage):
 
             return
 
-        QMessageBox.information(self, "View Device", f"Selected Device:\n\n{selected}")
+        device = self.application.services.devices.get(device_id)
+
+        if device is None:
+
+            QMessageBox.warning(self, "Device", "Device not found.")
+
+            return
+
+        device["Manufacturer"] = self.application.services.devices.manufacturer_name(
+            device["Manufacturer Code"]
+        )
+
+        device["Device Family"] = self.application.services.devices.family_name(
+            device["Device Family Code"]
+        )
+
+        repair_count = self.application.services.devices.repair_count(device_id)
+
+        guides = self.application.services.devices.repair_guides(device_id)
+
+        repairs = []
+
+        if not guides.empty:
+
+            repairs = sorted(guides["Service Name"].dropna().drop_duplicates().tolist())
+
+        dialog = DeviceDetailsDialog(
+            application=self.application,
+            device=device,
+            repair_count=repair_count,
+            repairs=repairs,
+            parent=self,
+        )
+
+        dialog.exec()
 
     # ==========================================================
     # Edit

@@ -2,6 +2,9 @@ import pandas as pd
 
 
 class RepositoryBase:
+    """
+    Base class for all DataFrame-backed repositories.
+    """
 
     def __init__(self, database, table_name):
 
@@ -19,7 +22,7 @@ class RepositoryBase:
     # READ
     # ==========================================================
 
-    def all(self):
+    def all(self) -> pd.DataFrame:
 
         return self.table.copy()
 
@@ -37,13 +40,13 @@ class RepositoryBase:
 
         return value in self.table[column].values
 
-    def find(self, column, value):
+    def find(self, column: str, value) -> pd.DataFrame:
 
         self.validate_column(column)
 
         return self.table[self.table[column] == value]
 
-    def first(self, column, value):
+    def first(self, column: str, value) -> pd.Series | None:
 
         records = self.find(column, value)
 
@@ -73,7 +76,7 @@ class RepositoryBase:
 
         self.database[self.table_name] = self.table
 
-    def replace(self, dataframe):
+    def replace_all(self, dataframe):
 
         self.table = dataframe.copy()
 

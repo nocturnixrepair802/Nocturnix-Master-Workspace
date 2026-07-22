@@ -1,74 +1,49 @@
-from workflow.workflow_base import WorkflowBase
+from models.repair_session import RepairSession
 
+class RepairWorkflow:
+    """
+    Coordinates the complete repair creation workflow.
+    """
 
-class RepairWorkflow(WorkflowBase):
+    def __init__(self, repair_manager):
 
-    def start(
+        self.repair_manager = repair_manager
 
-        self,
+        self.session = RepairSession()
 
-        customer_id,
+    # ======================================================
+    # Customer
+    # ======================================================
 
-        device_id,
+    def select_customer(self, customer):
 
-        service_id
+        self.session.customer = customer
 
-    ):
+    # ======================================================
+    # Device
+    # ======================================================
 
-        customer = self.manager.customer(
+    def select_device(self, device):
 
-            customer_id
+        self.session.device = device
 
-        )
+    # ======================================================
+    # Repair
+    # ======================================================
 
-        if customer is None:
+    def select_service(self, service):
 
-            return self.failure(
+        self.session.service = service
 
-                "Customer not found."
+    # ======================================================
+    # Utility
+    # ======================================================
 
-            )
+    def clear(self):
 
-        device = self.manager.device(
+        self.session.reset()
 
-            device_id
+    @property
+    def current(self):
 
-        )
-
-        if device is None:
-
-            return self.failure(
-
-                "Device not found."
-
-            )
-
-        service = self.manager.service(
-
-            service_id
-
-        )
-
-        if service is None:
-
-            return self.failure(
-
-                "Service not found."
-
-            )
-
-        return self.success(
-
-            "Repair workflow started.",
-
-            {
-
-                "customer": customer,
-
-                "device": device,
-
-                "service": service
-
-            }
-
-        )
+        return self.session

@@ -10,7 +10,7 @@ class QuoteEngine:
 
         self.pricing = PricingEngine(database)
 
-    def generate_quote(
+    def generate(
 
         self,
 
@@ -24,7 +24,7 @@ class QuoteEngine:
 
     ):
 
-        supported = self.compatibility.validate_repair(
+        supported = self.compatibility.validate(
 
             device_family,
 
@@ -36,12 +36,9 @@ class QuoteEngine:
 
             return supported
 
-        pricing = self.pricing.calculate_price(
-
+        pricing = self.pricing.calculate(
             labor_hours,
-
             parts_cost
-
         )
 
         return {

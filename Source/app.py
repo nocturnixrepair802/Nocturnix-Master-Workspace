@@ -6,9 +6,13 @@ from managers.repository_manager import RepositoryManager
 from managers.service_manager import ServiceManager
 from managers.repair_manager import RepairManager
 from managers.workflow_manager import WorkflowManager
+from managers.technical_knowledge_manager import TechnicalKnowledgeManager
 
 
 class Application:
+    """
+    Root dependency container for the Nocturnix Repair Platform.
+    """
 
     def __init__(self):
 
@@ -19,25 +23,25 @@ class Application:
 
         loader = TableLoader(MASTER_DATABASE)
 
-        self.database = loader.load_all_tables()
+        self.database: dict = loader.load_all_tables()
 
-        # Repository Layer
-        self.repositories = RepositoryManager(
+        self.repositories: RepositoryManager = RepositoryManager(
             self.database
         )
 
-        # Service Layer
-        self.services = ServiceManager(
+        self.services: ServiceManager = ServiceManager(
             self.repositories
         )
 
-        # Business Logic Layer
-        self.repair = RepairManager(
+        self.technical: TechnicalKnowledgeManager = (
+            TechnicalKnowledgeManager(self.services.technical)
+        )
+
+        self.repair: RepairManager = RepairManager(
             self.database
         )
 
-        # Workflow Layer
-        self.workflow = WorkflowManager(
+        self.workflow: WorkflowManager = WorkflowManager(
             self.repair
         )
 

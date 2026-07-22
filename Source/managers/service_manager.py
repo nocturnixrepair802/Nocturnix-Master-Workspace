@@ -2,12 +2,19 @@ from services.customer_service import CustomerService
 from services.device_service import DeviceService
 from services.repair_service import RepairService
 from services.customer_device_service import CustomerDeviceService
+from services.technical_knowledge_service import TechnicalKnowledgeService
+from managers.repository_manager import RepositoryManager
 
 class ServiceManager:
+    """
+    Creates and owns all business services.
+    """
 
-    def __init__(self, repositories):
+    def __init__(self, repositories: RepositoryManager):
 
         self.repositories = repositories
+
+        self.repositories: RepositoryManager = repositories
 
         # ======================================================
         # Core Services
@@ -27,14 +34,22 @@ class ServiceManager:
 
         self.repairs = RepairService(repositories.repairs)
 
+        # ======================================================
+        # Technical Knowledge Services
+        # ======================================================
+
+        self.technical = TechnicalKnowledgeService(repositories)
+
     # ======================================================
     # Utility
     # ======================================================
 
-    def all(self):
+    def all(self) -> dict:
 
         return {
             "customers": self.customers,
+            "customer_devices": self.customer_devices,
             "devices": self.devices,
             "repairs": self.repairs,
+            "technical": self.technical,
         }
