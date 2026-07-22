@@ -1,0 +1,74 @@
+Legacy Staging Preview Verification Report
+=====================================
+
+Hashes before execution:
+  Raw:       03489163501d6b8a3668c4398cbc0c615e11491f66f4d617566bc407a764c235
+  Staging:   ae52e160d3524d516bb35c8aa707e075ae96f8ca87e75600eaee4c28aec9e382
+  Canonical: d7123cf666ea6620b7fda30448efcee77476fe9320302153d8f5a4cd188e55a3
+
+Hashes after execution:
+  Raw:       03489163501d6b8a3668c4398cbc0c615e11491f66f4d617566bc407a764c235
+  Staging:   ae52e160d3524d516bb35c8aa707e075ae96f8ca87e75600eaee4c28aec9e382
+  Canonical: d7123cf666ea6620b7fda30448efcee77476fe9320302153d8f5a4cd188e55a3
+
+Hashes unchanged: True
+
+Total staging rows: 743
+
+Disposition counts:
+  Old disposition Mappable After Lookup Enrichment: 511
+  Old disposition Requires Manual Review: 232
+  Staging disposition Mappable After Lookup Enrichment: 496
+  Staging disposition Requires Manual Review: 247
+  Changed rows: 15
+
+Changed rows with reasons:
+  Source 729 SKU=700-0104 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 730 SKU=700-5003 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 731 SKU=700-5005 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 732 SKU=700-5005 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 733 SKU=700-5002 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 734 SKU=700-5001 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 735 SKU=700-0111 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 736 SKU=700-0113 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 737 SKU=700-5005 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 738 SKU=700-0104 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 740 SKU=700-0113 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 741 SKU=700-0111 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 742 SKU=700-5002 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 743 SKU=700-5001 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+  Source 744 SKU=700-5003 category=Device old=Mappable After Lookup Enrichment new=Requires Manual Review classification=Same SKU / Conflicting Item reasons=['conflicting SKU', 'missing Supplier']
+
+Manual review reason counts:
+  both Price and Cost zero: 232
+  missing Supplier: 45
+  conflicting SKU: 15
+
+Primary destination counts:
+  accessories_catalog staging: 1
+  tool_catalog staging: 38
+  master_services staging: 574
+  inventory_items staging: 40
+  parts_catalog staging: 82
+  master_devices staging: 8
+
+Secondary inventory candidate rows: 40
+
+SKU classification totals:
+  Unique SKU rows: 98
+  Duplicate SKU groups: 322
+  Rows in duplicate SKU groups: 645
+  Exact duplicate patterns: 315
+  Rows in exact duplicate patterns: 630
+  Excess exact duplicates: 315
+  Conflicting SKU rows: 15
+  Multi-supplier rows: 0
+  Multi-condition rows: 0
+  Missing SKU rows: 0
+
+Classification counts:
+  Unique SKU: 98
+  Same SKU / Same Item: 630
+  Same SKU / Conflicting Item: 15
+
+Report saved to Output/legacy_staging_verification_report.txt
