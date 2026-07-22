@@ -1,9 +1,8 @@
-from legacy_ui.dashboard import Dashboard
-from legacy_ui.customer_menu import CustomerMenu
-from legacy_ui.device_menu import DeviceMenu
-from controllers.device_controller import DeviceController
-
 from controllers.customer_controller import CustomerController
+from controllers.device_controller import DeviceController
+from legacy_ui.customer_menu import CustomerMenu
+from legacy_ui.dashboard import Dashboard
+from legacy_ui.device_menu import DeviceMenu
 
 
 class ApplicationController:

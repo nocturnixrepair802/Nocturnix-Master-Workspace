@@ -1,6 +1,3 @@
-from typing import Generic, TypeVar
-
-TService = TypeVar("TService")
 """
 Base class for all application controllers.
 
@@ -9,7 +6,7 @@ business services. They should not contain
 business logic.
 """
 
-class BaseController(Generic[TService]):
+class BaseController[TService]:
 
     def __init__(self, service: TService):
 

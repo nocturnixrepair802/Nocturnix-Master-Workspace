@@ -13,7 +13,7 @@ Purpose:
 ============================================================
 """
 
-from typing import Optional, cast
+from typing import cast
 
 import pandas as pd
 
@@ -62,7 +62,7 @@ class TechnicalLibraryController(BaseController):
     def get_guide(
         self,
         guide_id: str,
-    ) -> Optional[pd.Series]:
+    ) -> pd.Series | None:
         """
         Returns a repair guide by Guide ID.
         """

@@ -1,7 +1,9 @@
 from pathlib import Path
+
 from openpyxl import load_workbook
 
 from config.database import TABLES
+
 
 class WorkbookValidator:
 
@@ -34,7 +36,7 @@ class WorkbookValidator:
 
         except Exception as error:
 
-            print(f"✗ Unable to open workbook")
+            print("✗ Unable to open workbook")
             print(error)
             return False
 

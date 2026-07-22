@@ -1,11 +1,10 @@
+import pandas as pd
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHeaderView,
     QTableWidget,
     QTableWidgetItem,
 )
-
-import pandas as pd
 
 
 class DeviceTable(QTableWidget):

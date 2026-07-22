@@ -1,5 +1,6 @@
 from models.repair_session import RepairSession
 
+
 class RepairWorkflow:
     """
     Coordinates the complete repair creation workflow.

@@ -1,10 +1,10 @@
-from repositories.customer_repository import CustomerRepository
-from repositories.device_repository import DeviceRepository
-from repositories.manufacturer_repository import ManufacturerRepository
-from repositories.device_family_repository import DeviceFamilyRepository
-from repositories.repair_repository import RepairRepository
 from repositories.customer_device_repository import CustomerDeviceRepository
+from repositories.customer_repository import CustomerRepository
+from repositories.device_family_repository import DeviceFamilyRepository
+from repositories.device_repository import DeviceRepository
 from repositories.guide_repository import GuideRepository
+from repositories.manufacturer_repository import ManufacturerRepository
+from repositories.repair_repository import RepairRepository
 
 
 class RepositoryManager:

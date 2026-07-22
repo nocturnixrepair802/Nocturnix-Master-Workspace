@@ -31,8 +31,8 @@ through this class.
 
 from typing import Any
 
-from openpyxl.worksheet.table import Table
 from openpyxl.utils.cell import range_boundaries
+from openpyxl.worksheet.table import Table
 from openpyxl.worksheet.worksheet import Worksheet
 
 from managers.workbook_manager import WorkbookManager

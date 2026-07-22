@@ -1,13 +1,13 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
     QLabel,
     QListWidget,
     QPushButton,
     QVBoxLayout,
-    QHBoxLayout,
-    QFormLayout,
-    QGroupBox,
 )
 
 

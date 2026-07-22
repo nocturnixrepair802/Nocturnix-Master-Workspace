@@ -13,11 +13,11 @@ from PySide6.QtWidgets import (
 )
 
 from app import Application
-
-from gui.pages.dashboard_page import DashboardPage
 from gui.pages.customer_page import CustomerPage
+from gui.pages.dashboard_page import DashboardPage
 from gui.pages.device_page import DevicePage
 from gui.pages.repair_page import RepairPage
+
 
 class MainWindow(QMainWindow):
 

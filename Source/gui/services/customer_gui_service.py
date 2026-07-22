@@ -1,5 +1,5 @@
-from services.customer_service import CustomerService
 from services.customer_editor import CustomerEditor
+from services.customer_service import CustomerService
 
 
 class CustomerGuiService:

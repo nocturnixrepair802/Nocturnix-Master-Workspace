@@ -1,9 +1,6 @@
 from config import MASTER_DATABASE
-
-from services.table_loader import TableLoader
-
 from managers.repair_manager import RepairManager
-
+from services.table_loader import TableLoader
 
 print("=" * 70)
 print("REPAIR MANAGER TEST")

@@ -1,11 +1,9 @@
+from app import Application
 from config.database import MASTER_DATABASE
-
-from validators.workbook_validator import WorkbookValidator
+from controllers.application_controller import ApplicationController
 from validators.database_validator import DatabaseValidator
 from validators.relationship_validator import RelationshipValidator
-
-from app import Application
-from controllers.application_controller import ApplicationController
+from validators.workbook_validator import WorkbookValidator
 
 
 def main():

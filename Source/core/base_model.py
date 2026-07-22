@@ -21,9 +21,9 @@ Every model receives:
 ============================================================
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any
 
 
 @dataclass
@@ -60,14 +60,14 @@ class BaseModel:
         self.active = True
         self.touch()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Converts model to dictionary.
         """
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]):
+    def from_dict(cls, data: dict[str, Any]):
         """
         Creates object from dictionary.
         """

@@ -1,9 +1,6 @@
 from config import MASTER_DATABASE
-
-from services.table_loader import TableLoader
-
 from managers.repository_manager import RepositoryManager
-
+from services.table_loader import TableLoader
 
 print("=" * 70)
 print("REPOSITORY TEST")

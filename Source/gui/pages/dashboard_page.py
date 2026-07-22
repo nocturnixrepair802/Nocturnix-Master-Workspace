@@ -1,13 +1,7 @@
-from gui.pages.base_page import BasePage
-
-from PySide6.QtWidgets import (
-    QWidget,
-    QLabel,
-    QVBoxLayout,
-    QGridLayout
-)
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QGridLayout, QLabel
 
+from gui.pages.base_page import BasePage
 from gui.widgets.stat_card import StatCard
 
 

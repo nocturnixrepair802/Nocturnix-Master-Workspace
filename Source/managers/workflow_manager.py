@@ -1,7 +1,8 @@
-from workflow.repair_workflow import RepairWorkflow
+from managers.repair_manager import RepairManager
 from workflow.estimate_workflow import EstimateWorkflow
 from workflow.invoice_workflow import InvoiceWorkflow
-from managers.repair_manager import RepairManager
+from workflow.repair_workflow import RepairWorkflow
+
 
 class WorkflowManager:
     """

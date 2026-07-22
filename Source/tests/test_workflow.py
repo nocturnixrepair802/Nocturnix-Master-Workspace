@@ -1,10 +1,7 @@
 from config.database import MASTER_DATABASE
-
-from services.table_loader import TableLoader
-
 from managers.repair_manager import RepairManager
 from managers.workflow_manager import WorkflowManager
-
+from services.table_loader import TableLoader
 
 print("=" * 70)
 print("WORKFLOW TEST")

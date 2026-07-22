@@ -1,17 +1,17 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QLabel,
-    QPushButton,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QMessageBox,
+    QPushButton,
 )
 
-from gui.pages.base_page import BasePage
-from gui.widgets.customer_table import CustomerTable
-from gui.dialogs.customer_dialog import CustomerDialog
 from gui.dialogs.customer_details_dialog import CustomerDetailsDialog
+from gui.dialogs.customer_dialog import CustomerDialog
+from gui.pages.base_page import BasePage
 from gui.services.customer_gui_service import CustomerGuiService
+from gui.widgets.customer_table import CustomerTable
 
 
 class CustomerPage(BasePage):

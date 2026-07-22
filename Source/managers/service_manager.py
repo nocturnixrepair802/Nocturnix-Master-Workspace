@@ -1,9 +1,10 @@
+from managers.repository_manager import RepositoryManager
+from services.customer_device_service import CustomerDeviceService
 from services.customer_service import CustomerService
 from services.device_service import DeviceService
 from services.repair_service import RepairService
-from services.customer_device_service import CustomerDeviceService
 from services.technical_knowledge_service import TechnicalKnowledgeService
-from managers.repository_manager import RepositoryManager
+
 
 class ServiceManager:
     """

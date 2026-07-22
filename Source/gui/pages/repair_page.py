@@ -1,17 +1,18 @@
+import pandas as pd
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QLabel,
-    QPushButton,
-    QHBoxLayout,
-    QLineEdit,
     QComboBox,
-
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
 )
-import pandas as pd
-from gui.pages.base_page import BasePage
-from gui.widgets.repair_table import RepairTable
-from gui.services.repair_gui_service import RepairGuiService
+
 from gui.dialogs.repair_dialog import RepairDialog
+from gui.pages.base_page import BasePage
+from gui.services.repair_gui_service import RepairGuiService
+from gui.widgets.repair_table import RepairTable
+
 
 class RepairPage(BasePage):
 
@@ -206,5 +207,7 @@ class RepairPage(BasePage):
 
         dialog = RepairDialog(
             self.repairs,
-            self
+            self,
         )
+
+        dialog.exec()

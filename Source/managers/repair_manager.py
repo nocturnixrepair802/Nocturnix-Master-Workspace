@@ -1,7 +1,7 @@
-from engines.quote_engine import QuoteEngine
-from engines.pricing_engine import PricingEngine
-from engines.inventory_engine import InventoryEngine
 from engines.compatibility_engine import CompatibilityEngine
+from engines.inventory_engine import InventoryEngine
+from engines.pricing_engine import PricingEngine
+from engines.quote_engine import QuoteEngine
 
 
 class RepairManager:

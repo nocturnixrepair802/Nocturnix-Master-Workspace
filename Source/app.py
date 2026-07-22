@@ -1,12 +1,10 @@
 from config.database import MASTER_DATABASE
-
-from services.table_loader import TableLoader
-
+from managers.repair_manager import RepairManager
 from managers.repository_manager import RepositoryManager
 from managers.service_manager import ServiceManager
-from managers.repair_manager import RepairManager
-from managers.workflow_manager import WorkflowManager
 from managers.technical_knowledge_manager import TechnicalKnowledgeManager
+from managers.workflow_manager import WorkflowManager
+from services.table_loader import TableLoader
 
 
 class Application:

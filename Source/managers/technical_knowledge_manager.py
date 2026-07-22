@@ -5,6 +5,7 @@ Technical Knowledge Manager
 ============================================================
 """
 import pandas as pd
+
 from services.technical_knowledge_service import (
     TechnicalKnowledgeService,
 )

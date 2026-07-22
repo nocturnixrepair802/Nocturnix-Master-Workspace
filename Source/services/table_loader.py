@@ -16,7 +16,6 @@ Purpose:
 """
 
 from pathlib import Path
-from typing import Dict
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -63,7 +62,7 @@ class TableLoader:
 
                 for table in worksheet.tables.values():
 
-                    print(f"  • {table.name}")
+                    print(f"  - {table.name}")
 
     # ======================================================
     # Load Single Table
@@ -119,12 +118,12 @@ class TableLoader:
 
     def load_all_tables(
         self,
-    ) -> Dict[str, pd.DataFrame]:
+    ) -> dict[str, pd.DataFrame]:
         """
         Loads every configured table from the workbook.
         """
 
-        data: Dict[str, pd.DataFrame] = {}
+        data: dict[str, pd.DataFrame] = {}
 
         print()
         print("=" * 70)
@@ -139,11 +138,11 @@ class TableLoader:
 
                 data[key] = dataframe
 
-                print(f"✓ {table_name:<35}" f"{len(dataframe):>6} rows")
+                print(f"OK  {table_name:<35}" f"{len(dataframe):>6} rows")
 
-            except Exception as error:
+            except (KeyError, TypeError, ValueError) as error:
 
-                print(f"✗ {table_name}")
+                print(f"ERR {table_name}")
                 print(f"   {error}")
 
         print()

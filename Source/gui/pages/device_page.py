@@ -1,18 +1,19 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QLabel,
-    QPushButton,
-    QHBoxLayout,
-    QLineEdit,
     QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
     QMessageBox,
+    QPushButton,
 )
 
-from gui.pages.base_page import BasePage
-from gui.widgets.device_table import DeviceTable
-from gui.dialogs.device_dialog import DeviceDialog
-from gui.services.device_catalog_service import DeviceCatalogService
 from gui.dialogs.device_details_dialog import DeviceDetailsDialog
+from gui.dialogs.device_dialog import DeviceDialog
+from gui.pages.base_page import BasePage
+from gui.services.device_catalog_service import DeviceCatalogService
+from gui.widgets.device_table import DeviceTable
+
 
 class DevicePage(BasePage):
 

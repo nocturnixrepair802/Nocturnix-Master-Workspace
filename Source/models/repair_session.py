@@ -12,7 +12,6 @@ Purpose:
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 import pandas as pd
 
@@ -24,33 +23,33 @@ class RepairSession:
     # Customer
     # ======================================================
 
-    customer: Optional[pd.Series] = None
+    customer: pd.Series | None = None
 
-    customer_device: Optional[pd.Series] = None
+    customer_device: pd.Series | None = None
 
     # ======================================================
     # Device
     # ======================================================
 
-    device: Optional[pd.Series] = None
+    device: pd.Series | None = None
 
     # ======================================================
     # Repair
     # ======================================================
 
-    service: Optional[pd.Series] = None
+    service: pd.Series | None = None
 
-    compatibility: Optional[pd.Series] = None
+    compatibility: pd.Series | None = None
 
-    repair_guide: Optional[pd.Series] = None
+    repair_guide: pd.Series | None = None
 
     # ======================================================
     # Pricing
     # ======================================================
 
-    labor: Optional[pd.Series] = None
+    labor: pd.Series | None = None
 
-    pricing: Optional[pd.Series] = None
+    pricing: pd.Series | None = None
 
     parts: list = field(default_factory=list)
 
@@ -58,7 +57,7 @@ class RepairSession:
     # Ticket
     # ======================================================
 
-    repair_ticket: Optional[pd.Series] = None
+    repair_ticket: pd.Series | None = None
 
     # ======================================================
     # Utility

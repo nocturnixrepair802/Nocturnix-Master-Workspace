@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nocturnix-repair-platform"
+version = "0.7.0"
+description = "Desktop repair management platform for Nocturnix Mobile Repair"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "openpyxl>=3.1,<4",
+    "pandas>=3,<4",
+    "PySide6>=6.10,<7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<10",
+    "pyright>=1.1,<2",
+    "ruff>=0.12,<1",
+]
+
+[project.scripts]
+nocturnix = "run_gui:main"
+
+[tool.setuptools]
+package-dir = { "" = "Source" }
+py-modules = ["app", "main", "run_gui"]
+
+[tool.setuptools.packages.find]
+where = ["Source"]
+namespaces = true
+exclude = ["docs_not_used*", "legacy_ui*", "tests*"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 88
+src = ["Source"]
+extend-exclude = ["Backups", "Source/docs_not_used", "Source/legacy_ui"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP"]
+
+[tool.pyright]
+include = ["Source"]
+exclude = [
+    "Backups",
+    "Source/docs_not_used",
+    "Source/legacy_ui",
+    "Source/tests",
+]
+extraPaths = ["Source"]
+pythonVersion = "3.14"
+typeCheckingMode = "basic"
+
+[tool.pytest.ini_options]
+addopts = "-p no:cacheprovider"
+pythonpath = ["Source"]
+testpaths = ["Tests", "Source/tests"]

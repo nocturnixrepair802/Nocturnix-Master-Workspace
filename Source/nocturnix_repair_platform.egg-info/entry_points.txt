@@ -1,0 +1,2 @@
+[console_scripts]
+nocturnix = run_gui:main
