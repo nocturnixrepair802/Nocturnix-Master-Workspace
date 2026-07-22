@@ -269,3 +269,11 @@ and `CustomerController`. Its behavior is planned for migration into
 - Controllers belong to the legacy console path; the official GUI uses GUI services.
 - Placeholder modules are listed for visibility but do not represent working
   dependencies.
+
+## Related documentation
+
+- [Architecture](ARCHITECTURE.md)
+- [Database schema](DATABASE_SCHEMA.md)
+- [Business rules](BUSINESS_RULES.md)
+- [Engine refactor plan](ENGINE_REFACTOR_PLAN.md)
+- [Architecture decision records](ADR/)

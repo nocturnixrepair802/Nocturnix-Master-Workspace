@@ -23,6 +23,17 @@ State: Active development; stabilization in progress
 - Legacy smoke scripts need conversion or relocation before pytest can be a reliable
   gate.
 
+## Engine refactor documentation baseline
+
+- The 20 configured workbook tables are inventoried in
+  [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md).
+- Current, broken/undefined, and approved target rules are recorded in
+  [BUSINESS_RULES.md](BUSINESS_RULES.md).
+- Five accepted architecture decisions are recorded under [ADR/](ADR/).
+- [ENGINE_REFACTOR_PLAN.md](ENGINE_REFACTOR_PLAN.md) remains a proposed phased plan.
+- No workbook migration, Phase 0 tests, dependency changes, or engine refactoring has
+  been implemented by the documentation-preparation stage.
+
 ## Known failures and risks
 
 - Pyright currently reports missing third-party imports because it is not yet pointed

@@ -575,3 +575,14 @@ Update this document whenever an entry point, constructor dependency, manager
 registration, repository table binding, service boundary, GUI composition, or
 external dependency changes. Keep active dependencies distinct from placeholders and
 planned architecture.
+
+## Related documentation
+
+- [Database schema](DATABASE_SCHEMA.md)
+- [Business rules](BUSINESS_RULES.md)
+- [Engine refactor plan](ENGINE_REFACTOR_PLAN.md)
+- [Repository return contract ADR](ADR/ADR-001-repository-return-contract.md)
+- [Engine responsibility ADR](ADR/ADR-002-engines-own-business-rules.md)
+- [RepairManager facade ADR](ADR/ADR-003-repair-manager-remains-facade.md)
+- [Excel system-of-record ADR](ADR/ADR-004-excel-is-current-system-of-record.md)
+- [Decimal money ADR](ADR/ADR-005-decimal-for-money.md)

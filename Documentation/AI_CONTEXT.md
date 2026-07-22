@@ -26,6 +26,12 @@ The canonical project-memory documents are the Markdown files directly under
 - `FUTURE_ENHANCEMENTS.md`: ideas outside the active milestone.
 - `CHANGELOG.md`: chronological completed changes.
 - `NEXT_SESSION.md`: immediate handoff and verification commands.
+- [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md): observed workbook schema, temporary
+  adapter contracts, canonical targets, and unresolved migration questions.
+- [`BUSINESS_RULES.md`](BUSINESS_RULES.md): verified, broken/undefined, and approved
+  target engine rules.
+- [`ENGINE_REFACTOR_PLAN.md`](ENGINE_REFACTOR_PLAN.md): phased engine migration plan.
+- [`ADR/`](ADR/): accepted architecture decisions governing the migration.
 
 Older material under `Source/documentation/`, `Source/docs_not_used/`, nested
 documentation folders, and `Backups/` is reference material until explicitly

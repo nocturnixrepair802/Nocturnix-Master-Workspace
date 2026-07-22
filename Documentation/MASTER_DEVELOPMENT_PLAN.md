@@ -8,6 +8,16 @@ Deliver a reliable desktop repair-management application with a clear layered
 architecture, controlled Excel persistence, tested repair workflows, and an
 installable PySide6 user interface.
 
+## Documentation preparation
+
+- [x] Inventory the current workbook schema and distinguish current, adapter, and
+  canonical target contracts in [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md).
+- [x] Record verified, broken/undefined, and approved target engine rules in
+  [BUSINESS_RULES.md](BUSINESS_RULES.md).
+- [x] Record the accepted repository, engine, facade, Excel, and money decisions in
+  [ADR/](ADR/).
+- [ ] Phase 0 tests and source refactoring have not started.
+
 ## Phase 1: Stabilize the development baseline
 
 - [x] Add root project metadata and dependency declarations.
@@ -70,3 +80,6 @@ Exit criterion: a repair can move from intake to completion and persist correctl
 - Application bootstrap succeeds.
 - GUI changes receive focused manual verification.
 - Canonical shared-memory documents are updated.
+
+Implementation sequencing for the engine work is maintained in the
+[Engine Refactor Plan](ENGINE_REFACTOR_PLAN.md).

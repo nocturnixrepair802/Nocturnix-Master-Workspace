@@ -5,12 +5,20 @@ Last updated: 2026-07-22
 ## Start here
 
 1. Read `AI_CONTEXT.md`, `PROJECT_STATUS.md`, and `DECISIONS.md`.
-2. Run `git status --short` and inspect the full stabilization diff.
-3. Do not delete legacy or duplicate files until their active references are checked.
+2. Read [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md),
+   [BUSINESS_RULES.md](BUSINESS_RULES.md),
+   [ENGINE_REFACTOR_PLAN.md](ENGINE_REFACTOR_PLAN.md), and the accepted
+   [architecture decisions](ADR/) before engine work.
+3. Run `git status --short` and inspect the full stabilization diff.
+4. Do not delete legacy or duplicate files until their active references are checked.
 
 ## Immediate objective
 
 Finish and review the stabilization baseline without expanding feature scope.
+
+The engine documentation-preparation stage is complete. Do not begin Phase 0 tests,
+source refactoring, workbook migration, or column renames without a separate approved
+task.
 
 ## Ordered tasks
 
