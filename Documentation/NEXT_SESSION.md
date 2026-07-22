@@ -4,55 +4,55 @@ Last updated: 2026-07-22
 
 ## Start here
 
-1. Read `AI_CONTEXT.md`, `PROJECT_STATUS.md`, and `DECISIONS.md`.
-2. Read [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md),
-   [BUSINESS_RULES.md](BUSINESS_RULES.md),
-   [ENGINE_REFACTOR_PLAN.md](ENGINE_REFACTOR_PLAN.md), and the accepted
-   [architecture decisions](ADR/) before engine work.
-3. Run `git status --short` and inspect the full stabilization diff.
-4. Do not delete legacy or duplicate files until their active references are checked.
+1. Run `git pull`.
+2. Read [AI_CONTEXT.md](AI_CONTEXT.md).
+3. Read [ENGINE_REFACTOR_PLAN.md](ENGINE_REFACTOR_PLAN.md).
+4. Read [REFACTOR_PROGRESS.md](REFACTOR_PROGRESS.md).
+5. Confirm the repository is clean and review the current validation baseline.
+
+## Current baseline
+
+- Phase 0 is complete.
+- Phase 1A compatibility stabilization is complete.
+- Phase 1B has not started.
+- Current milestone: `v0.3.0-alpha` at commit `139145b`.
+- At closeout, `main` matched `origin/main` and the working tree was clean.
+- Focused validation: Ruff passed, Pyright reported 0 errors and 0 warnings, 37
+  tests passed, 1 strict pricing xfail remained, the application loaded all 20
+  tables, and `git diff --check` passed.
 
 ## Immediate objective
 
-Finish and review the stabilization baseline without expanding feature scope.
+Begin Phase 1B pricing stabilization only after receiving a copy-paste-ready
+implementation instruction. Do not touch inventory, workbook schemas, GUI, or
+workflows. Review and resolve the pricing business-rule questions before changing
+implementation behavior.
 
-The engine documentation-preparation stage is complete. Do not begin Phase 0 tests,
-source refactoring, workbook migration, or column renames without a separate approved
-task.
+## Phase 1B readiness checklist
 
-## Ordered tasks
+- [ ] Confirm the meaning of `labor_rates.Labor Price`.
+- [ ] Confirm the unit of `labor_rates.Estimated Time`.
+- [ ] Confirm the markup formula.
+- [ ] Confirm the processing-fee formula.
+- [ ] Confirm tax handling.
+- [ ] Confirm the rounding policy.
+- [ ] Confirm the minimum labor charge.
+- [ ] Confirm whether `retail_pricing` contains output values or pricing rules.
 
-1. Decide whether to retain or revert `dialog.exec()` in
-   `Source/gui/pages/repair_page.py`; it is a behavior change, not just lint cleanup.
-2. Add the virtual-environment location to Pyright configuration and rerun Pyright.
-3. Fix genuine active-code errors:
-   - missing `logging_system` imports;
-   - `GuideRepository.all_guides()` mismatch;
-   - obsolete `managers/seeder_manager.py` API;
-   - optional DataFrame access in `customer_page.py`.
-4. Move or convert import-time legacy smoke scripts so pytest collects real tests.
-5. Ignore/remove the generated `Source/nocturnix_repair_platform.egg-info/` artifact.
-6. Re-run the complete verification set and review the diff before committing.
+## Known unrelated test-collection failures
 
-## Verification commands
+Legacy script-style tests still reference:
 
-```powershell
-.venv\Scripts\ruff.exe check Source --no-cache
-.venv\Scripts\pyright.exe
-.venv\Scripts\python -m pytest -q
-.venv\Scripts\python -c "import sys; sys.path.insert(0, 'Source'); from app import Application; Application()"
-git diff --check
-git status --short
-```
+- `RepairManager.repositories`
+- `RepositoryManager.services`
+- `ServiceManager.suppliers`
+- `WorkflowManager.repair` instead of `WorkflowManager.repairs`
 
-## Expected baseline
+These failures are outside Phase 1B pricing stabilization unless separately
+approved.
 
-- Ruff: currently passes.
-- Application bootstrap: currently loads 20 of 20 tables.
-- Pyright: currently fails; distinguish environment resolution from real errors.
-- Pytest: currently fails during collection on outdated script-style tests.
+## Working rule
 
-## Handoff note
-
-The editable install created files inside `.venv` and an untracked egg-info directory
-under `Source/`. No repository commit has been made during the stabilization pass.
+After planning or review, wait for a copy-paste-ready implementation instruction.
+Do not infer approval or begin Phase 1B from this handoff alone. Show the diff and
+validation results after every approved task.

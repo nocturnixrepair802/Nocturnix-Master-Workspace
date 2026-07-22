@@ -49,10 +49,14 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
 
 ### Verification
 
-- Ruff passes.
-- All 20 configured workbook tables load successfully.
-- Pyright and pytest baselines were captured; remaining failures are documented in
-  `PROJECT_STATUS.md`.
+- Session closeout at `v0.3.0-alpha` / `139145b` confirmed `main` synchronized with
+  `origin/main` and a clean pre-closeout working tree.
+- Ruff passed and focused Phase 1A Pyright reported 0 errors and 0 warnings.
+- Phase 0 and Phase 1A tests reported 37 passed and 1 strict xfailed; the remaining
+  expected failure covers negative pricing inputs.
+- The application startup smoke test loaded all 20 configured workbook tables and
+  verified shared compatibility repository and engine ownership.
+- `git diff --check` passed before the documentation-only closeout changes.
 
 ## Historical summary
 

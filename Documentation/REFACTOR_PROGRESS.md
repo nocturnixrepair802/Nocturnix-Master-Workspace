@@ -39,3 +39,18 @@ workflow, and `EngineBase` stabilization have not begun.
 
 Phase 1B requires a separate copy-paste-ready implementation instruction. No Phase
 1B work is approved by this status entry.
+
+## Session closeout baseline
+
+- Repository milestone: `v0.3.0-alpha` at `139145b`.
+- Phase 0: complete.
+- Phase 1A: complete.
+- Phase 1B: not started.
+- Ruff: passed.
+- Focused Phase 1A Pyright: 0 errors and 0 warnings.
+- Focused tests: 37 passed and 1 strict xfailed.
+- Remaining strict xfail: negative pricing input rejection.
+- Application smoke test: passed with all 20 tables loaded.
+- Existing unrelated full-suite collection errors reference
+  `RepairManager.repositories`, `RepositoryManager.services`,
+  `ServiceManager.suppliers`, and `WorkflowManager.repair` instead of `repairs`.

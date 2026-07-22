@@ -4,6 +4,16 @@ Last updated: 2026-07-22
 Version: 0.7.0 alpha
 State: Active development; stabilization in progress
 
+## Session closeout
+
+- Phase 0 is complete.
+- Phase 1A compatibility stabilization is complete.
+- Phase 1B has not started.
+- `main` is synchronized with `origin/main` at commit
+  `139145bc5b558bbd599c33c7168be16a079052ba` (`139145b`).
+- The current milestone tag is `v0.3.0-alpha`, which points to the current HEAD.
+- The repository was clean before this documentation-only closeout.
+
 ## Verified working
 
 - Python 3.14 virtual environment exists.
@@ -16,12 +26,9 @@ State: Active development; stabilization in progress
 
 ## In progress
 
-- A stabilization diff touches project configuration and multiple Ruff mechanical
-  fixes. It has not yet been committed.
-- Canonical documentation is being consolidated under `Documentation/`.
-- Pyright environment configuration and genuine type errors need separation.
-- Legacy smoke scripts need conversion or relocation before pytest can be a reliable
-  gate.
+- Phase 1B pricing stabilization is the next planned engine slice, but it has not
+  been approved or started.
+- Pricing business-rule questions must be resolved before Phase 1B implementation.
 
 ## Engine refactor documentation baseline
 
@@ -47,6 +54,9 @@ State: Active development; stabilization in progress
   code.
 - Pytest collection fails because several `Source/tests/test_*.py` files execute
   outdated code at import time and reference removed attributes.
+  The unrelated failing references are `RepairManager.repositories`,
+  `RepositoryManager.services`, `ServiceManager.suppliers`, and
+  `WorkflowManager.repair` (the current attribute is `repairs`).
 - `Source/logs/application_log.py` and `error_log.py` import a missing
   `logging_system` package.
 - `Source/managers/seeder_manager.py` targets an obsolete seeder API.
@@ -55,20 +65,17 @@ State: Active development; stabilization in progress
 - `Source/nocturnix_repair_platform.egg-info/` is an untracked generated artifact
   from editable installation and should be ignored or removed.
 
-## Current worktree scope
+## Closeout validation
 
-The active stabilization pass includes:
-
-- Root `README.md` and `pyproject.toml`.
-- Corrected `.gitignore` backup/lock-file lines.
-- Import-safe `Source/run_gui.py` with direct execution preserved.
-- ASCII-safe `TableLoader` output.
-- Ruff-driven import and typing cleanup across active source.
-- A behavior change in `RepairPage.add_repair()` that calls `dialog.exec()`; this
-  should be explicitly accepted or reverted before commit.
+- Ruff: passed.
+- Focused Pyright for Phase 1A files: 0 errors and 0 warnings.
+- Phase 0 and Phase 1A tests: 37 passed and 1 strict xfailed.
+- Remaining strict xfail: rejection of negative pricing inputs.
+- Application startup smoke test: passed; 20 tables loaded and compatibility
+  repository/engine sharing verified.
+- `git diff --check`: passed before the documentation closeout edits.
 
 ## Next milestone
 
-Produce a clean, reviewable baseline where Ruff passes, Pyright resolves the virtual
-environment and active-code errors, pytest collects real tests only, and application
-bootstrap remains green.
+Begin Phase 1B pricing stabilization only after reviewing and resolving the pricing
+business-rule questions recorded in the next-session handoff.

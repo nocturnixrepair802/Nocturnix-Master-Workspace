@@ -31,6 +31,8 @@ The canonical project-memory documents are the Markdown files directly under
 - [`BUSINESS_RULES.md`](BUSINESS_RULES.md): verified, broken/undefined, and approved
   target engine rules.
 - [`ENGINE_REFACTOR_PLAN.md`](ENGINE_REFACTOR_PLAN.md): phased engine migration plan.
+- [`REFACTOR_PROGRESS.md`](REFACTOR_PROGRESS.md): completed engine-refactor phases
+  and the current validation baseline.
 - [`ADR/`](ADR/): accepted architecture decisions governing the migration.
 
 Older material under `Source/documentation/`, `Source/docs_not_used/`, nested
@@ -79,7 +81,11 @@ DataFrames back to the workbook is not yet complete.
 
 - The master workbook currently exposes 20 configured tables.
 - `Application()` loads all 20 tables successfully after the ASCII console fix.
-- Ruff currently passes for `Source/` under the configured rule set.
-- Pyright and pytest still expose legacy/stale-code issues; see `PROJECT_STATUS.md`.
-- The working tree contains an in-progress stabilization pass and must be reviewed
-  before committing.
+- Phase 0 and Phase 1A compatibility stabilization are complete. Phase 1B has not
+  started.
+- The current milestone is `v0.3.0-alpha` at commit `139145b`; at session closeout,
+  `main` matched `origin/main` and the working tree was clean.
+- Ruff passes, focused Phase 1A Pyright reports 0 errors and 0 warnings, and focused
+  tests report 37 passed with one strict negative-pricing xfail.
+- Legacy script-style pytest collection errors remain outside the completed Phase 1A
+  scope; see `PROJECT_STATUS.md`.
