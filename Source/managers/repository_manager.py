@@ -1,3 +1,4 @@
+from repositories.compatibility_repository import CompatibilityRepository
 from repositories.customer_device_repository import CustomerDeviceRepository
 from repositories.customer_repository import CustomerRepository
 from repositories.device_family_repository import DeviceFamilyRepository
@@ -39,6 +40,8 @@ class RepositoryManager:
         # ==================================================
 
         self.repairs = RepairRepository(database)
+
+        self.compatibility = CompatibilityRepository(database)
 
         # ==================================================
         # Technical Knowledge Repositories

@@ -30,7 +30,7 @@ class TechnicalKnowledgeService:
 
     def all(self):
 
-        return self.guides.all_guides()
+        return self.guides.all()
 
     # ======================================================
     # Standard Interface
@@ -44,7 +44,7 @@ class TechnicalKnowledgeService:
 
     def count(self):
 
-        return len(self.guides.all_guides())
+        return len(self.guides.all())
 
 
     def exists(self, guide_id):
