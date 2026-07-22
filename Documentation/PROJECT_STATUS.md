@@ -1,96 +1,58 @@
-# Nocturnix Repair Platform
+# Project Status
 
-Session Date
+Last updated: 2026-07-22
+Version: 0.7.0 alpha
+State: Active development; stabilization in progress
 
-July 20, 2026
+## Verified working
 
-Current Project Status
-Overall Progress
+- Python 3.14 virtual environment exists.
+- pandas 3.0.3, openpyxl 3.1.5, and PySide6 6.11.1 are installed.
+- `Application()` loads all 20 configured workbook tables.
+- Workbook-loader status output is plain ASCII and works on the Windows console.
+- The supported GUI launcher resolves to `gui.app.main_window.main`.
+- Root `pyproject.toml` declares runtime and development dependencies.
+- Ruff passes for `Source/` with the configured rules.
 
-The Nocturnix Repair Platform architecture continued to mature during this development session. Major work focused on stabilizing the Repository/Service architecture, integrating the normalized Excel database, and improving the Device Catalog module.
+## In progress
 
-Completed
-Core Architecture
-Stabilized RepositoryManager and ServiceManager architecture.
-Continued migration toward a Repository → Service → GUI layered design.
-Confirmed successful loading of all database tables from the master workbook.
-Created the initial ARCHITECTURE.md document to define long-term project structure.
-Customer Management
-Customer Management module remains fully operational.
-Customer table successfully displays:
-Active Status
-Tax Exempt Status
-Created Date
-Modified Date
-Customer CRUD functionality remains operational.
-Device Catalog
-Device Catalog successfully loads all 837 master devices.
-Device table updated to use normalized database schema.
-Manufacturer and Device Family lookup repositories integrated.
-Device names now display correctly from the master device table.
-Model Number, Release Year, and Active Status display correctly.
-Confirmed successful translation of database lookup codes into readable values.
-Architecture Improvements
-Confirmed lookup table strategy:
-Manufacturer Catalog
-Device Family Catalog
-Master Devices
-Repository responsibilities clearly separated.
-Business logic migration into the Service layer continues.
-Current Known Issues
-Device Module
-Manufacturer filtering not yet completed.
-Device Family filtering not yet completed.
-Search integration requires completion.
-Qt signal recursion discovered during combo-box filtering.
-Signal handling will be redesigned using Qt signal blocking.
-Next Development Session
+- A stabilization diff touches project configuration and multiple Ruff mechanical
+  fixes. It has not yet been committed.
+- Canonical documentation is being consolidated under `Documentation/`.
+- Pyright environment configuration and genuine type errors need separation.
+- Legacy smoke scripts need conversion or relocation before pytest can be a reliable
+  gate.
 
-Priority Order
+## Known failures and risks
 
-Complete Manufacturer filtering
-Complete Device Family filtering
-Integrate Search with filters
-Complete Device CRUD
-Finish Device Catalog Version 1
-Begin Repair Ticket workflow
+- Pyright currently reports missing third-party imports because it is not yet pointed
+  at `.venv`, plus genuine errors in logging, seeder, technical-knowledge, and GUI
+  code.
+- Pytest collection fails because several `Source/tests/test_*.py` files execute
+  outdated code at import time and reference removed attributes.
+- `Source/logs/application_log.py` and `error_log.py` import a missing
+  `logging_system` package.
+- `TechnicalKnowledgeService` calls a nonexistent `GuideRepository.all_guides()`.
+- `Source/managers/seeder_manager.py` targets an obsolete seeder API.
+- Workbook writes and durable CRUD persistence remain incomplete.
+- The repository contains many empty placeholders and duplicate implementations.
+- `Source/nocturnix_repair_platform.egg-info/` is an untracked generated artifact
+  from editable installation and should be ignored or removed.
 
-## Current Sprint
-Sprint 4
+## Current worktree scope
 
-## Overall Progress
-Architecture: 80%
-Database: 90%
-Customer Module: 60%
-Device Module: 30%
-Repair Module: 5%
-Overall Project: 35%
+The active stabilization pass includes:
 
-## Completed
-- Customer repository
-- Customer service
-- Customer management page
-- Customer dialog
-- Customer table
-- Device repository foundation
-- Device service foundation
-- Device page framework
-- Main window integration
-- Manager architecture
-- Dynamic table loading
+- Root `README.md` and `pyproject.toml`.
+- Corrected `.gitignore` backup/lock-file lines.
+- Import-safe `Source/run_gui.py` with direct execution preserved.
+- ASCII-safe `TableLoader` output.
+- Ruff-driven import and typing cleanup across active source.
+- A behavior change in `RepairPage.add_repair()` that calls `dialog.exec()`; this
+  should be explicitly accepted or reverted before commit.
 
-## In Progress
-- Device Module integration
-- Manufacturer lookup
-- Device Family lookup
+## Next milestone
 
-## Next Sprint
-- Manufacturer repository
-- Device family repository
-- Device lookup service
-- Customer Device relationships
-- Repair Intake Wizard
-
-## Known Issues
-- DeviceRepository assumes descriptive columns instead of normalized codes.
-- Device Module needs lookup tables.
+Produce a clean, reviewable baseline where Ruff passes, Pyright resolves the virtual
+environment and active-code errors, pytest collects real tests only, and application
+bootstrap remains green.

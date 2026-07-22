@@ -1,51 +1,50 @@
 # Changelog
 
-## Sprint 4 - 2026-07-20
+All notable project changes should be recorded here. Entries describe completed or
+actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
+
+## Unreleased - 2026-07-22
 
 ### Added
-- Device Module
-- Device Page
-- Device Table
-- Device Dialog
-- Device Service
-- Device Repository
 
-### Improved
-- Customer Management
-- Customer Dialog
-- Customer Table
+- Root `pyproject.toml` with packaging, dependency, Ruff, Pyright, and pytest
+  configuration.
+- Root `README.md` with setup and GUI launch instructions.
+- Canonical shared-memory documentation under `Documentation/`.
+- Installed project console entry point named `nocturnix`.
+
+### Changed
+
+- `Source/run_gui.py` can be imported safely and still launches the PySide6 app when
+  executed directly.
+- Workbook-loader status messages use ASCII output.
+- Python typing and import ordering were modernized with Ruff.
+- `RepairPage.add_repair()` currently executes the created repair dialog; this
+  behavioral change remains pending explicit review.
 
 ### Fixed
-- Customer NaN display
-- Customer Active column
-- Main Window navigation
 
-### Known Issues
-- Device lookup tables not yet implemented
+- Removed malformed literal `'n` fragments from `.gitignore`.
+- Preserved ignore rules for backups, virtual environments, Python caches, and byte
+  code.
+- Fixed Windows console failure caused by Unicode loader status glyphs.
 
-Version 0.3.0-dev
+### Verification
 
-Date: July 20, 2026
+- Ruff passes.
+- All 20 configured workbook tables load successfully.
+- Pyright and pytest baselines were captured; remaining failures are documented in
+  `PROJECT_STATUS.md`.
 
-Added
-Initial project architecture documentation (ARCHITECTURE.md)
-Repository lookup integration for normalized database
-Manufacturer lookup support
-Device Family lookup support
-Improved Device Catalog data pipeline
-Changed
-Device table now reads normalized database fields.
-DeviceService updated to utilize lookup repositories.
-Repository architecture refactored toward single-responsibility pattern.
-Service layer expanded to support lookup table translation.
-Fixed
-Corrected device table column mappings.
-Corrected normalized database integration.
-Resolved multiple repository initialization issues.
-Fixed startup errors caused by missing repository references.
-Corrected service initialization issues.
-Identified and resolved Qt signal recursion during combo-box initialization.
-Known Issues
-Manufacturer filtering pending.
-Device Family filtering pending.
-Search filtering integration pending.
+## Historical summary
+
+- Sprint 1: project foundation.
+- Sprint 2: Excel database and loading framework.
+- Sprint 3: customer module foundation.
+- Sprint 4: device catalog and lookup integration.
+- Sprint 5: repository/service/application composition architecture.
+- Sprint 6: repair-module foundation.
+- Sprint 7: repair integration and in-memory seeder framework.
+
+Detailed historical documents remain under `Source/documentation/` until archival
+consolidation is complete.

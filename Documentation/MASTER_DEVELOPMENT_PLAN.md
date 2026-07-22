@@ -1,67 +1,72 @@
-MASTER_DEVELOPMENT_PLAN.md
-# Nocturnix Repair Platform
-## Master Development Plan
+# Master Development Plan
 
-## 🚀 Current Sprint
+Last updated: 2026-07-22
 
-Sprint 5 – Device Catalog
+## Objective
 
-Status: 🔄 In Progress
+Deliver a reliable desktop repair-management application with a clear layered
+architecture, controlled Excel persistence, tested repair workflows, and an
+installable PySide6 user interface.
 
-Progress:
-█████████░ 90%
+## Phase 1: Stabilize the development baseline
 
-## 📋 Tasks
+- [x] Add root project metadata and dependency declarations.
+- [x] Define the PySide6 GUI as the supported entry point.
+- [x] Make workbook-loader console output ASCII-safe.
+- [x] Configure Ruff, Pyright, and pytest.
+- [x] Establish canonical shared-memory documents.
+- [ ] Point Pyright at the repository virtual environment and resolve genuine
+  source errors.
+- [ ] Separate or convert legacy executable smoke scripts named `test_*.py`.
+- [ ] Review the current lint-generated diff and remove generated packaging
+  artifacts from source control scope.
 
-- [x] Loading
-- [x] Search
-- [x] Manufacturer Filter
-- [x] Family Filter
-- [ ] Edit Database
-- [ ] Delete Database
+Exit criterion: clean Ruff, usable Pyright baseline, deterministic pytest
+collection, successful 20-table application bootstrap, and documented launch steps.
 
-## 🐞 Known Issues
+## Phase 2: Consolidate architecture
 
-- Delete not implemented.
-- Edit not saving to workbook.
+- Select one workbook manager and one table manager implementation.
+- Remove or archive duplicate seeder-manager and logger implementations.
+- Move workbook I/O out of the business-service layer.
+- Define repository and service protocols with consistent method names.
+- Classify empty modules as package markers, planned work, or obsolete scaffolding.
 
-## 🎯 Next Sprint
+Exit criterion: one documented dependency path with no competing active
+implementations.
 
-Sprint 6 – Repair Workflow│
+## Phase 3: Implement safe persistence
 
-## 🚀 Recent Milestones
+- Add workbook and table write operations.
+- Preserve `.xlsm` VBA content and Excel table ranges.
+- Add transaction/backup behavior before saves.
+- Validate schema, relationships, and identifiers before persistence.
+- Test against disposable workbook fixtures.
 
-✅ Repository architecture completed
+Exit criterion: create, edit, and delete operations persist safely and are covered
+by automated tests.
 
-✅ Customer module operational
+## Phase 4: Complete repair workflow
 
-✅ Device lookup translation implemented
+- Repair intake and ticket-number generation.
+- Customer/device selection and validation.
+- Quote, labor, part, compatibility, and inventory integration.
+- Edit, status transitions, completion, invoicing, and audit history.
 
-✅ Manufacturer filtering completed
+Exit criterion: a repair can move from intake to completion and persist correctly.
 
-✅ Family filtering completed
+## Phase 5: Operational modules
 
-🔄 Device editing in progress
+- Inventory and suppliers.
+- Estimates, invoices, and payments.
+- Dashboard and reporting.
+- Settings, user management, and installer.
 
-## ---------------------
-    DEVELOPMENT PLANS
-## ---------------------
-|
-├── ##Project Vision##
-├── ##Development Philosophy##
-├── ##Overall Progress##
-├── ##Current Sprint##
-├── ##Sprint Roadmap##
-├── ##Module Roadmap##
-├── ##Database Roadmap##
-├── ##GUI Roadmap##
-## Future Features ##
+## Quality gates for every phase
 
-
-├── ##Technical Debt##
-├── ##Bug Tracker##
-├── ##Milestones##
-├── ##Git Checkpoints##
-└── ##Future Releases##
-
-
+- Ruff passes.
+- Pyright has no unexplained errors in active code.
+- Pytest collection and relevant tests pass.
+- Application bootstrap succeeds.
+- GUI changes receive focused manual verification.
+- Canonical shared-memory documents are updated.
