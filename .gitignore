@@ -28,4 +28,6 @@ Thumbs.db
 
 # Excel Lock Files
 ~$*.xls*'n# Local project backups'nBackups/
-'n# Local prject backups'nBackups/
+'n# Local project backups'nBackups/
+# Local project backups
+Backups/
