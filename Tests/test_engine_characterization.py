@@ -17,12 +17,13 @@ from engines.results import (
     QuoteResult,
 )
 from managers.repair_manager import RepairManager
+from repositories.compatibility_repository import CompatibilityRepository
 
 
 def compatibility_table(
     *,
     supported: bool = True,
-    service_column: str = "Service ID",
+    service_column: str = "Service Name",
 ) -> pd.DataFrame:
     return pd.DataFrame(
         [
@@ -104,29 +105,35 @@ class TestCurrentVerifiedBehavior:
 
     def test_supported_compatibility_row_returns_supported(self) -> None:
         engine = CompatibilityEngine(
-            {"compatibility": compatibility_table(supported=True)}
+            CompatibilityRepository(
+                {"compatibility": compatibility_table(supported=True)}
+            )
         )
 
-        assert engine.validate("PHN", "SVC000001") == {
-            "supported": True,
-            "reason": "Supported",
-        }
+        result = engine.validate("PHN", "SVC000001")
+
+        assert result.supported is True
+        assert result.reason == "Supported"
 
     def test_unmatched_compatibility_returns_unsupported(self) -> None:
         engine = CompatibilityEngine(
-            {"compatibility": compatibility_table(supported=True)}
+            CompatibilityRepository(
+                {"compatibility": compatibility_table(supported=True)}
+            )
         )
 
-        assert engine.validate("TAB", "SVC000001") == {
-            "supported": False,
-            "reason": "Repair not supported.",
-        }
+        result = engine.validate("TAB", "SVC000001")
+
+        assert result.supported is False
+        assert result.reason == "Repair not supported."
 
     def test_empty_compatibility_table_returns_unsupported(self) -> None:
-        table = pd.DataFrame(columns=["Device Family", "Service ID", "Supported"])
-        engine = CompatibilityEngine({"compatibility": table})
+        table = pd.DataFrame(
+            columns=["Device Family", "Service Name", "Supported"]
+        )
+        engine = CompatibilityEngine(CompatibilityRepository({"compatibility": table}))
 
-        assert engine.validate("PHN", "SVC000001")["supported"] is False
+        assert engine.validate("PHN", "SVC000001").supported is False
 
     def test_inventory_unknown_sku_returns_false_without_quantity_column(self) -> None:
         inventory = pd.DataFrame([{"SKU": "OTHER"}])
@@ -148,26 +155,27 @@ class TestCurrentVerifiedBehavior:
         }
         manager = RepairManager(database)
 
-        result = manager.validate_part("PHN", "SVC000001")
+        with pytest.warns(DeprecationWarning, match="validate_service"):
+            result = manager.validate_part("PHN", "SVC000001")
 
-        assert result["supported"] is True
+        assert result.supported is True
 
 
 class TestCurrentKnownFailures:
-    def test_missing_required_compatibility_column_raises_key_error(self) -> None:
+    def test_missing_required_compatibility_column_raises_schema_error(self) -> None:
         table = pd.DataFrame([{"Device Family": "PHN"}])
-        engine = CompatibilityEngine({"compatibility": table})
+        engine = CompatibilityEngine(CompatibilityRepository({"compatibility": table}))
 
-        with pytest.raises(KeyError, match="Service ID"):
+        with pytest.raises(ValueError, match="Service Name.*Supported"):
             engine.validate("PHN", "SVC000001")
 
-    def test_current_workbook_compatibility_column_mismatch_raises_key_error(
+    def test_canonical_service_id_column_is_not_a_workbook_alias(
         self,
     ) -> None:
-        table = compatibility_table(service_column="Service Name")
-        engine = CompatibilityEngine({"compatibility": table})
+        table = compatibility_table(service_column="Service ID")
+        engine = CompatibilityEngine(CompatibilityRepository({"compatibility": table}))
 
-        with pytest.raises(KeyError, match="Service ID"):
+        with pytest.raises(ValueError, match="Service Name"):
             engine.validate("PHN", "SVC000001")
 
     def test_matching_inventory_sku_without_quantity_raises_key_error(self) -> None:
@@ -197,14 +205,15 @@ class TestCurrentKnownFailures:
         with pytest.raises(KeyError, match="Markup"):
             engine.calculate(1.0, 25.0)
 
-    def test_quote_fails_through_compatibility_column_mismatch(self) -> None:
+    def test_quote_fails_through_invalid_compatibility_schema(self) -> None:
         database = {
             **pricing_database(),
-            "compatibility": compatibility_table(service_column="Service Name"),
+            "compatibility": compatibility_table(service_column="Service ID"),
         }
-        engine = QuoteEngine(database)
+        compatibility = CompatibilityEngine(CompatibilityRepository(database))
+        engine = QuoteEngine(database, compatibility)
 
-        with pytest.raises(KeyError, match="Service ID"):
+        with pytest.raises(ValueError, match="Service Name"):
             engine.generate("PHN", "SVC000001", 1.0, 25.0)
 
     def test_repair_manager_calculate_price_parameter_mismatch_raises_type_error(
@@ -222,16 +231,14 @@ class TestCurrentKnownFailures:
 
 
 class TestApprovedTargetBehaviorNotImplemented:
-    @pytest.mark.xfail(
-        strict=True,
-        reason="Target contract must honor Supported=False; current engine ignores it.",
-    )
     def test_supported_false_row_is_rejected(self) -> None:
         engine = CompatibilityEngine(
-            {"compatibility": compatibility_table(supported=False)}
+            CompatibilityRepository(
+                {"compatibility": compatibility_table(supported=False)}
+            )
         )
 
-        assert engine.validate("PHN", "SVC000001")["supported"] is False
+        assert engine.validate("PHN", "SVC000001").supported is False
 
     @pytest.mark.xfail(
         strict=True,
@@ -243,13 +250,6 @@ class TestApprovedTargetBehaviorNotImplemented:
         with pytest.raises(ValueError, match="nonnegative"):
             engine.calculate(-1.0, -25.0)
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "RepairManager target API uses validate_service; current validate_part "
-            "name has the wrong semantic contract."
-        ),
-    )
     def test_repair_manager_exposes_validate_service_contract(self) -> None:
         database = {
             **pricing_database(),
@@ -260,4 +260,4 @@ class TestApprovedTargetBehaviorNotImplemented:
 
         result = manager.validate_service("PHN", "SVC000001")
 
-        assert result["supported"] is True
+        assert result.supported is True

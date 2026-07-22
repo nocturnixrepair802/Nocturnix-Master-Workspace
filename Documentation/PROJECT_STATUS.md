@@ -30,9 +30,15 @@ State: Active development; stabilization in progress
 - Current, broken/undefined, and approved target rules are recorded in
   [BUSINESS_RULES.md](BUSINESS_RULES.md).
 - Five accepted architecture decisions are recorded under [ADR/](ADR/).
-- [ENGINE_REFACTOR_PLAN.md](ENGINE_REFACTOR_PLAN.md) remains a proposed phased plan.
-- No workbook migration, Phase 0 tests, dependency changes, or engine refactoring has
-  been implemented by the documentation-preparation stage.
+- [ENGINE_REFACTOR_PLAN.md](ENGINE_REFACTOR_PLAN.md) is being implemented in bounded
+  phases.
+- Phase 0 added typed result definitions and characterization tests.
+- Phase 1A is complete and stabilizes the compatibility path through a temporary repository adapter
+  over the unchanged workbook columns `Device Family` and `Service Name`.
+- `CompatibilityEngine` returns `CompatibilityResult`, honors `Supported=False`,
+  rejects malformed decisions, and preserves `Notes` and `Requires Capability`.
+- Pricing and inventory stabilization, workbook migration, and canonical column
+  renaming have not begun.
 
 ## Known failures and risks
 
@@ -43,7 +49,6 @@ State: Active development; stabilization in progress
   outdated code at import time and reference removed attributes.
 - `Source/logs/application_log.py` and `error_log.py` import a missing
   `logging_system` package.
-- `TechnicalKnowledgeService` calls a nonexistent `GuideRepository.all_guides()`.
 - `Source/managers/seeder_manager.py` targets an obsolete seeder API.
 - Workbook writes and durable CRUD persistence remain incomplete.
 - The repository contains many empty placeholders and duplicate implementations.

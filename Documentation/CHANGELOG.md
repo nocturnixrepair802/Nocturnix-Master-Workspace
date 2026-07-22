@@ -12,6 +12,10 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
 - Root `README.md` with setup and GUI launch instructions.
 - Canonical shared-memory documentation under `Documentation/`.
 - Installed project console entry point named `nocturnix`.
+- Phase 0 infrastructure-independent typed engine results and characterization tests.
+- A canonical `CompatibilityRepository.find_service()` lookup over the unchanged
+  workbook's `Device Family` and `Service Name` columns.
+- `RepairManager.validate_service()` returning `CompatibilityResult`.
 
 ### Changed
 
@@ -21,6 +25,12 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
 - Python typing and import ordering were modernized with Ruff.
 - `RepairPage.add_repair()` currently executes the created repair dialog; this
   behavioral change remains pending explicit review.
+- Phase 1A makes `CompatibilityEngine` consume `CompatibilityRepository`, honor
+  boolean `Supported` values, and preserve notes and required capabilities.
+- `RepairManager` and `QuoteEngine` now share one injected compatibility engine;
+  quote dictionaries temporarily adapt the typed compatibility result.
+- `RepairManager.validate_part()` remains as a deprecated compatibility alias while
+  existing references are retired.
 
 ### Fixed
 
@@ -28,6 +38,14 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
 - Preserved ignore rules for backups, virtual environments, Python caches, and byte
   code.
 - Fixed Windows console failure caused by Unicode loader status glyphs.
+- Compatibility lookups now report missing required columns and duplicate matches
+  descriptively instead of raising a raw `KeyError` or selecting a row silently.
+
+### Engine refactor progress
+
+- Phase 1A is complete. The compatibility path now uses an internal translation
+  layer over the unchanged workbook schema, while temporary caller shims remain
+  explicitly marked for removal after canonical workbook migration.
 
 ### Verification
 

@@ -1,12 +1,16 @@
+import warnings
+
 from engines.compatibility_engine import CompatibilityEngine
 from engines.inventory_engine import InventoryEngine
 from engines.pricing_engine import PricingEngine
 from engines.quote_engine import QuoteEngine
+from engines.results import CompatibilityResult
+from repositories.compatibility_repository import CompatibilityRepository
 
 
 class RepairManager:
 
-    def __init__(self, database):
+    def __init__(self, database, repositories=None):
 
         self.database = database
 
@@ -14,13 +18,18 @@ class RepairManager:
         # Business Engines
         # ======================================================
 
-        self.quote = QuoteEngine(database)
-
         self.pricing = PricingEngine(database)
 
         self.inventory = InventoryEngine(database)
 
-        self.compatibility = CompatibilityEngine(database)
+        compatibility_repository = (
+            repositories.compatibility
+            if repositories is not None
+            else CompatibilityRepository(database)
+        )
+        self.compatibility = CompatibilityEngine(compatibility_repository)
+
+        self.quote = QuoteEngine(database, self.compatibility)
 
     # ======================================================
     # Repair Quote
@@ -61,6 +70,20 @@ class RepairManager:
     # Compatibility
     # ======================================================
 
-    def validate_part(self, device, part):
+    def validate_service(
+        self,
+        device_family_code: str,
+        service_id: str,
+    ) -> CompatibilityResult:
+        return self.compatibility.validate(device_family_code, service_id)
 
-        return self.compatibility.validate(device, part)
+    def validate_part(self, device, part):
+        # TODO (Phase 2): Remove compatibility shim after canonical workbook migration.
+
+        warnings.warn(
+            "validate_part() is deprecated; it validates service compatibility. "
+            "Use validate_service().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.validate_service(device, part)

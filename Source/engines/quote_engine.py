@@ -4,9 +4,9 @@ from engines.pricing_engine import PricingEngine
 
 class QuoteEngine:
 
-    def __init__(self, database):
+    def __init__(self, database, compatibility: CompatibilityEngine):
 
-        self.compatibility = CompatibilityEngine(database)
+        self.compatibility = compatibility
 
         self.pricing = PricingEngine(database)
 
@@ -32,9 +32,14 @@ class QuoteEngine:
 
         )
 
-        if not supported["supported"]:
+        if not supported.supported:
 
-            return supported
+            # TODO (Phase 2): Remove compatibility shim after canonical workbook migration.
+            return {
+                "supported": supported.supported,
+                "reason": supported.reason,
+                "requires_capability": supported.requires_capability,
+            }
 
         pricing = self.pricing.calculate(
             labor_hours,

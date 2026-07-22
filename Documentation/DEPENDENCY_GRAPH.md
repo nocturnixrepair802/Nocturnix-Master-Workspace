@@ -19,6 +19,7 @@ Application
 |   |   +-- ManufacturerRepository
 |   |   +-- DeviceFamilyRepository
 |   |   +-- RepairRepository
+|   |   +-- CompatibilityRepository
 |   |   `-- GuideRepository
 |   |
 |   +-- ServiceManager [active]
@@ -30,10 +31,11 @@ Application
 |   |   `-- TechnicalKnowledgeService
 |   |
 |   +-- RepairManager [active]
+|   |   +-- CompatibilityRepository (shared from RepositoryManager)
+|   |   +-- CompatibilityEngine (shared with QuoteEngine)
 |   |   +-- QuoteEngine
 |   |   +-- PricingEngine
-|   |   +-- InventoryEngine
-|   |   `-- CompatibilityEngine
+|   |   `-- InventoryEngine
 |   |
 |   +-- TechnicalKnowledgeManager [active]
 |   |   `-- TechnicalKnowledgeService
@@ -103,10 +105,10 @@ Application
 |   |   +-- ManufacturerRepository -> manufacturer_catalog
 |   |   +-- DeviceFamilyRepository -> device_catalog
 |   |   +-- RepairRepository -> repair_tickets
+|   |   +-- CompatibilityRepository -> compatibility
 |   |   `-- GuideRepository -> repair_guides
 |   |
 |   +-- Configured database key but unwired
-|   |   +-- CompatibilityRepository -> compatibility
 |   |   +-- InventoryRepository -> parts_catalog
 |   |   +-- LaborRepository -> labor_rates
 |   |   +-- ServiceRepository -> master_services
@@ -134,9 +136,10 @@ Application
 |   +-- InventoryEngine
 |   |   `-- EngineBase
 |   +-- CompatibilityEngine
-|   |   `-- EngineBase
+|   |   +-- CompatibilityRepository
+|   |   `-- CompatibilityResult
 |   `-- QuoteEngine
-|       +-- CompatibilityEngine
+|       +-- CompatibilityEngine [injected shared instance]
 |       `-- PricingEngine
 |
 +-- Controllers
@@ -197,7 +200,7 @@ Application
 |       +-- CustomerService
 |       +-- CustomerDeviceService
 |       +-- DeviceService
-|       +-- CompatibilityRepository [expected but not registered]
+|       +-- CompatibilityRepository
 |       `-- master_services DataFrame
 |
 `-- Models
@@ -248,6 +251,11 @@ Application
 - `WorkflowManager` owns multi-step workflow instances.
 - `MainWindow` owns the active GUI pages.
 
+Phase 1A uses `CompatibilityRepository` as a temporary schema adapter. Its canonical
+`find_service(device_family_code, service_id)` API maps lookups onto the unchanged
+workbook columns `Device Family` and `Service Name`; it does not rename or migrate
+workbook data.
+
 The preferred `Source/managers/` workbook subsystem (`WorkbookManager`,
 `WorksheetManager`, and `TableManager`) is not yet connected to `Application` or
 `TableLoader`. Startup continues to use `TableLoader` directly.
@@ -258,10 +266,6 @@ and `CustomerController`. Its behavior is planned for migration into
 
 ## Known broken or incomplete edges
 
-- `RepairGuiService` expects `RepositoryManager.compatibility`, which is not
-  registered.
-- `TechnicalKnowledgeService` expects `GuideRepository.all_guides()`, while the
-  repository currently exposes `all()`.
 - Several implemented repositories bind database keys that are not loaded by the
   current `config.database.TABLES` mapping.
 - Repositories that reference absent `TABLES` keys will fail during construction:

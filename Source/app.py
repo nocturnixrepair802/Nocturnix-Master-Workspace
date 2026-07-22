@@ -36,7 +36,8 @@ class Application:
         )
 
         self.repair: RepairManager = RepairManager(
-            self.database
+            self.database,
+            self.repositories,
         )
 
         self.workflow: WorkflowManager = WorkflowManager(
