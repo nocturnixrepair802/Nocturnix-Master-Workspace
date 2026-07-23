@@ -1,0 +1,8 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    "/^cmd /c \"cd /d D:\\\\Projects\\\\Nocturnix Repair Platform && \\.venv\\\\Scripts\\\\python\\.exe -m ruff check Scripts/audit_legacy_staging_preview\\.py\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  }
+}
