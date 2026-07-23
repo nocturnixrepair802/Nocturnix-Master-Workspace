@@ -57,13 +57,51 @@ SHEET_NAMES = [
     "02 - Duplicate Exclusions",
     "03 - SKU Conflicts",
     "04 - Lookup Enrichment",
-    "05 - Zero Value Review",
+    "05 - Pricing Review",
     "06 - Manufacturer Review",
     "07 - Supplier Review",
     "08 - Destinations",
     "09 - Decision Log",
     "10 - Validation",
     "11 - Import Metadata",
+]
+EXCLUSION_COMPARE_FIELDS = [
+    ("Category", "Record Category"),
+    ("Manufacturer", "Legacy Manufacturer"),
+    ("Name", "Legacy Name"),
+    ("Type", "Legacy Type"),
+    ("Price", "Legacy Retail Price"),
+    ("Cost", "Legacy Cost"),
+    ("Supplier", "Legacy Supplier"),
+    ("Condition", "Legacy Condition"),
+    ("Stock", "Legacy Stock"),
+    ("Serial Number", "Legacy Serial Number"),
+    ("Bin", "Legacy Bin"),
+    ("Tax Free", "Legacy Tax Free"),
+    ("Note", "Legacy Note"),
+    ("Updated At", "Legacy Updated At"),
+    ("Created At", "Legacy Created At"),
+]
+EXCLUSION_FIELDS_COMPARED = "; ".join(
+    label for label, _column in EXCLUSION_COMPARE_FIELDS
+)
+EXCLUSION_HEADERS = [
+    "Exact Duplicate Group ID",
+    "Excluded Source Row Number",
+    "Retained Source Row Number",
+    "Legacy SKU",
+    "Match Type",
+    "Fields Compared",
+    "Exact Match Verified",
+    *(
+        header
+        for label, _column in EXCLUSION_COMPARE_FIELDS
+        for header in (f"Excluded {label}", f"Retained {label}", f"{label} Match")
+    ),
+    "Difference Summary",
+    "Exclusion Reason",
+    "Approval Status",
+    "Reviewer Notes",
 ]
 
 HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
@@ -75,6 +113,19 @@ ZERO_FILL = PatternFill("solid", fgColor="E2F0D9")
 INVALID_FILL = PatternFill("solid", fgColor="F8CBAD")
 CURRENCY_FORMAT = '$#,##0.00;[Red]-$#,##0.00'
 DATE_FORMAT = "yyyy-mm-dd"
+REPAIR_HISTORICAL_NOTES = (
+    "Legacy repair price retained for historical and market reference only. "
+    "Final Nocturnix pricing will be established after completion of the Master "
+    "Pricing Model."
+)
+REPAIR_UNPRICED_NOTES = (
+    "Valid repair record. Do not archive. Do not classify as free. Await pricing "
+    "model completion."
+)
+REPAIR_COST_ONLY_NOTES = (
+    "Retain provisional cost. Final customer pricing will be calculated from the "
+    "approved pricing model."
+)
 
 
 class ProposalError(RuntimeError):
@@ -106,6 +157,7 @@ class ProposalData:
     exact_participating_rows: int
     unique_sku_rows: int
     zero_counts: Counter[str]
+    pricing_review_counts: Counter[str]
     destination_counts: Counter[str]
     secondary_inventory_count: int
     unique_unresolved_row_count: int
@@ -215,6 +267,7 @@ def load_staging_records(path: Path) -> tuple[list[str], list[SourceRecord]]:
             "Legacy Cost",
             "Legacy Supplier",
             "Legacy Condition",
+            *(column for _label, column in EXCLUSION_COMPARE_FIELDS),
         }
         missing = sorted(required - set(headers))
         if missing:
@@ -293,6 +346,98 @@ def classify_zero_values(record: SourceRecord) -> str:
     return "Price > 0 and Cost > 0"
 
 
+def pricing_review_details(record: SourceRecord, monetary_pattern: str) -> dict[str, str]:
+    """Return proposal-only pricing guidance without calculating any values."""
+    category = text(record.values.get("Record Category"))
+    if category == "Repair":
+        if monetary_pattern == "Price > 0 and Cost = 0":
+            return {
+                "Business Interpretation": (
+                    "Legacy provisional repair price. Internal repair cost has not "
+                    "yet been calculated."
+                ),
+                "Pricing Status": "Pending Pricing Review",
+                "Recommended Action": "Review Legacy Price",
+                "Default Reviewer Notes": REPAIR_HISTORICAL_NOTES,
+            }
+        if monetary_pattern == "Price = 0 and Cost = 0":
+            return {
+                "Business Interpretation": "Repair pricing has not yet been developed.",
+                "Pricing Status": "Pending Pricing Review",
+                "Recommended Action": "Await Pricing Model",
+                "Default Reviewer Notes": REPAIR_UNPRICED_NOTES,
+            }
+        if monetary_pattern == "Price = 0 and Cost > 0":
+            return {
+                "Business Interpretation": (
+                    "Known internal cost exists. Customer price not yet established."
+                ),
+                "Pricing Status": "Pending Pricing Review",
+                "Recommended Action": "Await Pricing Model",
+                "Default Reviewer Notes": REPAIR_COST_ONLY_NOTES,
+            }
+        if monetary_pattern == "Invalid Monetary Value":
+            return {
+                "Business Interpretation": (
+                    "Legacy repair monetary value requires source-format research."
+                ),
+                "Pricing Status": "Pending Pricing Review",
+                "Recommended Action": "Do Not Publish",
+                "Default Reviewer Notes": (
+                    "Preserve the legacy value and await pricing-model completion and "
+                    "source-data review."
+                ),
+            }
+        return {
+            "Business Interpretation": (
+                "Legacy repair price and cost are provisional reference values."
+            ),
+            "Pricing Status": "Pending Pricing Review",
+            "Recommended Action": "Review Legacy Price",
+            "Default Reviewer Notes": REPAIR_HISTORICAL_NOTES,
+        }
+
+    nonrepair_details = {
+        "Price = 0 and Cost = 0": (
+            "Price and cost require business review.",
+            "Pending Pricing Review",
+            "Do Not Publish",
+            "Determine whether values are missing, intentionally unpriced, or inactive.",
+        ),
+        "Price = 0 and Cost > 0": (
+            "Known cost exists but customer price is not established.",
+            "Pending Pricing Review",
+            "Do Not Publish",
+            "Review the customer price before publication.",
+        ),
+        "Price > 0 and Cost = 0": (
+            "Customer price exists but cost requires review.",
+            "Pending Pricing Review",
+            "Research Cost",
+            "Research the missing or intentionally zero cost.",
+        ),
+        "Price > 0 and Cost > 0": (
+            "Price and cost are populated.",
+            "Pricing Approved",
+            "Review Legacy Price",
+            "No zero-value pricing exception identified.",
+        ),
+        "Invalid Monetary Value": (
+            "A monetary value is not numeric.",
+            "Pending Pricing Review",
+            "Do Not Publish",
+            "Correct the monetary data type using verified source information.",
+        ),
+    }
+    interpretation, status, action, notes = nonrepair_details[monetary_pattern]
+    return {
+        "Business Interpretation": interpretation,
+        "Pricing Status": status,
+        "Recommended Action": action,
+        "Default Reviewer Notes": notes,
+    }
+
+
 def enrichment_reasons(record: SourceRecord) -> list[str]:
     """Return visible reasons that a retained record needs lookup work."""
     values = record.values
@@ -325,6 +470,48 @@ def inventory_candidate(record: SourceRecord) -> bool:
     )
 
 
+def build_exclusion_comparison(
+    group_id: str,
+    excluded: SourceRecord,
+    retained: SourceRecord,
+) -> dict[str, Any]:
+    """Build and verify a self-contained exact-duplicate comparison row."""
+    comparison: dict[str, Any] = {
+        "Exact Duplicate Group ID": group_id,
+        "Excluded Source Row Number": excluded.source_row,
+        "Retained Source Row Number": retained.source_row,
+        "Legacy SKU": text(excluded.values.get("Legacy SKU")),
+        "Match Type": "Exact Duplicate",
+        "Fields Compared": EXCLUSION_FIELDS_COMPARED,
+    }
+    differences: list[str] = []
+    for label, staging_column in EXCLUSION_COMPARE_FIELDS:
+        excluded_value = excluded.values.get(staging_column)
+        retained_value = retained.values.get(staging_column)
+        matches = canonical_scalar(excluded_value) == canonical_scalar(retained_value)
+        comparison[f"Excluded {label}"] = excluded_value
+        comparison[f"Retained {label}"] = retained_value
+        comparison[f"{label} Match"] = "Yes" if matches else "No"
+        if not matches:
+            differences.append(label)
+
+    exact_match = not differences
+    comparison["Exact Match Verified"] = "Yes" if exact_match else "No"
+    comparison["Difference Summary"] = "; ".join(differences)
+    comparison["Exclusion Reason"] = (
+        "Excess exact duplicate; retain first source row"
+    )
+    comparison["Approval Status"] = "Pending Review"
+    comparison["Reviewer Notes"] = ""
+    if not exact_match:
+        raise ProposalError(
+            "Unexpected difference in exact-duplicate group "
+            f"{group_id}: excluded source {excluded.source_row}, retained source "
+            f"{retained.source_row}, fields={comparison['Difference Summary']}"
+        )
+    return comparison
+
+
 def build_proposal(
     headers: list[str],
     staging_records: list[SourceRecord],
@@ -351,20 +538,18 @@ def build_proposal(
         sorted(duplicate_groups, key=lambda rows: rows[0]), start=1
     ):
         retained_source = min(source_rows)
+        retained_record = by_source[retained_source]
         group_id = f"EDG-{group_number:04d}"
         for source_row in sorted(source_rows):
             if source_row == retained_source:
                 continue
             excluded_rows.add(source_row)
             exclusions.append(
-                {
-                    "Source Row Number": source_row,
-                    "Retained Source Row Number": retained_source,
-                    "Legacy SKU": text(by_source[source_row].values.get("Legacy SKU")),
-                    "Exact Duplicate Group ID": group_id,
-                    "Exclusion Reason": "Excess exact duplicate; retain first source row",
-                    "Approval Status": "Pending Review",
-                }
+                build_exclusion_comparison(
+                    group_id,
+                    excluded=by_source[source_row],
+                    retained=retained_record,
+                )
             )
 
     retained = [
@@ -419,6 +604,7 @@ def build_proposal(
     zero_review: list[dict[str, Any]] = []
     destinations: list[dict[str, Any]] = []
     zero_counts: Counter[str] = Counter()
+    pricing_review_counts: Counter[str] = Counter()
     destination_counts: Counter[str] = Counter()
 
     for record in retained:
@@ -471,7 +657,16 @@ def build_proposal(
             )
 
         zero_category = classify_zero_values(record)
+        pricing_details = pricing_review_details(record, zero_category)
         zero_counts[zero_category] += 1
+        pricing_review_counts[pricing_details["Pricing Status"]] += 1
+        if (
+            category == "Repair"
+            and zero_category == "Price > 0 and Cost = 0"
+        ):
+            pricing_review_counts["Historical Price Review"] += 1
+        if pricing_details["Pricing Status"] == "Archive Candidate":
+            pricing_review_counts["Archive Candidates"] += 1
         zero_review.append(
             {
                 "Source Row Number": record.source_row,
@@ -481,6 +676,7 @@ def build_proposal(
                 "Price": values.get("Legacy Retail Price"),
                 "Cost": values.get("Legacy Cost"),
                 "Zero Value Category": zero_category,
+                **pricing_details,
                 "Proposed Interpretation": "",
                 "Approval Status": "Pending Review",
                 "Reviewer Notes": "",
@@ -519,10 +715,10 @@ def build_proposal(
     unique_sku_rows = sum(
         1 for record in retained if len(sku_groups[text(record.values.get("Legacy SKU"))]) == 1
     )
-    nonordinary_zero_review = [
+    unresolved_pricing_review = [
         row
         for row in zero_review
-        if row["Zero Value Category"] != "Price > 0 and Cost > 0"
+        if row["Pricing Status"] != "Pricing Approved"
     ]
     unresolved_retained_rows = {
         int(row["Source Row Number"])
@@ -531,7 +727,7 @@ def build_proposal(
             enrichment,
             manufacturer_review,
             supplier_review,
-            nonordinary_zero_review,
+            unresolved_pricing_review,
         )
         for row in review_rows
     }
@@ -541,7 +737,7 @@ def build_proposal(
         + len(enrichment)
         + len(manufacturer_review)
         + len(supplier_review)
-        + len(nonordinary_zero_review)
+        + len(unresolved_pricing_review)
     )
 
     proposal = ProposalData(
@@ -558,6 +754,7 @@ def build_proposal(
         exact_participating_rows=sum(len(rows) for rows in duplicate_groups),
         unique_sku_rows=unique_sku_rows,
         zero_counts=zero_counts,
+        pricing_review_counts=pricing_review_counts,
         destination_counts=destination_counts,
         secondary_inventory_count=sum(
             1 for record in retained if inventory_candidate(record)
@@ -576,7 +773,21 @@ def validate_calculation(
 ) -> None:
     """Enforce approved counts and lossless provenance before workbook creation."""
     retained_rows = {record.source_row for record in proposal.retained}
-    excluded_rows = {int(row["Source Row Number"]) for row in proposal.exclusions}
+    excluded_rows = {
+        int(row["Excluded Source Row Number"]) for row in proposal.exclusions
+    }
+    retained_references = {
+        int(row["Retained Source Row Number"]) for row in proposal.exclusions
+    }
+    comparison_rows_verified = all(
+        row["Match Type"] == "Exact Duplicate"
+        and row["Exact Match Verified"] == "Yes"
+        and row["Difference Summary"] == ""
+        and all(row[f"{label} Match"] == "Yes" for label, _ in EXCLUSION_COMPARE_FIELDS)
+        and int(row["Excluded Source Row Number"])
+        != int(row["Retained Source Row Number"])
+        for row in proposal.exclusions
+    )
     checks = {
         "source row count": len(source_rows) == EXPECTED_SOURCE_ROWS,
         "retained row count": len(retained_rows) == EXPECTED_RETAINED_ROWS,
@@ -585,6 +796,8 @@ def validate_calculation(
         == EXPECTED_CONFLICTING_ROWS,
         "retained rows unique": len(retained_rows) == len(proposal.retained),
         "excluded rows unique": len(excluded_rows) == len(proposal.exclusions),
+        "retained exclusion references valid": retained_references <= retained_rows,
+        "duplicate comparisons verified": comparison_rows_verified,
         "proposal categories disjoint": retained_rows.isdisjoint(excluded_rows),
         "no source row lost": retained_rows | excluded_rows == source_rows,
         "conflicts retained": conflicting_source_rows <= retained_rows,
@@ -655,7 +868,16 @@ def apply_column_formats(worksheet: Worksheet, headers: Sequence[str]) -> None:
     """Apply currency and date formats by semantic column name."""
     for column_number, header in enumerate(headers, start=1):
         lowered = header.lower()
-        if header in {"Price", "Cost", "Legacy Retail Price", "Legacy Cost"}:
+        if header in {
+            "Price",
+            "Cost",
+            "Legacy Retail Price",
+            "Legacy Cost",
+            "Excluded Price",
+            "Retained Price",
+            "Excluded Cost",
+            "Retained Cost",
+        }:
             for cell in worksheet.iter_cols(
                 min_col=column_number,
                 max_col=column_number,
@@ -664,7 +886,9 @@ def apply_column_formats(worksheet: Worksheet, headers: Sequence[str]) -> None:
             ):
                 for item in cell:
                     item.number_format = CURRENCY_FORMAT
-        if "date" in lowered:
+        if "date" in lowered or lowered.endswith("updated at") or lowered.endswith(
+            "created at"
+        ):
             for cell in worksheet.iter_cols(
                 min_col=column_number,
                 max_col=column_number,
@@ -700,6 +924,24 @@ def apply_conditional_formats(worksheet: Worksheet, headers: Sequence[str]) -> N
         worksheet.conditional_formatting.add(
             f"{pending}2:{pending}{last_row}",
             CellIsRule(operator="equal", formula=['"Pending Review"'], fill=PENDING_FILL),
+        )
+
+    for header in headers:
+        if header.endswith(" Match") or header == "Exact Match Verified":
+            column = column_letter_for(headers, header)
+            if column:
+                worksheet.conditional_formatting.add(
+                    f"{column}2:{column}{last_row}",
+                    CellIsRule(operator="equal", formula=['"No"'], fill=CONFLICT_FILL),
+                )
+    difference_summary = column_letter_for(headers, "Difference Summary")
+    if difference_summary:
+        worksheet.conditional_formatting.add(
+            f"{difference_summary}2:{difference_summary}{last_row}",
+            FormulaRule(
+                formula=[f'LEN(TRIM(${difference_summary}2))>0'],
+                fill=CONFLICT_FILL,
+            ),
         )
     conflict = column_letter_for(headers, "Conflict Group ID")
     if conflict:
@@ -790,13 +1032,18 @@ def summary_rows(proposal: ProposalData) -> list[list[Any]]:
         ["Lookup-enrichment rows", len(proposal.enrichment), "Pending"],
     ]
     for category in (
-        "Price = 0 and Cost = 0",
-        "Price = 0 and Cost > 0",
-        "Price > 0 and Cost = 0",
-        "Price > 0 and Cost > 0",
-        "Invalid Monetary Value",
+        "Pending Pricing Review",
+        "Historical Price Review",
+        "Archive Candidates",
+        "Pricing Approved",
     ):
-        rows.append([f"Zero review: {category}", proposal.zero_counts[category], "Retained rows"])
+        rows.append(
+            [
+                f"Pricing review: {category}",
+                proposal.pricing_review_counts[category],
+                "Proposal classification",
+            ]
+        )
     for destination, count in sorted(proposal.destination_counts.items()):
         rows.append([f"Primary: {destination}", count, "Proposed destination"])
     rows.extend(
@@ -857,9 +1104,33 @@ def validation_rows(proposal: ProposalData) -> list[list[Any]]:
             str(len(proposal.exclusions)),
         ),
         (
+            "All duplicate exclusion comparisons are exact matches",
+            all(
+                row["Match Type"] == "Exact Duplicate"
+                and row["Exact Match Verified"] == "Yes"
+                and row["Difference Summary"] == ""
+                and all(
+                    row[f"{label} Match"] == "Yes"
+                    for label, _column in EXCLUSION_COMPARE_FIELDS
+                )
+                for row in proposal.exclusions
+            ),
+            f"{len(proposal.exclusions)} exact matches",
+        ),
+        (
             "All 15 conflicting rows retained and pending",
             len(proposal.conflicts) == EXPECTED_CONFLICTING_ROWS,
             str(len(proposal.conflicts)),
+        ),
+        (
+            "Zero-cost Repair rows are pending pricing review",
+            all(
+                row["Pricing Status"] == "Pending Pricing Review"
+                for row in proposal.zero_review
+                if row["Category"] == "Repair"
+                and monetary_value(row["Cost"]) == Decimal("0")
+            ),
+            "Repair pricing approval deferred",
         ),
         ("No final canonical IDs generated", True, "Blank proposal column"),
         ("No source row lost", True, "Validated before workbook creation"),
@@ -903,14 +1174,7 @@ def create_workbook(
     sheet_definitions: list[tuple[int, list[str], Sequence[dict[str, Any]]]] = [
         (
             2,
-            [
-                "Source Row Number",
-                "Retained Source Row Number",
-                "Legacy SKU",
-                "Exact Duplicate Group ID",
-                "Exclusion Reason",
-                "Approval Status",
-            ],
+            EXCLUSION_HEADERS,
             proposal.exclusions,
         ),
         (
@@ -962,6 +1226,10 @@ def create_workbook(
                 "Price",
                 "Cost",
                 "Zero Value Category",
+                "Business Interpretation",
+                "Pricing Status",
+                "Recommended Action",
+                "Default Reviewer Notes",
                 "Proposed Interpretation",
                 "Approval Status",
                 "Reviewer Notes",
@@ -1069,6 +1337,108 @@ def create_workbook(
     return workbook
 
 
+def validate_reopened_exclusions(
+    retained: Worksheet,
+    exclusions: Worksheet,
+) -> str:
+    """Validate every self-contained duplicate comparison after reopening."""
+    exclusion_headers = [cell.value for cell in exclusions[1]]
+    if exclusion_headers != EXCLUSION_HEADERS:
+        raise ProposalError("Duplicate exclusion headers do not match specification")
+    header_columns = {
+        str(header): column
+        for column, header in enumerate(exclusion_headers, start=1)
+    }
+    exclusion_count = exclusions.max_row - 1
+    if exclusion_count != EXPECTED_EXCLUSIONS:
+        raise ProposalError("Reopened exclusion count is not 315")
+
+    retained_headers = [cell.value for cell in retained[1]]
+    retained_source_column = retained_headers.index("Source Row Number") + 1
+    retained_source_rows = {
+        int(retained.cell(row=row, column=retained_source_column).value)
+        for row in range(2, retained.max_row + 1)
+    }
+    individual_match_headers = [
+        header for header in exclusion_headers if str(header).endswith(" Match")
+    ]
+    excluded_source_rows: list[int] = []
+
+    for row in range(2, exclusions.max_row + 1):
+        row_values = {
+            header: exclusions.cell(row=row, column=column).value
+            for header, column in header_columns.items()
+        }
+        excluded_source = int(row_values["Excluded Source Row Number"])
+        retained_source = int(row_values["Retained Source Row Number"])
+        excluded_source_rows.append(excluded_source)
+        if row_values["Match Type"] != "Exact Duplicate":
+            raise ProposalError(f"Invalid Match Type on exclusion row {row}")
+        if row_values["Exact Match Verified"] != "Yes":
+            raise ProposalError(f"Exact match not verified on exclusion row {row}")
+        if any(row_values[header] != "Yes" for header in individual_match_headers):
+            raise ProposalError(f"Individual field mismatch on exclusion row {row}")
+        if row_values["Difference Summary"] not in (None, ""):
+            raise ProposalError(f"Difference Summary is not blank on exclusion row {row}")
+        if retained_source not in retained_source_rows:
+            raise ProposalError(
+                f"Exclusion row {row} points to non-retained source {retained_source}"
+            )
+        if excluded_source == retained_source:
+            raise ProposalError(
+                f"Excluded and retained source rows are equal on exclusion row {row}"
+            )
+
+    if len(set(excluded_source_rows)) != EXPECTED_EXCLUSIONS:
+        raise ProposalError("The 315 excluded source rows are not unique")
+    return "Duplicate exclusion comparisons: PASS (315 exact matches)"
+
+
+def validate_reopened_pricing_review(worksheet: Worksheet) -> str:
+    """Confirm zero-cost Repair rows are deferred, not treated as failures."""
+    headers = [cell.value for cell in worksheet[1]]
+    required = {
+        "Category",
+        "Cost",
+        "Business Interpretation",
+        "Pricing Status",
+        "Recommended Action",
+        "Default Reviewer Notes",
+    }
+    missing = sorted(required - set(headers))
+    if missing:
+        raise ProposalError(
+            f"Pricing Review columns missing after reopen: {', '.join(missing)}"
+        )
+    columns = {str(header): index for index, header in enumerate(headers, start=1)}
+    zero_cost_repair_rows = 0
+    for row in range(2, worksheet.max_row + 1):
+        category = worksheet.cell(row=row, column=columns["Category"]).value
+        cost = worksheet.cell(row=row, column=columns["Cost"]).value
+        if category != "Repair" or monetary_value(cost) != Decimal("0"):
+            continue
+        zero_cost_repair_rows += 1
+        status = worksheet.cell(row=row, column=columns["Pricing Status"]).value
+        interpretation = worksheet.cell(
+            row=row, column=columns["Business Interpretation"]
+        ).value
+        notes = worksheet.cell(
+            row=row, column=columns["Default Reviewer Notes"]
+        ).value
+        if status != "Pending Pricing Review":
+            raise ProposalError(
+                f"Zero-cost Repair row {row} is not Pending Pricing Review"
+            )
+        if not interpretation or not notes:
+            raise ProposalError(
+                f"Zero-cost Repair row {row} lacks deferred-pricing guidance"
+            )
+    return (
+        "Repair zero-cost pricing deferral: PASS "
+        f"({zero_cost_repair_rows} pending rows)"
+    )
+
+
 def validate_reopened_workbook(path: Path, hashes_before: dict[Path, str]) -> list[str]:
     """Reopen the output and independently verify structure and key counts."""
     workbook = load_workbook(path, read_only=False, data_only=False)
@@ -1087,6 +1457,7 @@ def validate_reopened_workbook(path: Path, hashes_before: dict[Path, str]) -> li
         retained = workbook[SHEET_NAMES[1]]
         exclusions = workbook[SHEET_NAMES[2]]
         conflicts = workbook[SHEET_NAMES[3]]
+        pricing_review = workbook[SHEET_NAMES[5]]
         retained_count = retained.max_row - 1
         exclusion_count = exclusions.max_row - 1
         conflict_count = conflicts.max_row - 1
@@ -1108,6 +1479,8 @@ def validate_reopened_workbook(path: Path, hashes_before: dict[Path, str]) -> li
             f"Counts: PASS (retained={retained_count}, exclusions={exclusion_count}, "
             f"conflicts={conflict_count})"
         )
+        messages.append(validate_reopened_exclusions(retained, exclusions))
+        messages.append(validate_reopened_pricing_review(pricing_review))
 
         retained_headers = [cell.value for cell in retained[1]]
         canonical_column = retained_headers.index("Proposed Canonical ID") + 1
@@ -1144,9 +1517,14 @@ def print_summary(proposal: ProposalData, validation_messages: Sequence[str]) ->
     print(f"Proposed exclusions: {len(proposal.exclusions)}")
     print(f"Conflicting rows: {len(proposal.conflicts)}")
     print(f"Lookup-enrichment rows: {len(proposal.enrichment)}")
-    print("Zero-value categories:")
-    for category, count in sorted(proposal.zero_counts.items()):
-        print(f"  {category}: {count}")
+    print("Pricing Review Summary:")
+    for category in (
+        "Pending Pricing Review",
+        "Historical Price Review",
+        "Archive Candidates",
+        "Pricing Approved",
+    ):
+        print(f"  {category}: {proposal.pricing_review_counts[category]}")
     print("Primary destinations:")
     for destination, count in sorted(proposal.destination_counts.items()):
         print(f"  {destination}: {count}")
