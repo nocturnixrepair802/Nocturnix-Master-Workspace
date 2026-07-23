@@ -1,6 +1,9 @@
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from tempfile import gettempdir
 from typing import Any, cast
 
+import pytest
 from fastapi.testclient import TestClient
 
 from nocturnix import create_app
@@ -8,10 +11,32 @@ from nocturnix.config import Settings
 from nocturnix.models import UserIdentity
 
 H = {"X-Nocturnix-Dev-User": "dev-user-001"}
+_CLIENTS: list[TestClient] = []
 
 
-def client(rate: int = 120) -> TestClient:
-    return TestClient(create_app(Settings(rate_limit_per_minute=rate)))
+@pytest.fixture(autouse=True)
+def close_test_clients():
+    yield
+    while _CLIENTS:
+        test_client = _CLIENTS.pop()
+        test_client.app.state.container.engine.dispose()
+        test_client.close()
+
+
+def client(rate: int = 120, db_path: Path | None = None) -> TestClient:
+    if db_path is None:
+        db_path = Path(gettempdir()) / f"nocturnix_test_{id(object())}.db"
+    test_client = TestClient(
+        create_app(
+            Settings(
+                rate_limit_per_minute=rate,
+                database_url=f"sqlite:///{db_path}",
+                database_migration_mode="auto-test-only",
+            )
+        )
+    )
+    _CLIENTS.append(test_client)
+    return test_client
 
 
 def test_public_health_config_openapi_static_pwa() -> None:
@@ -40,7 +65,10 @@ def test_auth_cors_status_and_rate_limit() -> None:
         headers={"Origin": "http://localhost:8000", "Access-Control-Request-Method": "GET"},
     )
     assert cors.status_code == 200
-    assert c.get("/api/v1/status", headers=H).json()["persistence_type"].startswith("temporary")
+    status = c.get("/api/v1/status", headers=H).json()
+    assert status["persistence_type"].startswith("durable SQL")
+    assert status["persistence_provider"] == "sqlite"
+    assert status["database_ready"] is True
     limited = client(rate=1)
     limited.get("/api/v1/health")
     assert limited.get("/api/v1/health").status_code == 429
@@ -122,13 +150,21 @@ def test_approval_lifecycle_ownership_expiry_duplicate_and_audit_redaction() -> 
         json={"action_type": "mock", "title": "Expire", "proposed_content": {}},
     ).json()
     container = cast(Any, c.app).state.container
-    app = container.approvals.repo.get(expired["id"])
-    app.expires_at = datetime.now(UTC) - timedelta(seconds=1)
-    container.approvals.repo.update(app)
+    from nocturnix.persistence_models import ApprovalRow
+
+    with container.session_factory() as session:
+        row = session.get(ApprovalRow, expired["id"])
+        row.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+        session.commit()
     assert c.post(f"/api/v1/approvals/{expired['id']}/approve", headers=H).status_code == 409
-    container.audit.record(
-        UserIdentity(), "test", "redact", metadata={"api_token": "secret", "safe": "ok"}
-    )
+    from nocturnix.repositories.sql import SqlAuditRepository
+    from nocturnix.services.core import AuditService
+
+    with container.session_factory() as session:
+        AuditService(SqlAuditRepository(session)).record(
+            UserIdentity(), "test", "redact", metadata={"api_token": "secret", "safe": "ok"}
+        )
+        session.commit()
     audit = c.get("/api/v1/audit?limit=100", headers=H).json()["items"]
     assert any(e["metadata"].get("api_token") == "[REDACTED]" for e in audit)
 
@@ -150,3 +186,73 @@ def test_mock_email_and_calendar() -> None:
     ).json()
     assert proposal["conflict_detected"] is True
     assert proposal["approval"]["action_type"] == "mock_calendar_event"
+
+
+def test_preferences_retention_and_restart_persistence(tmp_path: Path) -> None:
+    db = tmp_path / "restart.db"
+    c1 = client(db_path=db)
+    approval = c1.post(
+        "/api/v1/approvals",
+        headers=H,
+        json={"action_type": "mock", "title": "Persist", "proposed_content": {"safe": "ok"}},
+    ).json()
+    repair = c1.post(
+        "/api/v1/repair-intakes",
+        headers=H,
+        json={"device_type": "laptop", "issue_description": "screen cracked"},
+    ).json()
+    conv = c1.post("/api/v1/chat", headers=H, json={"message": "device preparation"}).json()[
+        "conversation_id"
+    ]
+    prefs = c1.put(
+        "/api/v1/preferences", headers=H, json={"preferred_name": "Dev", "mode": "business"}
+    ).json()
+    assert prefs["preferred_name"] == "Dev"
+    cleanup = c1.post("/api/v1/retention/cleanup", headers=H, json={}).json()
+    assert cleanup["dry_run"] is True and all(v == 0 for v in cleanup["deleted_counts"].values())
+
+    c2 = client(db_path=db)
+    assert c2.get(f"/api/v1/approvals/{approval['id']}", headers=H).json()["id"] == approval["id"]
+    assert c2.get("/api/v1/preferences", headers=H).json()["preferred_name"] == "Dev"
+    assert any(
+        e["category"] in {"chat", "repair", "retention"}
+        for e in c2.get("/api/v1/audit?limit=100", headers=H).json()["items"]
+    )
+    assert repair["owner_user_id"] == "dev-user-001"
+    assert conv.startswith("conv_")
+
+
+def test_migrations_repeat_and_transaction_claim(tmp_path: Path) -> None:
+    from nocturnix.db import (
+        create_database_engine,
+        create_session_factory,
+        current_revision,
+        run_migrations,
+        session_scope,
+    )
+    from nocturnix.models import ApprovalCreateRequest, UserIdentity
+    from nocturnix.repositories.sql import SqlApprovalRepository, SqlAuditRepository
+    from nocturnix.services.core import ApprovalService, AuditService
+
+    url = f"sqlite:///{tmp_path / 'migration.db'}"
+    run_migrations(url)
+    first = current_revision(url)
+    run_migrations(url)
+    assert current_revision(url) == first
+    engine = create_database_engine(url)
+    factory = create_session_factory(engine)
+    user = UserIdentity()
+    with session_scope(factory) as session:
+        service = ApprovalService(
+            SqlApprovalRepository(session), AuditService(SqlAuditRepository(session))
+        )
+        approval = service.create(
+            user, ApprovalCreateRequest(action_type="mock", title="Concurrent", proposed_content={})
+        )
+    with session_scope(factory) as s1:
+        repo1 = SqlApprovalRepository(s1)
+        assert repo1.claim_execution(approval.id, user.user_id) is not None
+    with session_scope(factory) as s2:
+        repo2 = SqlApprovalRepository(s2)
+        assert repo2.claim_execution(approval.id, user.user_id) is None
+    engine.dispose()

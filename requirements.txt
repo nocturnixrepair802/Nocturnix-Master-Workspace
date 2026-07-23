@@ -9,3 +9,5 @@ ruff>=0.6
 mypy>=1.11
 bandit[toml]>=1.7
 pip-audit>=2.7
+SQLAlchemy>=2.0
+alembic>=1.13
