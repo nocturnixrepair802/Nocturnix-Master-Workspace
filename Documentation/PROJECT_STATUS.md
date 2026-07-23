@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-07-22
+Last updated: 2026-07-23
 Version: 0.7.0 alpha
 State: Active development; stabilization in progress
 
@@ -29,6 +29,22 @@ State: Active development; stabilization in progress
 - Phase 1B pricing stabilization is the next planned engine slice, but it has not
   been approved or started.
 - Pricing business-rule questions must be resolved before Phase 1B implementation.
+- The Master Pricing review package is documentation-first and remains
+  uncommitted. ADR-007 resolves pricing-record identity and approves its
+  47-column schema; generator execution and workbook creation have not occurred.
+
+## Master Pricing review milestone
+
+- `PRC######` is the accepted Pricing Record ID namespace.
+- The current empty namespace begins at `PRC000001`; the 314-row draft is
+  expected to end at `PRC000314`.
+- `Legacy Pricing Status` preserves the Master Services observation, while
+  `Pricing Status` owns the governed pricing lifecycle.
+- Initial records are draft review records. Calculated fields and Final Customer
+  Price remain blank and unapproved.
+- Currency, cost, margin, regional-market, calculation, rounding, approval,
+  effective-date, and publication policies remain unresolved.
+- No canonical workbook import or pricing-engine change is authorized.
 
 ## Engine refactor documentation baseline
 
@@ -36,7 +52,7 @@ State: Active development; stabilization in progress
   [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md).
 - Current, broken/undefined, and approved target rules are recorded in
   [BUSINESS_RULES.md](BUSINESS_RULES.md).
-- Five accepted architecture decisions are recorded under [ADR/](ADR/).
+- Seven accepted architecture decisions are recorded under [ADR/](ADR/).
 - [ENGINE_REFACTOR_PLAN.md](ENGINE_REFACTOR_PLAN.md) is being implemented in bounded
   phases.
 - Phase 0 added typed result definitions and characterization tests.

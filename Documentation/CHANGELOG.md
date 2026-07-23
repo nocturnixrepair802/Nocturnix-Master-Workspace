@@ -3,7 +3,7 @@
 All notable project changes should be recorded here. Entries describe completed or
 actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
 
-## Unreleased - 2026-07-22
+## Unreleased - 2026-07-23
 
 ### Added
 
@@ -16,6 +16,9 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
 - A canonical `CompatibilityRepository.find_service()` lookup over the unchanged
   workbook's `Device Family` and `Service Name` columns.
 - `RepairManager.validate_service()` returning `CompatibilityResult`.
+- ADR-007 accepting the `PRC######` Master Pricing identity namespace and the
+  47-column Master Pricing review schema.
+- Documentation-first Master Pricing generator and independent validator.
 
 ### Changed
 
@@ -29,6 +32,8 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
   boolean `Supported` values, and preserve notes and required capabilities.
 - `RepairManager` and `QuoteEngine` now share one injected compatibility engine;
   quote dictionaries temporarily adapt the typed compatibility result.
+- Master Pricing may allocate `PRC000001` from the ADR-007-approved empty
+  namespace and later continue after the highest valid canonical PRC ID.
 - `RepairManager.validate_part()` remains as a deprecated compatibility alias while
   existing references are retired.
 
