@@ -12,7 +12,7 @@ import sys
 import zipfile
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -64,6 +64,27 @@ SHEET_NAMES = [
     "14 - Revision History",
     "15 - Import Metadata",
 ]
+TABLE_NAMES_BY_SHEET = {
+    "00 - Instructions": {"tblMasterServicesInstructions"},
+    "01 - Master Services": {"tblMasterServicesCatalog"},
+    "02 - Service Categories": {"tblServiceCategories"},
+    "03 - Repair Types": {"tblRepairTypes"},
+    "04 - Device Families": {"tblDeviceFamilies"},
+    "05 - Manufacturers": {"tblManufacturers"},
+    "06 - Labor Standards": {"tblLaborStandardsLookup"},
+    "07 - Labor Tiers": {"tblLaborTiersLookup"},
+    "08 - Difficulty Levels": {"tblDifficultyLevels"},
+    "09 - Skill Levels": {"tblSkillLevels"},
+    "10 - Turnaround Times": {"tblTurnaroundTimes"},
+    "11 - Warranty Options": {"tblWarrantyOptions"},
+    "12 - Status Values": {"tblServiceStatusValues"},
+    "13 - Validation Summary": {
+        "tblMasterServicesValidationSummary",
+        "tblLaborMatchAudit",
+    },
+    "14 - Revision History": {"tblMasterServicesRevisionHistory"},
+    "15 - Import Metadata": {"tblMasterServicesImportMetadata"},
+}
 MASTER_HEADERS = [
     "Service ID",
     "Legacy Service SKU",
@@ -111,14 +132,20 @@ MASTER_HEADERS = [
     "Created At",
     "Updated At",
 ]
-YES_NO_FIELDS = [
-    "Active",
-    "Requires Parts",
-    "Requires Labor",
-    "Diagnostic Required",
-    "Warranty Eligible",
-    "Mobile Service Eligible",
-    "Mail-In Eligible",
+LABOR_AUDIT_HEADERS = [
+    "Source Record Number",
+    "Service ID",
+    "Legacy Service Name",
+    "Labor Standard ID",
+    "Match Score",
+    "Second Best Score",
+    "Score Margin",
+    "Match Evidence",
+    "Mapping Result",
+    "Mapped Minutes",
+    "Mapped Labor Tier",
+    "Mapped Difficulty",
+    "Mapped Skill Level",
 ]
 PRICING_STATUSES = [
     "Pending Pricing Review",
@@ -161,6 +188,25 @@ REQUIRED_DEFINED_NAMES = set(DEFINED_NAME_BY_HEADER.values())
 LABOR_MATCH_THRESHOLD = 0.82
 LABOR_TIE_MARGIN = 0.03
 SERVICE_ID_PATTERN = re.compile(r"^SVC\d{6}$")
+PERSISTED_SCORE_FIELDS = {"Match Score", "Second Best Score", "Score Margin"}
+PERSISTED_MINUTE_FIELDS = {
+    "Standard Minutes",
+    "Minimum Minutes",
+    "Maximum Minutes",
+    "Mapped Minutes",
+    "Matched Standard Minutes",
+    "Matched Minimum Minutes",
+    "Matched Maximum Minutes",
+}
+PERSISTED_DATE_FIELDS = {
+    "Effective Date",
+    "Last Reviewed",
+    "Created At",
+    "Updated At",
+    "Generated At UTC",
+    "Decision Date",
+}
+PERSISTED_SCORE_TOLERANCE = Decimal("1e-12")
 
 HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
 HEADER_FONT = Font(color="FFFFFF", bold=True)
@@ -217,6 +263,102 @@ def text(value: Any) -> str:
     return "" if value is None else str(ascii_value(value)).strip()
 
 
+def normalized_text(value: Any) -> str:
+    """Normalize persisted text without changing substantive characters."""
+    return "" if value is None else str(value).strip()
+
+
+def normalized_number(value: Any) -> Decimal | None:
+    """Normalize a persisted numeric value and reject populated nonnumbers."""
+    if value is None or normalized_text(value) == "":
+        return None
+    if isinstance(value, bool):
+        raise ValueError("Boolean is not a persisted numeric value")
+    try:
+        number = Decimal(normalized_text(value))
+    except InvalidOperation as exc:
+        raise ValueError(f"Nonnumeric persisted value: {value!r}") from exc
+    if not number.is_finite():
+        raise ValueError(f"Nonfinite persisted value: {value!r}")
+    return number
+
+
+def normalized_datetime(value: Any) -> str:
+    """Normalize persisted dates and equivalent timezone representations."""
+    if value is None or normalized_text(value) == "":
+        return ""
+    if isinstance(value, datetime):
+        if value.tzinfo is not None:
+            value = value.astimezone(UTC).replace(tzinfo=None)
+        return value.isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    raw = normalized_text(value)
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        try:
+            return date.fromisoformat(raw).isoformat()
+        except ValueError:
+            return raw
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone(UTC).replace(tzinfo=None)
+    return parsed.isoformat()
+
+
+def normalized_persisted_value(field_name: str, value: Any) -> Any:
+    """Normalize a reopened workbook value according to its field semantics."""
+    if field_name in PERSISTED_SCORE_FIELDS | PERSISTED_MINUTE_FIELDS:
+        return normalized_number(value)
+    if field_name in PERSISTED_DATE_FIELDS:
+        return normalized_datetime(value)
+    return normalized_text(value)
+
+
+def persisted_values_equal(field_name: str, expected: Any, actual: Any) -> bool:
+    """Compare values while tolerating only equivalent Excel representations."""
+    try:
+        normalized_expected = normalized_persisted_value(field_name, expected)
+        normalized_actual = normalized_persisted_value(field_name, actual)
+    except ValueError:
+        return False
+    if field_name in PERSISTED_SCORE_FIELDS:
+        if normalized_expected is None or normalized_actual is None:
+            return normalized_expected is normalized_actual
+        return (
+            abs(normalized_expected - normalized_actual)
+            <= PERSISTED_SCORE_TOLERANCE
+        )
+    return normalized_expected == normalized_actual
+
+
+def persisted_value_token(field_name: str, value: Any) -> str:
+    """Return a stable digest token for a normalized persisted value."""
+    try:
+        normalized = normalized_persisted_value(field_name, value)
+    except ValueError:
+        return f"!invalid!{normalized_text(value)}"
+    if normalized is None:
+        return ""
+    if field_name in PERSISTED_SCORE_FIELDS:
+        return f"{normalized:.12f}"
+    if field_name in PERSISTED_MINUTE_FIELDS:
+        return format(normalized.normalize(), "f")
+    return str(normalized)
+
+
+def assert_persisted_comparison_policy() -> None:
+    """Exercise the persisted-value equivalence boundary without workbook I/O."""
+    assert persisted_values_equal("Labor Standard ID", "", None)
+    assert persisted_values_equal("Mapped Minutes", 45, 45.0)
+    assert persisted_values_equal("Match Score", 0.82, Decimal("0.820000000000"))
+    assert persisted_values_equal("Match Evidence", " evidence ", "evidence")
+    assert not persisted_values_equal("Labor Standard ID", "LAB001", "LAB002")
+    assert not persisted_values_equal(
+        "Match Score", Decimal("0.82"), Decimal("0.820000000002")
+    )
+
+
 def normalized(value: Any) -> str:
     """Return a comparison key containing lowercase ASCII alphanumerics."""
     return " ".join(re.findall(r"[a-z0-9]+", text(value).lower()))
@@ -239,6 +381,19 @@ def sha256_file(path: Path) -> str:
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
+    return digest.hexdigest()
+
+
+def labor_audit_digest(records: Sequence[dict[str, Any]]) -> str:
+    """Return a deterministic digest covering every labor-audit value."""
+    digest = hashlib.sha256()
+    for record in records:
+        values = [
+            persisted_value_token(header, record.get(header))
+            for header in LABOR_AUDIT_HEADERS
+        ]
+        digest.update("\x1f".join(values).encode("ascii"))
+        digest.update(b"\n")
     return digest.hexdigest()
 
 
@@ -523,7 +678,7 @@ def labor_match(
         f"service_similarity={similarity:.3f}; "
         f"manufacturer_support={manufacturer_score:.3f}"
     )
-    if best_score < LABOR_MATCH_THRESHOLD:
+    if not best_id or best_score <= LABOR_MATCH_THRESHOLD:
         return LaborMatch(
             match_score=best_score,
             second_best_score=second_score,
@@ -750,12 +905,16 @@ def build_service_rows(
                 "Source Record Number": source_row,
                 "Service ID": service_id,
                 "Legacy Service Name": legacy_name,
-                "Proposed Labor Standard ID": labor.labor_id,
+                "Labor Standard ID": labor.labor_id,
                 "Match Score": labor.match_score,
-                "Second-Best Score": labor.second_best_score,
+                "Second Best Score": labor.second_best_score,
                 "Score Margin": labor.score_margin,
                 "Match Evidence": labor.evidence,
                 "Mapping Result": labor.mapping_result,
+                "Mapped Minutes": labor.standard_minutes,
+                "Mapped Labor Tier": labor.labor_tier,
+                "Mapped Difficulty": labor.difficulty,
+                "Mapped Skill Level": labor.skill_level,
             }
         )
     return output, labor_audit
@@ -1021,21 +1180,10 @@ def build_workbook(
         {"Validation Check": "Canonical import", "Result": "PASS", "Evidence": "Not performed"},
     ]
     append_table(sheets[SHEET_NAMES[13]], ["Validation Check", "Result", "Evidence"], validation_rows, "tblMasterServicesValidationSummary")
-    labor_audit_headers = [
-        "Source Record Number",
-        "Service ID",
-        "Legacy Service Name",
-        "Proposed Labor Standard ID",
-        "Match Score",
-        "Second-Best Score",
-        "Score Margin",
-        "Match Evidence",
-        "Mapping Result",
-    ]
     append_table_at(
         sheets[SHEET_NAMES[13]],
         start_row=len(validation_rows) + 4,
-        headers=labor_audit_headers,
+        headers=LABOR_AUDIT_HEADERS,
         records=labor_audit_rows,
         table_name="tblLaborMatchAudit",
     )
@@ -1044,7 +1192,7 @@ def build_workbook(
     highest_existing = max(
         existing_service_ids, key=lambda identifier: int(identifier[3:])
     )
-    metadata = [{"Metadata Field": "Artifact Type", "Value": "Proposed canonical Master Services Catalog"}, {"Metadata Field": "Generated At UTC", "Value": generated_at}, {"Metadata Field": "Expected Service Rows", "Value": EXPECTED_SERVICE_ROWS}, {"Metadata Field": "Highest Existing Service ID", "Value": highest_existing}, {"Metadata Field": "First Generated Service ID", "Value": service_rows[0]["Service ID"]}, {"Metadata Field": "Final Generated Service ID", "Value": service_rows[-1]["Service ID"]}, {"Metadata Field": "Malformed Existing Service IDs", "Value": "; ".join(malformed_existing_ids)}, {"Metadata Field": "Service ID Source Worksheet", "Value": SERVICE_ID_SOURCE_SHEET}, {"Metadata Field": "Output", "Value": str(OUTPUT_PATH)}]
+    metadata = [{"Metadata Field": "Artifact Type", "Value": "Proposed canonical Master Services Catalog"}, {"Metadata Field": "Generated At UTC", "Value": generated_at}, {"Metadata Field": "Expected Service Rows", "Value": EXPECTED_SERVICE_ROWS}, {"Metadata Field": "Highest Existing Service ID", "Value": highest_existing}, {"Metadata Field": "First Generated Service ID", "Value": service_rows[0]["Service ID"]}, {"Metadata Field": "Final Generated Service ID", "Value": service_rows[-1]["Service ID"]}, {"Metadata Field": "Malformed Existing Service IDs", "Value": "; ".join(malformed_existing_ids)}, {"Metadata Field": "Service ID Source Worksheet", "Value": SERVICE_ID_SOURCE_SHEET}, {"Metadata Field": "Labor Match Audit SHA-256", "Value": labor_audit_digest(labor_audit_rows)}, {"Metadata Field": "Output", "Value": str(OUTPUT_PATH)}]
     for path, digest in hashes.items():
         metadata.extend(({"Metadata Field": f"Protected Input: {path.name}", "Value": str(path)}, {"Metadata Field": f"SHA-256: {path.name}", "Value": digest}))
     append_table(sheets[SHEET_NAMES[15]], ["Metadata Field", "Value"], metadata, "tblMasterServicesImportMetadata")
@@ -1083,6 +1231,19 @@ def table_records(worksheet: Worksheet, table_name: str) -> list[dict[str, Any]]
     )
     headers = [text(value) for value in rows[0]]
     return [dict(zip(headers, row, strict=False)) for row in rows[1:] if row[0]]
+
+
+def table_headers(worksheet: Worksheet, table_name: str) -> list[str]:
+    """Return the exact header sequence for a named table."""
+    if table_name not in worksheet.tables:
+        raise CatalogError(f"Required table missing: {table_name}")
+    min_col, min_row, max_col, _max_row = range_boundaries(
+        worksheet.tables[table_name].ref
+    )
+    return [
+        text(worksheet.cell(row=min_row, column=column).value)
+        for column in range(min_col, max_col + 1)
+    ]
 
 
 def validate_defined_names_and_validations(
@@ -1217,6 +1378,7 @@ def validate_generated_workbook(
     hashes_before: dict[Path, str],
     existing_ids: set[str],
     malformed_existing_ids: Sequence[str],
+    expected_labor_audit_rows: Sequence[dict[str, Any]],
 ) -> list[str]:
     """Reopen the generated workbook and run essential structural checks."""
     workbook = load_workbook(path, read_only=False, data_only=False)
@@ -1226,6 +1388,16 @@ def validate_generated_workbook(
             raise CatalogError("Generated worksheet names/order are invalid")
         if len(set(workbook.sheetnames)) != 16 or any(len(name) > 31 for name in workbook.sheetnames):
             raise CatalogError("Generated worksheet names violate Excel constraints")
+        for sheet_name, expected_tables in TABLE_NAMES_BY_SHEET.items():
+            worksheet = workbook[sheet_name]
+            if set(worksheet.tables) != expected_tables:
+                raise CatalogError(
+                    f"Excel Table contract is invalid on {sheet_name!r}"
+                )
+            if worksheet.freeze_panes != "A2":
+                raise CatalogError(f"Header row is not frozen on {sheet_name!r}")
+            if not worksheet.auto_filter.ref:
+                raise CatalogError(f"Filters are not enabled on {sheet_name!r}")
         master = workbook[SHEET_NAMES[1]]
         if "tblMasterServicesCatalog" not in master.tables:
             raise CatalogError("tblMasterServicesCatalog is missing")
@@ -1257,24 +1429,86 @@ def validate_generated_workbook(
         labor_audit = table_records(
             workbook[SHEET_NAMES[13]], "tblLaborMatchAudit"
         )
+        if (
+            table_headers(workbook[SHEET_NAMES[13]], "tblLaborMatchAudit")
+            != LABOR_AUDIT_HEADERS
+        ):
+            raise CatalogError("Labor match audit schema is invalid")
         if len(labor_audit) != EXPECTED_SERVICE_ROWS:
             raise CatalogError("Labor match audit does not cover all service rows")
-        if any(
-            text(record.get("Mapping Result"))
-            not in {"Mapped", "Pending Labor Mapping", "Ambiguous"}
-            for record in labor_audit
+        for audit_row_number, (expected, reopened) in enumerate(
+            zip(expected_labor_audit_rows, labor_audit, strict=True),
+            start=2,
         ):
-            raise CatalogError("Labor match audit contains an invalid Mapping Result")
+            service_id = normalized_text(
+                reopened.get("Service ID") or expected.get("Service ID")
+            )
+            for field in LABOR_AUDIT_HEADERS:
+                expected_value = expected.get(field)
+                reopened_value = reopened.get(field)
+                if not persisted_values_equal(
+                    field,
+                    expected_value,
+                    reopened_value,
+                ):
+                    raise CatalogError(
+                        f"Audit row {audit_row_number} ({service_id}) changed "
+                        f"{field}: expected {expected_value!r} "
+                        f"({type(expected_value).__name__}), reopened "
+                        f"{reopened_value!r} "
+                        f"({type(reopened_value).__name__})"
+                    )
+        service_ids = [text(record.get("Service ID")) for record in service_records]
+        audit_ids = [text(record.get("Service ID")) for record in labor_audit]
+        if audit_ids != service_ids:
+            raise CatalogError(
+                "Labor match audit rows do not preserve service order and identity"
+            )
+        if len(audit_ids) != len(set(audit_ids)):
+            raise CatalogError("Labor match audit contains duplicate Service IDs")
+        if any(not SERVICE_ID_PATTERN.fullmatch(identifier) for identifier in audit_ids):
+            raise CatalogError("Labor match audit contains an invalid Service ID")
         services_by_id = {
             text(record.get("Service ID")): record for record in service_records
         }
+        labor_by_id = {
+            text(record.get("Labor ID")): record
+            for record in worksheet_records(workbook[SHEET_NAMES[6]])
+            if text(record.get("Labor ID"))
+        }
         for record in labor_audit:
-            service = services_by_id[text(record.get("Service ID"))]
+            service_id = text(record.get("Service ID"))
+            service = services_by_id[service_id]
             result = text(record.get("Mapping Result"))
-            audit_labor_id = text(record.get("Proposed Labor Standard ID"))
+            if result not in {"Mapped", "Pending Labor Mapping", "Ambiguous"}:
+                raise CatalogError(
+                    "Labor match audit contains an invalid Mapping Result"
+                )
+            if record.get("Source Record Number") != service.get(
+                "Source Record Number"
+            ):
+                raise CatalogError(
+                    f"Labor audit source row changed for {service_id}"
+                )
+            if text(record.get("Legacy Service Name")) != text(
+                service.get("Service Name")
+            ):
+                raise CatalogError(
+                    f"Labor audit legacy service name changed for {service_id}"
+                )
+            audit_labor_id = text(record.get("Labor Standard ID"))
             service_labor_id = text(service.get("Labor Standard ID"))
             match_score = float(record.get("Match Score") or 0)
+            second_score = float(record.get("Second Best Score") or 0)
             score_margin = float(record.get("Score Margin") or 0)
+            if abs((match_score - second_score) - score_margin) > 1e-9:
+                raise CatalogError(
+                    f"Labor audit score margin is inconsistent for {service_id}"
+                )
+            if not text(record.get("Match Evidence")):
+                raise CatalogError(
+                    f"Labor audit evidence is blank for {service_id}"
+                )
             if result == "Mapped" and (
                 not audit_labor_id or audit_labor_id != service_labor_id
             ):
@@ -1282,15 +1516,90 @@ def validate_generated_workbook(
             if result != "Mapped" and (audit_labor_id or service_labor_id):
                 raise CatalogError("Unresolved labor audit row populated a labor ID")
             if result == "Mapped" and (
-                match_score < LABOR_MATCH_THRESHOLD
+                match_score <= LABOR_MATCH_THRESHOLD
                 or score_margin <= LABOR_TIE_MARGIN
             ):
                 raise CatalogError("Mapped labor audit row is below or tied at threshold")
             if result == "Ambiguous" and (
-                match_score < LABOR_MATCH_THRESHOLD
+                match_score <= LABOR_MATCH_THRESHOLD
                 or score_margin > LABOR_TIE_MARGIN
             ):
                 raise CatalogError("Ambiguous labor audit scores are inconsistent")
+            if result == "Pending Labor Mapping" and (
+                match_score > LABOR_MATCH_THRESHOLD
+                and score_margin > LABOR_TIE_MARGIN
+            ):
+                raise CatalogError(
+                    "Eligible labor audit row was left Pending Labor Mapping"
+                )
+            mapped_fields = {
+                "Mapped Minutes": service.get("Standard Minutes", ""),
+                "Mapped Labor Tier": text(service.get("Labor Tier")),
+                "Mapped Difficulty": text(service.get("Repair Difficulty")),
+                "Mapped Skill Level": text(service.get("Skill Level")),
+            }
+            if result == "Mapped":
+                labor = labor_by_id.get(audit_labor_id)
+                if labor is None:
+                    raise CatalogError(
+                        f"Labor audit references unknown Labor Standard ID "
+                        f"{audit_labor_id!r}"
+                    )
+                expected_service_labor_fields = {
+                    "Standard Minutes": labor.get("Standard Minutes", ""),
+                    "Minimum Minutes": labor.get("Minimum Minutes", ""),
+                    "Maximum Minutes": labor.get("Maximum Minutes", ""),
+                    "Labor Tier": text(labor.get("Labor Rate Tier")),
+                    "Repair Difficulty": text(labor.get("Repair Difficulty")),
+                    "Skill Level": text(labor.get("Skill Level")),
+                }
+                for field, expected_value in expected_service_labor_fields.items():
+                    actual_value = service.get(field)
+                    if not persisted_values_equal(
+                        field,
+                        expected_value,
+                        actual_value,
+                    ):
+                        raise CatalogError(
+                            f"Audit row for {service_id} changed {field}: expected "
+                            f"{expected_value!r} ({type(expected_value).__name__}), "
+                            f"reopened {actual_value!r} "
+                            f"({type(actual_value).__name__})"
+                        )
+                expected_labor_fields = {
+                    "Mapped Minutes": labor.get("Standard Minutes", ""),
+                    "Mapped Labor Tier": text(labor.get("Labor Rate Tier")),
+                    "Mapped Difficulty": text(labor.get("Repair Difficulty")),
+                    "Mapped Skill Level": text(labor.get("Skill Level")),
+                }
+                for comparisons in (mapped_fields, expected_labor_fields):
+                    for field, expected_value in comparisons.items():
+                        actual_value = record.get(field)
+                        if not persisted_values_equal(
+                            field,
+                            expected_value,
+                            actual_value,
+                        ):
+                            raise CatalogError(
+                                f"Audit row for {service_id} changed {field}: "
+                                f"expected {expected_value!r} "
+                                f"({type(expected_value).__name__}), reopened "
+                                f"{actual_value!r} "
+                                f"({type(actual_value).__name__})"
+                            )
+            elif any(text(record.get(field)) for field in mapped_fields):
+                raise CatalogError(
+                    f"Unresolved labor audit row has mapped values for {service_id}"
+                )
+        metadata_values = {
+            text(record.get("Metadata Field")): text(record.get("Value"))
+            for record in worksheet_records(workbook[SHEET_NAMES[15]])
+        }
+        expected_audit_digest = metadata_values.get("Labor Match Audit SHA-256")
+        if not expected_audit_digest:
+            raise CatalogError("Labor match audit digest metadata is missing")
+        if labor_audit_digest(labor_audit) != expected_audit_digest:
+            raise CatalogError("Labor match audit values changed after generation")
         table_names = [name for sheet in workbook.worksheets for name in sheet.tables]
         if len(table_names) != len(set(table_names)):
             raise CatalogError("Excel Table names are not unique")
@@ -1319,6 +1628,7 @@ def validate_generated_workbook(
 def main() -> int:
     """Generate and validate the standalone proposed Master Services workbook."""
     try:
+        assert_persisted_comparison_policy()
         protected = (
             RAW_PATH,
             STAGING_PATH,
@@ -1380,6 +1690,7 @@ def main() -> int:
             hashes,
             existing_service_ids,
             malformed_existing_ids,
+            labor_audit_rows,
         )
         print(f"Generated: {OUTPUT_PATH}")
         print(f"Master Services rows: {len(service_rows)}")

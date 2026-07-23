@@ -14,7 +14,8 @@ import zipfile
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from decimal import Decimal, InvalidOperation
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
@@ -42,16 +43,33 @@ APPROVED_THRESHOLD = 0.82
 MATERIAL_TIE_MARGIN = 0.03
 MAPPING_RESULTS = {"Mapped", "Pending Labor Mapping", "Ambiguous"}
 SERVICE_ID_PATTERN = re.compile(r"^SVC\d{6}$")
+PERSISTED_SCORE_FIELDS = {"Match Score", "Second Best Score", "Score Margin"}
+PERSISTED_MINUTE_FIELDS = {
+    "Standard Minutes",
+    "Minimum Minutes",
+    "Maximum Minutes",
+    "Mapped Minutes",
+    "Matched Standard Minutes",
+    "Matched Minimum Minutes",
+    "Matched Maximum Minutes",
+}
+PERSISTED_DATE_FIELDS = {
+    "Effective Date",
+    "Last Reviewed",
+    "Created At",
+    "Updated At",
+    "Generated At UTC",
+    "Decision Date",
+}
+PERSISTED_SCORE_TOLERANCE = Decimal("1e-12")
 
 REQUIRED_SERVICE_HEADERS = {
     "Service ID",
-    "Legacy Service SKU",
     "Manufacturer Name",
     "Device Family Name",
     "Device Model",
     "Repair Type",
     "Service Name",
-    "Labor Standard ID",
     "Repair Difficulty",
     "Skill Level",
     "Source Record Number",
@@ -73,25 +91,17 @@ REQUIRED_LABOR_HEADERS = {
 AUDIT_HEADERS = [
     "Source Record Number",
     "Service ID",
-    "Legacy Service SKU",
-    "Manufacturer",
-    "Device Family",
-    "Repair Type",
-    "Service Name",
-    "Device Model",
-    "Existing Labor Standard ID",
-    "Proposed Labor Standard ID",
+    "Legacy Service Name",
+    "Labor Standard ID",
     "Match Score",
     "Second Best Score",
     "Score Margin",
     "Match Evidence",
     "Mapping Result",
-    "Matched Standard Minutes",
-    "Matched Minimum Minutes",
-    "Matched Maximum Minutes",
-    "Matched Labor Tier",
-    "Matched Repair Difficulty",
-    "Matched Skill Level",
+    "Mapped Minutes",
+    "Mapped Labor Tier",
+    "Mapped Difficulty",
+    "Mapped Skill Level",
 ]
 
 FEATURE_WEIGHTS = {
@@ -144,6 +154,87 @@ def ascii_value(value: Any) -> Any:
 def text(value: Any) -> str:
     """Return a stripped ASCII-safe representation."""
     return "" if value is None else str(ascii_value(value)).strip()
+
+
+def normalized_text(value: Any) -> str:
+    """Normalize persisted text without changing substantive characters."""
+    return "" if value is None else str(value).strip()
+
+
+def normalized_number(value: Any) -> Decimal | None:
+    """Normalize a persisted numeric value and reject populated nonnumbers."""
+    if value is None or normalized_text(value) == "":
+        return None
+    if isinstance(value, bool):
+        raise ValueError("Boolean is not a persisted numeric value")
+    try:
+        number = Decimal(normalized_text(value))
+    except InvalidOperation as exc:
+        raise ValueError(f"Nonnumeric persisted value: {value!r}") from exc
+    if not number.is_finite():
+        raise ValueError(f"Nonfinite persisted value: {value!r}")
+    return number
+
+
+def normalized_datetime(value: Any) -> str:
+    """Normalize persisted dates and equivalent timezone representations."""
+    if value is None or normalized_text(value) == "":
+        return ""
+    if isinstance(value, datetime):
+        if value.tzinfo is not None:
+            value = value.astimezone(UTC).replace(tzinfo=None)
+        return value.isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    raw = normalized_text(value)
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        try:
+            return date.fromisoformat(raw).isoformat()
+        except ValueError:
+            return raw
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone(UTC).replace(tzinfo=None)
+    return parsed.isoformat()
+
+
+def normalized_persisted_value(field_name: str, value: Any) -> Any:
+    """Normalize a reopened workbook value according to its field semantics."""
+    if field_name in PERSISTED_SCORE_FIELDS | PERSISTED_MINUTE_FIELDS:
+        return normalized_number(value)
+    if field_name in PERSISTED_DATE_FIELDS:
+        return normalized_datetime(value)
+    return normalized_text(value)
+
+
+def persisted_values_equal(field_name: str, expected: Any, actual: Any) -> bool:
+    """Compare values while tolerating only equivalent Excel representations."""
+    try:
+        normalized_expected = normalized_persisted_value(field_name, expected)
+        normalized_actual = normalized_persisted_value(field_name, actual)
+    except ValueError:
+        return False
+    if field_name in PERSISTED_SCORE_FIELDS:
+        if normalized_expected is None or normalized_actual is None:
+            return normalized_expected is normalized_actual
+        return (
+            abs(normalized_expected - normalized_actual)
+            <= PERSISTED_SCORE_TOLERANCE
+        )
+    return normalized_expected == normalized_actual
+
+
+def assert_persisted_comparison_policy() -> None:
+    """Exercise the persisted-value equivalence boundary without workbook I/O."""
+    assert persisted_values_equal("Labor Standard ID", "", None)
+    assert persisted_values_equal("Mapped Minutes", 45, 45.0)
+    assert persisted_values_equal("Match Score", 0.82, Decimal("0.820000000000"))
+    assert persisted_values_equal("Match Evidence", " evidence ", "evidence")
+    assert not persisted_values_equal("Labor Standard ID", "LAB001", "LAB002")
+    assert not persisted_values_equal(
+        "Match Score", Decimal("0.82"), Decimal("0.820000000002")
+    )
 
 
 def normalized(value: Any) -> str:
@@ -400,33 +491,17 @@ def score_service(
     return {
         "Source Record Number": service.get("Source Record Number"),
         "Service ID": text(service.get("Service ID")),
-        "Legacy Service SKU": text(service.get("Legacy Service SKU")),
-        "Manufacturer": text(service.get("Manufacturer Name")),
-        "Device Family": text(service.get("Device Family Name")),
-        "Repair Type": text(service.get("Repair Type")),
-        "Service Name": text(service.get("Service Name")),
-        "Device Model": text(service.get("Device Model")),
-        "Existing Labor Standard ID": text(service.get("Labor Standard ID")),
-        "Proposed Labor Standard ID": proposed_id,
+        "Legacy Service Name": text(service.get("Service Name")),
+        "Labor Standard ID": proposed_id,
         "Match Score": best.score,
         "Second Best Score": second_score,
         "Score Margin": margin,
         "Match Evidence": best.evidence,
         "Mapping Result": result,
-        "Matched Standard Minutes": best.labor.get("Standard Minutes", "")
-        if mapped
-        else "",
-        "Matched Minimum Minutes": best.labor.get("Minimum Minutes", "")
-        if mapped
-        else "",
-        "Matched Maximum Minutes": best.labor.get("Maximum Minutes", "")
-        if mapped
-        else "",
-        "Matched Labor Tier": text(best.labor.get("Labor Rate Tier")) if mapped else "",
-        "Matched Repair Difficulty": text(best.labor.get("Repair Difficulty"))
-        if mapped
-        else "",
-        "Matched Skill Level": text(best.labor.get("Skill Level")) if mapped else "",
+        "Mapped Minutes": best.labor.get("Standard Minutes", "") if mapped else "",
+        "Mapped Labor Tier": text(best.labor.get("Labor Rate Tier")) if mapped else "",
+        "Mapped Difficulty": text(best.labor.get("Repair Difficulty")) if mapped else "",
+        "Mapped Skill Level": text(best.labor.get("Skill Level")) if mapped else "",
     }
 
 
@@ -567,12 +642,33 @@ def validate_audit_rows(
         raise MappingError("Master Services is not ordered by Source Record Number")
     if len(numeric_source_numbers) != len(set(numeric_source_numbers)):
         raise MappingError("Master Services contains duplicate Source Record Numbers")
+    audit_source_numbers = [
+        int(row.get("Source Record Number")) for row in audit_rows
+    ]
+    if audit_source_numbers != numeric_source_numbers:
+        raise MappingError("Audit source rows do not preserve source order and identity")
+    if len(audit_source_numbers) != len(set(audit_source_numbers)):
+        raise MappingError("Audit contains duplicate Source Record Numbers")
 
     for row_number, row in enumerate(audit_rows, start=2):
         result = text(row.get("Mapping Result"))
-        proposed_id = text(row.get("Proposed Labor Standard ID"))
+        proposed_id = text(row.get("Labor Standard ID"))
         score = float(row.get("Match Score") or 0)
+        second_score = float(row.get("Second Best Score") or 0)
         margin = float(row.get("Score Margin") or 0)
+        service = services[row_number - 2]
+        if text(row.get("Legacy Service Name")) != text(
+            service.get("Service Name")
+        ):
+            raise MappingError(
+                f"Audit service name changed in row {row_number}"
+            )
+        if abs((score - second_score) - margin) > 1e-9:
+            raise MappingError(
+                f"Audit score margin is inconsistent in row {row_number}"
+            )
+        if not text(row.get("Match Evidence")):
+            raise MappingError(f"Audit evidence is blank in row {row_number}")
         if result not in MAPPING_RESULTS:
             raise MappingError(f"Invalid Mapping Result in audit row {row_number}")
         if result == "Mapped":
@@ -584,20 +680,40 @@ def validate_audit_rows(
                 )
             labor = labor_by_id[proposed_id]
             comparisons = {
-                "Matched Standard Minutes": labor.get("Standard Minutes", ""),
-                "Matched Minimum Minutes": labor.get("Minimum Minutes", ""),
-                "Matched Maximum Minutes": labor.get("Maximum Minutes", ""),
-                "Matched Labor Tier": text(labor.get("Labor Rate Tier")),
-                "Matched Repair Difficulty": text(labor.get("Repair Difficulty")),
-                "Matched Skill Level": text(labor.get("Skill Level")),
+                "Mapped Minutes": labor.get("Standard Minutes", ""),
+                "Mapped Labor Tier": text(labor.get("Labor Rate Tier")),
+                "Mapped Difficulty": text(labor.get("Repair Difficulty")),
+                "Mapped Skill Level": text(labor.get("Skill Level")),
             }
-            if any(row.get(field) != value for field, value in comparisons.items()):
-                raise MappingError(
-                    f"Mapped labor fields were not copied exactly in audit row {row_number}"
-                )
+            for field, expected_value in comparisons.items():
+                actual_value = row.get(field)
+                if not persisted_values_equal(
+                    field,
+                    expected_value,
+                    actual_value,
+                ):
+                    raise MappingError(
+                        f"Audit row {row_number} "
+                        f"({row.get('Service ID')}) changed {field}: expected "
+                        f"{expected_value!r} ({type(expected_value).__name__}), "
+                        f"actual {actual_value!r} "
+                        f"({type(actual_value).__name__})"
+                    )
         elif proposed_id:
             raise MappingError(
                 f"Unresolved audit row {row_number} contains an invented labor ID"
+            )
+        elif any(
+            text(row.get(field))
+            for field in (
+                "Mapped Minutes",
+                "Mapped Labor Tier",
+                "Mapped Difficulty",
+                "Mapped Skill Level",
+            )
+        ):
+            raise MappingError(
+                f"Unresolved audit row {row_number} contains mapped labor values"
             )
         if result == "Pending Labor Mapping" and (
             score > APPROVED_THRESHOLD and margin > MATERIAL_TIE_MARGIN
@@ -630,6 +746,12 @@ def validate_reopened_report(
         worksheet = workbook["01 - Mapping Audit"]
         if "tblMasterLaborMappingAudit" not in worksheet.tables:
             raise MappingError("tblMasterLaborMappingAudit is missing")
+        reopened_headers = [
+            text(cell.value)
+            for cell in worksheet[1]
+        ]
+        if reopened_headers != AUDIT_HEADERS:
+            raise MappingError("Reopened audit report schema is invalid")
         records = list(worksheet.iter_rows(min_row=2, values_only=True))
         records = [row for row in records if row[0] is not None]
         if len(records) != EXPECTED_SERVICE_ROWS:
@@ -639,28 +761,29 @@ def validate_reopened_report(
         reopened_ids = [text(row[service_id_column]) for row in records]
         if reopened_ids != list(source_service_ids):
             raise MappingError("Reopened audit report changed Service IDs or order")
-        comparison_fields = (
-            "Proposed Labor Standard ID",
-            "Match Score",
-            "Second Best Score",
-            "Score Margin",
-            "Match Evidence",
-            "Mapping Result",
-            "Matched Standard Minutes",
-            "Matched Minimum Minutes",
-            "Matched Maximum Minutes",
-            "Matched Labor Tier",
-            "Matched Repair Difficulty",
-            "Matched Skill Level",
-        )
         for row_number, (actual, expected) in enumerate(
             zip(reopened, expected_audit_rows, strict=True),
             start=2,
         ):
-            for field in comparison_fields:
-                if actual.get(field) != expected.get(field):
+            for field in AUDIT_HEADERS:
+                expected_value = expected.get(field)
+                reopened_value = actual.get(field)
+                if not persisted_values_equal(
+                    field,
+                    expected_value,
+                    reopened_value,
+                ):
+                    service_id = normalized_text(
+                        reopened_value
+                        if field == "Service ID"
+                        else actual.get("Service ID") or expected.get("Service ID")
+                    )
                     raise MappingError(
-                        f"Reopened audit row {row_number} changed {field}"
+                        f"Audit row {row_number} ({service_id}) changed {field}: "
+                        f"expected {expected_value!r} "
+                        f"({type(expected_value).__name__}), reopened "
+                        f"{reopened_value!r} "
+                        f"({type(reopened_value).__name__})"
                     )
     finally:
         workbook.close()
@@ -683,6 +806,7 @@ def validate_reopened_report(
 def main() -> int:
     """Generate and validate the standalone labor mapping audit report."""
     try:
+        assert_persisted_comparison_policy()
         protected = (MASTER_SERVICES_PATH, LABOR_CATALOG_PATH)
         require_files(protected)
         hashes_before = {path: sha256_file(path) for path in protected}

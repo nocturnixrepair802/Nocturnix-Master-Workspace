@@ -28,8 +28,8 @@ not calculate prices or costs and does not modify an authoritative workbook.
 
 ## Service Identity Rules
 
-- Read all existing Service IDs from `Nocturnix_Master_Database.xlsx`, worksheet
-  `34 Master Services`, at runtime.
+- Read all existing Service IDs from `Data/Nocturnix_Master_Database.xlsm`,
+  worksheet `34 Master Services`, at runtime.
 - Accept existing IDs for sequence calculation only when they match
   `^SVC\d{6}$`; report malformed values and exclude them from the calculation.
 - Assign new IDs in ascending Source Record Number order using the next number
@@ -48,18 +48,107 @@ not calculate prices or costs and does not modify an authoritative workbook.
 
 ## Labor Mapping Rules
 
-Labor matching uses Device Category, Manufacturer, Device Scope, Service, Repair
-Difficulty, and Skill Level. The generator derives a device category from legacy
-type/group/name text, compares service descriptions to labor service names, and
-uses manufacturer agreement as supporting evidence. A match is accepted only
-when its score clears the documented threshold and is not materially tied with a
-different labor record.
+The catalog generator's embedded preliminary mapping derives Device Category
+from legacy type/group/name text, compares the legacy group/name/type values to
+the labor Service, and uses Manufacturer agreement as supporting evidence.
+
+The standalone Master Labor Mapping Engine V1 rescoring audit uses
+Manufacturer, Device Family, Repair Type, Service Name similarity, Device Model
+keywords, Labor Category, Repair Difficulty, and Skill Level. Candidate ordering
+is deterministic. Both workflows accept a match only when its score is greater
+than `0.82` and its score margin is greater than `0.03`. Materially tied rows are
+`Ambiguous`; lower-scoring rows are `Pending Labor Mapping`.
 
 When a reliable match exists, the generator copies Labor Standard ID, Standard,
 Minimum, and Maximum Minutes, Labor Tier, Repair Difficulty, and Skill Level.
 When evidence is insufficient, Labor Standard ID and time fields remain blank,
 the service is preserved, and Review Status becomes `Pending Labor Mapping`.
 The generator never invents a labor duration.
+
+The embedded and standalone audit tables use this exact 13-column schema:
+
+1. Source Record Number
+2. Service ID
+3. Legacy Service Name
+4. Labor Standard ID
+5. Match Score
+6. Second Best Score
+7. Score Margin
+8. Match Evidence
+9. Mapping Result
+10. Mapped Minutes
+11. Mapped Labor Tier
+12. Mapped Difficulty
+13. Mapped Skill Level
+
+Unresolved audit rows leave Labor Standard ID and all mapped fields blank.
+
+## Workbook Contract
+
+The generated Master Services workbook contains these 16 worksheets in this
+exact order:
+
+1. `00 - Instructions`
+2. `01 - Master Services`
+3. `02 - Service Categories`
+4. `03 - Repair Types`
+5. `04 - Device Families`
+6. `05 - Manufacturers`
+7. `06 - Labor Standards`
+8. `07 - Labor Tiers`
+9. `08 - Difficulty Levels`
+10. `09 - Skill Levels`
+11. `10 - Turnaround Times`
+12. `11 - Warranty Options`
+13. `12 - Status Values`
+14. `13 - Validation Summary`
+15. `14 - Revision History`
+16. `15 - Import Metadata`
+
+The primary `01 - Master Services` table is
+`tblMasterServicesCatalog` and contains exactly the 45 fields in the data
+dictionary. `13 - Validation Summary` contains both
+`tblMasterServicesValidationSummary` and `tblLaborMatchAudit`. Every other
+worksheet contains its single documented Excel Table.
+
+| Worksheet | Excel Table |
+|---|---|
+| 00 - Instructions | `tblMasterServicesInstructions` |
+| 01 - Master Services | `tblMasterServicesCatalog` |
+| 02 - Service Categories | `tblServiceCategories` |
+| 03 - Repair Types | `tblRepairTypes` |
+| 04 - Device Families | `tblDeviceFamilies` |
+| 05 - Manufacturers | `tblManufacturers` |
+| 06 - Labor Standards | `tblLaborStandardsLookup` |
+| 07 - Labor Tiers | `tblLaborTiersLookup` |
+| 08 - Difficulty Levels | `tblDifficultyLevels` |
+| 09 - Skill Levels | `tblSkillLevels` |
+| 10 - Turnaround Times | `tblTurnaroundTimes` |
+| 11 - Warranty Options | `tblWarrantyOptions` |
+| 12 - Status Values | `tblServiceStatusValues` |
+| 13 - Validation Summary | `tblMasterServicesValidationSummary`; `tblLaborMatchAudit` |
+| 14 - Revision History | `tblMasterServicesRevisionHistory` |
+| 15 - Import Metadata | `tblMasterServicesImportMetadata` |
+
+All Master Services list validations reference these workbook-defined names:
+
+- `DV_YesNo`
+- `DV_ServiceStatuses`
+- `DV_PricingStatuses`
+- `DV_ReviewStatuses`
+- `DV_ManufacturerIDs`
+- `DV_DeviceFamilyCodes`
+- `DV_ServiceCategoryIDs`
+- `DV_RepairTypeIDs`
+- `DV_LaborStandardIDs`
+- `DV_LaborTiers`
+- `DV_DifficultyLevels`
+- `DV_SkillLevels`
+- `DV_TurnaroundTimes`
+- `DV_WarrantyOptions`
+
+Direct cross-sheet list-validation formulas are prohibited. Warranty Options
+always includes `N/A`.
 
 ## Pricing Deferral Rules
 
