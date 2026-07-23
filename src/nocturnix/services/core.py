@@ -10,6 +10,7 @@ from nocturnix.models import (
     ApprovalRecord,
     ApprovalStatus,
     AuditEvent,
+    ChatRequest,
     ChatResponse,
     RepairIntakeRequest,
     RepairIntakeResponse,
@@ -17,7 +18,6 @@ from nocturnix.models import (
     SourceMetadata,
     UserIdentity,
 )
-from nocturnix.repositories.memory import InMemoryApprovalRepository, InMemoryAuditRepository
 
 SENSITIVE_KEYS = ("password", "token", "secret", "card", "ssn", "auth", "imei", "serial")
 SAFETY_TERMS = {
@@ -56,7 +56,7 @@ def redact_metadata(metadata: dict[str, object]) -> dict[str, object]:
 
 
 class AuditService:
-    def __init__(self, repo: InMemoryAuditRepository) -> None:
+    def __init__(self, repo) -> None:
         self.repo = repo
 
     def record(
@@ -94,7 +94,7 @@ class AuditService:
 
 
 class ApprovalService:
-    def __init__(self, repo: InMemoryApprovalRepository, audit: AuditService) -> None:
+    def __init__(self, repo, audit: AuditService) -> None:
         self.repo = repo
         self.audit = audit
 
@@ -142,9 +142,16 @@ class ApprovalService:
             self.repo.update(approval)
             raise ApprovalConflict("approval has expired")
         now = datetime.now(UTC)
+        claimed = self.repo.claim_execution(approval.id, user.user_id)
+        if claimed is None:
+            raise ApprovalConflict("approval is not pending")
+        approval = claimed
         approval.status = ApprovalStatus.approved
+        approval.approved_at = now
+        approval.completed_at = now
         approval.decided_at = now
-        approval.mock_execution_result = "mock execution recorded; no external action was taken"
+        approval.execution_result = "mock execution recorded; no external action was taken"
+        approval.mock_execution_result = approval.execution_result
         self.repo.update(approval)
         self.audit.record(
             user,
@@ -162,7 +169,8 @@ class ApprovalService:
         if approval.status != ApprovalStatus.pending:
             raise ApprovalConflict("approval is not pending")
         approval.status = ApprovalStatus.rejected
-        approval.decided_at = datetime.now(UTC)
+        approval.rejected_at = datetime.now(UTC)
+        approval.decided_at = approval.rejected_at
         self.repo.update(approval)
         self.audit.record(user, "approval", "rejected", resource_id=approval.id)
         return approval
@@ -274,4 +282,103 @@ class RepairService:
                 "This mock intake does not guarantee price, repairability, completion time, "
                 "or data recovery."
             ),
+        )
+
+
+class ConversationService:
+    def __init__(self, conversations, messages, retention_days: int) -> None:
+        self.conversations = conversations
+        self.messages = messages
+        self.retention_days = retention_days
+
+    def persist_exchange(
+        self, user: UserIdentity, req: ChatRequest, response: ChatResponse
+    ) -> None:
+        from datetime import timedelta
+
+        from nocturnix.models import ChatMessageRecord, ConversationRecord
+
+        now = datetime.now(UTC)
+        conversation = self.conversations.get(response.conversation_id)
+        if conversation is None:
+            conversation = ConversationRecord(
+                id=response.conversation_id,
+                owner_user_id=user.user_id,
+                mode=req.mode,
+                escalation_state="escalated" if response.escalation else "none",
+                retention_expires_at=now + timedelta(days=self.retention_days),
+            )
+            self.conversations.add(conversation)
+        elif conversation.owner_user_id != user.user_id:
+            raise PermissionDenied("conversation belongs to another user")
+        else:
+            conversation.updated_at = now
+            if response.escalation:
+                conversation.escalation_state = "escalated"
+            self.conversations.update(conversation)
+        self.messages.add(
+            ChatMessageRecord(conversation_id=conversation.id, role="user", content=req.message)
+        )
+        self.messages.add(
+            ChatMessageRecord(
+                conversation_id=conversation.id,
+                role="assistant",
+                content=response.response,
+                source_metadata={"source_count": len(response.sources)},
+                tool_summary_metadata={"mock_provider": True},
+            )
+        )
+
+
+class PreferenceService:
+    def __init__(self, repo) -> None:
+        self.repo = repo
+
+    def get(self, user: UserIdentity):
+        from nocturnix.models import UserPreferences
+
+        return self.repo.get(user.user_id) or UserPreferences(owner_user_id=user.user_id)
+
+    def update(self, user: UserIdentity, req):
+        current = self.get(user)
+        data = current.model_dump()
+        for key, value in req.model_dump(exclude_unset=True).items():
+            if value is not None:
+                data[key] = value
+        data["owner_user_id"] = user.user_id
+        data["created_at"] = current.created_at
+        data["updated_at"] = datetime.now(UTC)
+        return self.repo.upsert(type(current)(**data))
+
+
+class RetentionService:
+    def __init__(self, audit: AuditService, settings) -> None:
+        self.audit = audit
+        self.settings = settings
+
+    def cleanup(self, user: UserIdentity, dry_run: bool = True):
+        from datetime import timedelta
+
+        from nocturnix.models import RetentionCleanupReport
+
+        now = datetime.now(UTC)
+        candidate_counts = {
+            "audit_events": self.audit.repo.count_candidates(
+                (now - timedelta(days=self.settings.audit_retention_days)).isoformat()
+            ),
+            "conversations": 0,
+            "repair_intakes": 0,
+            "approvals": 0,
+        }
+        self.audit.record(
+            user,
+            "retention",
+            "cleanup_dry_run" if dry_run else "cleanup_requested",
+            metadata={"candidate_counts": candidate_counts, "physical_delete_enabled": False},
+        )
+        return RetentionCleanupReport(
+            dry_run=dry_run,
+            candidate_counts=candidate_counts,
+            deleted_counts={k: 0 for k in candidate_counts},
+            audit_recorded=True,
         )

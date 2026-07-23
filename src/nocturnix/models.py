@@ -8,7 +8,7 @@ from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 APP_NAME = "Nocturnix AI Assistant"
-APP_VERSION = "0.1.2"
+APP_VERSION = "0.1.3"
 DEV_USER_ID = "dev-user-001"
 
 
@@ -28,6 +28,10 @@ class ApprovalStatus(StrEnum):
     approved = "approved"
     rejected = "rejected"
     expired = "expired"
+    cancelled = "cancelled"
+    executing = "executing"
+    completed = "completed"
+    failed = "failed"
 
 
 class UserIdentity(StrictModel):
@@ -141,6 +145,18 @@ class ApprovalRecord(StrictModel):
     status: ApprovalStatus = ApprovalStatus.pending
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     expires_at: datetime = Field(default_factory=lambda: datetime.now(UTC) + timedelta(minutes=30))
+    content_hash: str = ""
+    action_integrity_hash: str = ""
+    requested_permissions: list[str] = Field(default_factory=list)
+    approved_at: datetime | None = None
+    rejected_at: datetime | None = None
+    cancelled_at: datetime | None = None
+    execution_started_at: datetime | None = None
+    completed_at: datetime | None = None
+    failed_at: datetime | None = None
+    execution_result: str | None = None
+    failure_reason: str | None = None
+    version: int = 1
     decided_at: datetime | None = None
     mock_execution_result: str | None = None
 
@@ -184,3 +200,90 @@ class CalendarProposal(StrictModel):
         if self.end <= self.start:
             raise ValueError("end must be after start")
         return self
+
+
+class ConversationRecord(StrictModel):
+    id: str = Field(default_factory=lambda: f"conv_{uuid4().hex[:12]}")
+    owner_user_id: str
+    mode: str = "personal"
+    status: str = "active"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    escalation_state: str = "none"
+    retention_expires_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC) + timedelta(days=30)
+    )
+
+
+class ChatMessageRecord(StrictModel):
+    id: str = Field(default_factory=lambda: f"msg_{uuid4().hex[:12]}")
+    conversation_id: str
+    role: Literal["user", "assistant"]
+    content: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    source_metadata: dict[str, object] = Field(default_factory=dict)
+    tool_summary_metadata: dict[str, object] = Field(default_factory=dict)
+
+
+class RepairIntakeRecord(StrictModel):
+    id: str = Field(default_factory=lambda: f"repair_{uuid4().hex[:12]}")
+    owner_user_id: str
+    device_type: str
+    manufacturer: str | None = None
+    model: str | None = None
+    issue_description: str
+    power_state: str | None = None
+    physical_damage_state: str | None = None
+    liquid_exposure_state: bool = False
+    data_recovery_importance: str | None = None
+    preferred_service_method: str | None = None
+    desired_next_step: str | None = None
+    notes: str | None = None
+    escalation_state: str = "none"
+    escalation_reason: str | None = None
+    status: str = "draft"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    confirmed_at: datetime | None = None
+    cancelled_at: datetime | None = None
+    retention_expires_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC) + timedelta(days=90)
+    )
+
+
+class UserPreferences(StrictModel):
+    owner_user_id: str
+    preferred_name: str | None = Field(default=None, max_length=120)
+    writing_tone: str = Field(default="friendly", max_length=40)
+    mode: Literal["personal", "business"] = "personal"
+    time_zone: str = Field(default="UTC", max_length=80)
+    quiet_hours: dict[str, object] = Field(default_factory=dict)
+    daily_briefing: bool = False
+    email_summary: bool = True
+    calendar_summary: bool = True
+    accessibility: dict[str, object] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class PreferencesUpdateRequest(StrictModel):
+    preferred_name: str | None = Field(default=None, max_length=120)
+    writing_tone: str | None = Field(default=None, max_length=40)
+    mode: Literal["personal", "business"] | None = None
+    time_zone: str | None = Field(default=None, max_length=80)
+    quiet_hours: dict[str, object] | None = None
+    daily_briefing: bool | None = None
+    email_summary: bool | None = None
+    calendar_summary: bool | None = None
+    accessibility: dict[str, object] | None = None
+
+
+class RetentionCleanupRequest(StrictModel):
+    dry_run: bool = True
+
+
+class RetentionCleanupReport(StrictModel):
+    dry_run: bool
+    candidate_counts: dict[str, int]
+    deleted_counts: dict[str, int]
+    audit_recorded: bool

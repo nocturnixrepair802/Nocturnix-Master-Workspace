@@ -4,6 +4,7 @@ from collections import defaultdict
 from contextlib import asynccontextmanager
 from time import monotonic
 from uuid import uuid4
+from weakref import finalize
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.encoders import jsonable_encoder
@@ -13,6 +14,15 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from nocturnix.config import Settings
+from nocturnix.db import (
+    create_database_engine,
+    create_session_factory,
+    current_revision,
+    database_ready,
+    run_migrations,
+    safe_database_provider,
+    session_scope,
+)
 from nocturnix.models import (
     APP_NAME,
     APP_VERSION,
@@ -22,36 +32,82 @@ from nocturnix.models import (
     ChatRequest,
     KnowledgeSearchRequest,
     KnowledgeSearchResponse,
+    PreferencesUpdateRequest,
     RepairIntakeRequest,
+    RetentionCleanupRequest,
     RiskLevel,
     UserIdentity,
 )
-from nocturnix.repositories.memory import InMemoryApprovalRepository, InMemoryAuditRepository
+from nocturnix.repositories.sql import (
+    SqlApprovalRepository,
+    SqlAuditRepository,
+    SqlConversationRepository,
+    SqlMessageRepository,
+    SqlPreferenceRepository,
+    SqlRepairIntakeRepository,
+)
 from nocturnix.services.core import (
     ApprovalConflict,
     ApprovalService,
     AuditService,
+    ConversationService,
     KnowledgeService,
     MockAssistantProvider,
     NotFound,
     PermissionDenied,
+    PreferenceService,
     RepairService,
+    RetentionService,
 )
 
 
 class AppContainer:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        self.audit = AuditService(InMemoryAuditRepository())
-        self.approvals = ApprovalService(InMemoryApprovalRepository(), self.audit)
+        self.engine = create_database_engine(settings.database_url, settings.database_echo)
+        self._engine_finalizer = finalize(self, self.engine.dispose)
+        if settings.database_migration_mode == "auto-test-only":
+            run_migrations(settings.database_url)
+        self.session_factory = create_session_factory(self.engine)
         self.knowledge = KnowledgeService(settings.safe_knowledge_path)
         self.assistant = MockAssistantProvider()
-        self.repair = RepairService()
         self.rate_buckets: dict[str, list[float]] = defaultdict(list)
 
 
 def get_container(request: Request) -> AppContainer:
     return request.app.state.container
+
+
+class RequestServices:
+    def __init__(self, container: AppContainer):
+        self.container = container
+        self.scope = session_scope(container.session_factory)
+        self.session = self.scope.__enter__()
+        self.audit = AuditService(SqlAuditRepository(self.session))
+        self.approvals = ApprovalService(SqlApprovalRepository(self.session), self.audit)
+        self.conversations = ConversationService(
+            SqlConversationRepository(self.session),
+            SqlMessageRepository(self.session),
+            container.settings.conversation_retention_days,
+        )
+        self.repair_repo = SqlRepairIntakeRepository(self.session)
+        self.preferences = PreferenceService(SqlPreferenceRepository(self.session))
+        self.retention = RetentionService(self.audit, container.settings)
+        self.repair = RepairService()
+
+    def close(self) -> None:
+        self.scope.__exit__(None, None, None)
+
+
+def get_services(request: Request):
+    services = RequestServices(request.app.state.container)
+    try:
+        yield services
+    except Exception as exc:
+        services.scope.__exit__(type(exc), exc, exc.__traceback__)
+        raise
+    else:
+        services.close()
 
 
 def current_user(x_nocturnix_dev_user: str | None = Header(default=None)) -> UserIdentity:
@@ -67,6 +123,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI):
         app.state.ready = True
         yield
+        app.state.container.engine.dispose()
         app.state.ready = False
 
     app = FastAPI(title=APP_NAME, version=APP_VERSION, lifespan=lifespan)
@@ -74,7 +131,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=resolved.cors_origins,
-        allow_methods=["GET", "POST"],
+        allow_methods=["GET", "POST", "PUT"],
         allow_headers=["Content-Type", "X-Nocturnix-Dev-User", "X-Request-ID"],
         expose_headers=["X-Request-ID"],
     )
@@ -170,7 +227,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "knowledge_base_available": container.settings.safe_knowledge_path.exists(),
             "approval_service_available": True,
             "audit_service_available": True,
-            "persistence_type": "temporary in-memory development storage",
+            "persistence_type": "durable SQL development storage",
+            "persistence_provider": safe_database_provider(container.settings.database_url),
+            "database_ready": database_ready(container.settings.database_url),
+            "migration_revision": current_revision(container.settings.database_url),
+            "retention_configured": True,
             "ready": True,
             "user_id": user.user_id,
         }
@@ -178,82 +239,112 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.post("/api/v1/chat")
     def chat(
         req: ChatRequest,
-        container: AppContainer = Depends(get_container),
+        services: RequestServices = Depends(get_services),
         user: UserIdentity = Depends(current_user),
     ):
-        sources, _placeholder = container.knowledge.search(req.message, limit=3)
-        response = container.assistant.respond(req.message, req.conversation_id, sources)
-        container.audit.record(
-            user, "chat", "created", metadata={"escalation": response.escalation}
-        )
+        sources, _placeholder = services.container.knowledge.search(req.message, limit=3)
+        response = services.container.assistant.respond(req.message, req.conversation_id, sources)
+        services.audit.record(user, "chat", "created", metadata={"escalation": response.escalation})
+        services.conversations.persist_exchange(user, req, response)
         return response
 
     @app.post("/api/v1/knowledge/search", response_model=KnowledgeSearchResponse)
     def knowledge_search(
         req: KnowledgeSearchRequest,
-        container: AppContainer = Depends(get_container),
+        services: RequestServices = Depends(get_services),
         user: UserIdentity = Depends(current_user),
     ):
-        container.audit.record(user, "knowledge", "searched")
-        results, placeholder = container.knowledge.search(req.query, req.limit)
+        services.audit.record(user, "knowledge", "searched")
+        results, placeholder = services.container.knowledge.search(req.query, req.limit)
         return KnowledgeSearchResponse(results=results, placeholder=placeholder)
 
     @app.post("/api/v1/repair-intakes")
     def repair_intake(
         req: RepairIntakeRequest,
-        container: AppContainer = Depends(get_container),
+        services: RequestServices = Depends(get_services),
         user: UserIdentity = Depends(current_user),
     ):
-        return container.repair.create(user, req, container.audit)
+        resp = services.repair.create(user, req, services.audit)
+        from datetime import UTC, datetime, timedelta
+
+        from nocturnix.models import RepairIntakeRecord
+
+        now = datetime.now(UTC)
+        services.repair_repo.add(
+            RepairIntakeRecord(
+                id=resp.id,
+                owner_user_id=user.user_id,
+                device_type=req.device_type,
+                manufacturer=req.manufacturer,
+                model=req.model,
+                issue_description=req.issue_description,
+                power_state=req.power_state,
+                physical_damage_state=req.visible_damage,
+                liquid_exposure_state=req.liquid_exposure,
+                data_recovery_importance=req.data_recovery_importance,
+                preferred_service_method=req.preferred_service_method,
+                desired_next_step=req.desired_next_step,
+                notes=req.notes,
+                escalation_state="escalated" if resp.safety_escalation else "none",
+                escalation_reason=", ".join(resp.safety_indicators) or None,
+                status="draft",
+                created_at=now,
+                updated_at=now,
+                retention_expires_at=now
+                + timedelta(days=services.container.settings.repair_intake_retention_days),
+            )
+        )
+        return resp
 
     @app.post("/api/v1/approvals")
     def create_approval(
         req: ApprovalCreateRequest,
-        container: AppContainer = Depends(get_container),
+        services: RequestServices = Depends(get_services),
         user: UserIdentity = Depends(current_user),
     ):
-        return container.approvals.create(user, req)
+        return services.approvals.create(user, req)
 
     @app.get("/api/v1/approvals")
     def list_approvals(
-        container: AppContainer = Depends(get_container), user: UserIdentity = Depends(current_user)
+        services: RequestServices = Depends(get_services),
+        user: UserIdentity = Depends(current_user),
     ):
-        return {"items": container.approvals.list(user)}
+        return {"items": services.approvals.list(user)}
 
     @app.get("/api/v1/approvals/{approval_id}")
     def get_approval(
         approval_id: str,
-        container: AppContainer = Depends(get_container),
+        services: RequestServices = Depends(get_services),
         user: UserIdentity = Depends(current_user),
     ):
-        return container.approvals.get(user, approval_id)
+        return services.approvals.get(user, approval_id)
 
     @app.post("/api/v1/approvals/{approval_id}/approve")
     def approve(
         approval_id: str,
-        container: AppContainer = Depends(get_container),
+        services: RequestServices = Depends(get_services),
         user: UserIdentity = Depends(current_user),
     ):
-        return container.approvals.approve(user, approval_id)
+        return services.approvals.approve(user, approval_id)
 
     @app.post("/api/v1/approvals/{approval_id}/reject")
     def reject(
         approval_id: str,
-        container: AppContainer = Depends(get_container),
+        services: RequestServices = Depends(get_services),
         user: UserIdentity = Depends(current_user),
     ):
-        return container.approvals.reject(user, approval_id)
+        return services.approvals.reject(user, approval_id)
 
     @app.get("/api/v1/audit")
     def audit(
         offset: int = 0,
         limit: int = 20,
         category: str | None = None,
-        container: AppContainer = Depends(get_container),
+        services: RequestServices = Depends(get_services),
         user: UserIdentity = Depends(current_user),
     ):
         return {
-            "items": container.audit.list(user, category, offset, limit),
+            "items": services.audit.list(user, category, offset, limit),
             "offset": offset,
             "limit": min(limit, 100),
         }
@@ -301,10 +392,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.post("/api/v1/mock/email/messages/{message_id}/draft-proposal")
     def email_draft(
         message_id: str,
-        container: AppContainer = Depends(get_container),
+        services: RequestServices = Depends(get_services),
         user: UserIdentity = Depends(current_user),
     ):
-        approval = container.approvals.create(
+        approval = services.approvals.create(
             user,
             ApprovalCreateRequest(
                 action_type="mock_email_draft",
@@ -341,14 +432,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.post("/api/v1/mock/calendar/event-proposals")
     def calendar_proposal(
         req: CalendarProposal,
-        container: AppContainer = Depends(get_container),
+        services: RequestServices = Depends(get_services),
         user: UserIdentity = Depends(current_user),
     ):
         conflict = any(
             str(event["start"]).startswith(req.start.strftime("%Y-%m-%dT%H"))
             for event in calendar_events
         )
-        approval = container.approvals.create(
+        approval = services.approvals.create(
             user,
             ApprovalCreateRequest(
                 action_type="mock_calendar_event",
@@ -359,6 +450,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             ),
         )
         return {"mock": True, "conflict_detected": conflict, "approval": approval}
+
+    @app.get("/api/v1/preferences")
+    def get_preferences(
+        services: RequestServices = Depends(get_services),
+        user: UserIdentity = Depends(current_user),
+    ):
+        return services.preferences.get(user)
+
+    @app.put("/api/v1/preferences")
+    def put_preferences(
+        req: PreferencesUpdateRequest,
+        services: RequestServices = Depends(get_services),
+        user: UserIdentity = Depends(current_user),
+    ):
+        return services.preferences.update(user, req)
+
+    @app.post("/api/v1/retention/cleanup")
+    def retention_cleanup(
+        req: RetentionCleanupRequest,
+        services: RequestServices = Depends(get_services),
+        user: UserIdentity = Depends(current_user),
+    ):
+        return services.retention.cleanup(user, dry_run=req.dry_run)
 
     static_root = __import__("pathlib").Path(__file__).resolve().parents[1] / "static"
     app.mount("/static", StaticFiles(directory=static_root), name="static")
