@@ -11,9 +11,7 @@ from nocturnix.db import Base
 
 class CustomerRow(Base):
     __tablename__ = "customers"
-    __table_args__ = (
-        UniqueConstraint("owner_user_id", "email", name="uq_customers_owner_email"),
-    )
+    __table_args__ = (UniqueConstraint("owner_user_id", "email", name="uq_customers_owner_email"),)
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
@@ -39,9 +37,7 @@ class CustomerDeviceRow(Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
-    customer_id: Mapped[str] = mapped_column(
-        ForeignKey("customers.id"), index=True, nullable=False
-    )
+    customer_id: Mapped[str] = mapped_column(ForeignKey("customers.id"), index=True, nullable=False)
     device_type: Mapped[str] = mapped_column(String(80), nullable=False)
     manufacturer: Mapped[str | None] = mapped_column(String(80), index=True)
     model: Mapped[str | None] = mapped_column(String(120), index=True)
@@ -60,23 +56,17 @@ class CustomerDeviceRow(Base):
 class RepairTicketRow(Base):
     __tablename__ = "repair_tickets"
     __table_args__ = (
-        UniqueConstraint(
-            "owner_user_id", "ticket_number", name="uq_repair_tickets_owner_number"
-        ),
+        UniqueConstraint("owner_user_id", "ticket_number", name="uq_repair_tickets_owner_number"),
     )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
     ticket_number: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
-    customer_id: Mapped[str] = mapped_column(
-        ForeignKey("customers.id"), index=True, nullable=False
-    )
+    customer_id: Mapped[str] = mapped_column(ForeignKey("customers.id"), index=True, nullable=False)
     customer_device_id: Mapped[str] = mapped_column(
         ForeignKey("customer_devices.id"), index=True, nullable=False
     )
-    assigned_user_id: Mapped[str | None] = mapped_column(
-        ForeignKey("users.id"), index=True
-    )
+    assigned_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), index=True)
     status: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
     priority: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
     issue_description: Mapped[str] = mapped_column(Text, nullable=False)

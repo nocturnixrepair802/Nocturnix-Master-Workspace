@@ -83,9 +83,7 @@ def test_agent_proposes_write_tool_without_executing() -> None:
         "notes": None,
         "status": "active",
     }
-    client = FakeClient(
-        [response("resp_1", output=[function_call("create_customer", arguments)])]
-    )
+    client = FakeClient([response("resp_1", output=[function_call("create_customer", arguments)])])
     agent = OpenAIRepairAgent(client, FakeRepairService(), model="test-model")
 
     result = agent.run(owner_user_id="owner_1", message="Create Ada")
@@ -132,9 +130,7 @@ def test_agent_executes_exact_confirmed_write_action() -> None:
 def test_confirmation_is_bound_to_exact_arguments() -> None:
     approved = {"first_name": "Ada", "last_name": "Lovelace"}
     changed = {"first_name": "Grace", "last_name": "Hopper"}
-    client = FakeClient(
-        [response("resp_1", output=[function_call("create_customer", changed)])]
-    )
+    client = FakeClient([response("resp_1", output=[function_call("create_customer", changed)])])
     agent = OpenAIRepairAgent(client, FakeRepairService(), model="test-model")
 
     result = agent.run(

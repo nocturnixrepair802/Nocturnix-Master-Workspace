@@ -2,6 +2,20 @@
 
 Version 0.1.3 provides durable SQL-backed development persistence with Alembic migrations while remaining mock-only and development-only. SQLite is the safe local default; no live providers are connected.
 
+# feature/customer-repair-foundation-v0.1.7
+
+customer records
+repair-ticket foundation
+repair AI confirmation persistence
+Alembic head 20260724_004
+mock-only and development-only limitations
+test result: 48 passed
+coverage: 87.13%
+
+
+
+
+
 ## Run locally
 
 ```bash

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -17,7 +18,7 @@ from nocturnix.repair_persistence_models import RepairConfirmationRow
 
 
 @pytest.fixture
-def session() -> Session:
+def session() -> Generator[Session, None, None]:
     engine = create_engine("sqlite:///:memory:", future=True)
     Base.metadata.create_all(engine)
     with Session(engine, expire_on_commit=False) as database_session:

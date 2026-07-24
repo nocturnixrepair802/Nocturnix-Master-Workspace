@@ -105,7 +105,10 @@ class CustomerCreateRequest(StrictModel):
     def validate_contact_method(self) -> CustomerCreateRequest:
         if self.preferred_contact_method == ContactMethod.email and not self.email:
             raise ValueError("email is required when preferred_contact_method is email")
-        if self.preferred_contact_method in {ContactMethod.phone, ContactMethod.text} and not self.phone:
+        if (
+            self.preferred_contact_method in {ContactMethod.phone, ContactMethod.text}
+            and not self.phone
+        ):
             raise ValueError("phone is required for phone or text contact")
         return self
 

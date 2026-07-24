@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Protocol
@@ -29,9 +30,17 @@ from nocturnix.repair_persistence_models import (
 
 
 class CustomerRepository(Protocol):
-    def create(self, owner_user_id: str, request: CustomerCreateRequest) -> CustomerRow: ...
+    def create(
+        self,
+        owner_user_id: str,
+        request: CustomerCreateRequest,
+    ) -> CustomerRow: ...
 
-    def get(self, owner_user_id: str, customer_id: str) -> CustomerRow | None: ...
+    def get(
+        self,
+        owner_user_id: str,
+        customer_id: str,
+    ) -> CustomerRow | None: ...
 
     def list(
         self,
@@ -85,9 +94,7 @@ class RepairTicketRepository(Protocol):
 
     def get(self, owner_user_id: str, ticket_id: str) -> RepairTicketRow | None: ...
 
-    def get_by_number(
-        self, owner_user_id: str, ticket_number: str
-    ) -> RepairTicketRow | None: ...
+    def get_by_number(self, owner_user_id: str, ticket_number: str) -> RepairTicketRow | None: ...
 
     def list(
         self,
@@ -202,9 +209,7 @@ class SqlCustomerRepository:
             )
         total = self.session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
         rows = self.session.scalars(
-            stmt.order_by(CustomerRow.last_name, CustomerRow.first_name)
-            .offset(offset)
-            .limit(limit)
+            stmt.order_by(CustomerRow.last_name, CustomerRow.first_name).offset(offset).limit(limit)
         ).all()
         return list(rows), total
 
@@ -227,9 +232,7 @@ class SqlCustomerDeviceRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def create(
-        self, owner_user_id: str, request: CustomerDeviceCreateRequest
-    ) -> CustomerDeviceRow:
+    def create(self, owner_user_id: str, request: CustomerDeviceCreateRequest) -> CustomerDeviceRow:
         now = datetime.now(UTC)
         row = CustomerDeviceRow(
             id=f"dev_{uuid4().hex[:16]}",
@@ -329,9 +332,7 @@ class SqlRepairTicketRepository:
             )
         )
 
-    def get_by_number(
-        self, owner_user_id: str, ticket_number: str
-    ) -> RepairTicketRow | None:
+    def get_by_number(self, owner_user_id: str, ticket_number: str) -> RepairTicketRow | None:
         return self.session.scalar(
             select(RepairTicketRow).where(
                 RepairTicketRow.ticket_number == ticket_number,
@@ -435,8 +436,8 @@ class SqlRepairTicketRepository:
         self,
         owner_user_id: str,
         ticket_id: str,
-    ) -> list[RepairTicketStatusHistoryRow]:
-        return list(
+    ) -> builtins.list[RepairTicketStatusHistoryRow]:
+        return builtins.list(
             self.session.scalars(
                 select(RepairTicketStatusHistoryRow)
                 .where(

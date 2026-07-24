@@ -62,9 +62,7 @@ def create_device(client: TestClient, customer_id: str) -> dict[str, Any]:
     return response.json()
 
 
-def create_ticket(
-    client: TestClient, customer_id: str, device_id: str
-) -> dict[str, Any]:
+def create_ticket(client: TestClient, customer_id: str, device_id: str) -> dict[str, Any]:
     response = client.post(
         "/api/v1/repair-tickets",
         headers=OWNER_HEADERS,
