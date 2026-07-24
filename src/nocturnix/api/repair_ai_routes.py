@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from time import monotonic
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -8,6 +9,7 @@ from openai import OpenAI
 from pydantic import Field
 
 from nocturnix.models import StrictModel, UserIdentity
+from nocturnix.openai_provider_errors import classify_openai_exception
 from nocturnix.openai_repair_agent import OpenAIRepairAgent
 from nocturnix.repair_ai_tools import RepairAssistantTools
 from nocturnix.repair_confirmation_store import (
@@ -117,6 +119,7 @@ def create_repair_ai_router(
         client = OpenAI(
             api_key=settings.openai_api_key,
             timeout=settings.openai_timeout_seconds,
+            max_retries=2,
         )
         agent = OpenAIRepairAgent(
             client,
@@ -124,12 +127,40 @@ def create_repair_ai_router(
             model=settings.openai_model,
             max_tool_rounds=settings.openai_max_tool_rounds,
         )
-        result = agent.run(
-            owner_user_id=user.user_id,
-            message=req.message,
-            previous_response_id=previous_response_id,
-            confirmed_actions=confirmed_actions,
-        )
+        started_at = monotonic()
+        try:
+            result = agent.run(
+                owner_user_id=user.user_id,
+                message=req.message,
+                previous_response_id=previous_response_id,
+                confirmed_actions=confirmed_actions,
+            )
+        except Exception as exc:
+            provider_failure = classify_openai_exception(exc)
+            if provider_failure is None:
+                raise
+            services.audit.record(
+                user,
+                "repair_ai_agent",
+                "provider_failure",
+                metadata={
+                    "model": settings.openai_model,
+                    "category": provider_failure.category,
+                    "retryable": provider_failure.retryable,
+                    "request_id": provider_failure.request_id,
+                    "latency_ms": int((monotonic() - started_at) * 1000),
+                    "confirmation_used": bool(req.confirmation_id),
+                },
+            )
+            raise HTTPException(
+                status_code=provider_failure.status_code,
+                detail=provider_failure.public_detail,
+                headers=(
+                    {"Retry-After": "2"}
+                    if provider_failure.status_code == 429
+                    else None
+                ),
+            ) from exc
 
         proposed_actions: list[dict[str, Any]] = []
         if result.response_id:
@@ -160,6 +191,8 @@ def create_repair_ai_router(
                 "confirmation_store": "memory" if confirmation_store else "sql",
                 "proposed_action_count": len(proposed_actions),
                 "tool_result_count": len(result.tool_results),
+                "response_id": result.response_id,
+                "latency_ms": int((monotonic() - started_at) * 1000),
             },
         )
         return {
