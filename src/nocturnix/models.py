@@ -8,7 +8,7 @@ from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 APP_NAME = "Nocturnix AI Assistant"
-APP_VERSION = "0.1.5"
+APP_VERSION = "0.1.6"
 DEV_USER_ID = "dev-user-001"
 
 
@@ -287,3 +287,93 @@ class RetentionCleanupReport(StrictModel):
     candidate_counts: dict[str, int]
     deleted_counts: dict[str, int]
     audit_recorded: bool
+
+
+# v0.1.6 persistent business assistant models
+class MemoryCreateRequest(StrictModel):
+    title: str = Field(min_length=1, max_length=200)
+    summary: str = Field(default="", max_length=500)
+    body: str = Field(default="", max_length=5000)
+    category: Literal[
+        "business",
+        "personal",
+        "technical",
+        "project",
+        "customer",
+        "device",
+        "inventory",
+        "reminder",
+        "meeting",
+        "research",
+        "decision",
+        "idea",
+        "future",
+    ] = "business"
+    tags: list[str] = Field(default_factory=list, max_length=20)
+    priority: int = Field(default=3, ge=1, le=5)
+    expires_at: datetime | None = None
+    visibility: Literal["private", "owner", "team_mock"] = "private"
+    confidence: float = Field(default=1.0, ge=0, le=1)
+    related_memory_ids: list[str] = Field(default_factory=list, max_length=20)
+    source: str = Field(default="manual", max_length=120)
+    ai_generated: bool = False
+    manual: bool = True
+    pinned: bool = False
+    favorite: bool = False
+
+
+class MemoryUpdateRequest(StrictModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    summary: str | None = Field(default=None, max_length=500)
+    body: str | None = Field(default=None, max_length=5000)
+    category: str | None = Field(default=None, max_length=40)
+    tags: list[str] | None = Field(default=None, max_length=20)
+    priority: int | None = Field(default=None, ge=1, le=5)
+    expires_at: datetime | None = None
+    visibility: str | None = Field(default=None, max_length=40)
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    related_memory_ids: list[str] | None = Field(default=None, max_length=20)
+    pinned: bool | None = None
+    favorite: bool | None = None
+    archived: bool | None = None
+    deleted: bool | None = None
+
+
+class PlanningTaskRequest(StrictModel):
+    title: str = Field(min_length=1, max_length=200)
+    description: str = Field(default="", max_length=2000)
+    status: Literal[
+        "today", "this_week", "upcoming", "waiting", "blocked", "completed", "cancelled", "deferred"
+    ] = "today"
+    priority: int = Field(default=3, ge=1, le=5)
+    manual_order: int = Field(default=100, ge=0)
+    ai_suggested_order: int = Field(default=100, ge=0)
+    time_estimate_minutes: int = Field(default=15, ge=1, le=1440)
+    effort_score: int = Field(default=3, ge=1, le=5)
+    energy_score: int = Field(default=3, ge=1, le=5)
+    deadline: datetime | None = None
+    project_id: str | None = Field(default=None, max_length=120)
+    tags: list[str] = Field(default_factory=list, max_length=20)
+
+
+class ReminderRequest(StrictModel):
+    title: str = Field(min_length=1, max_length=200)
+    body: str = Field(default="", max_length=2000)
+    reminder_type: Literal[
+        "one_time",
+        "daily",
+        "weekly",
+        "monthly",
+        "yearly",
+        "after_event",
+        "after_approval",
+        "after_inactivity",
+    ] = "one_time"
+    scheduled_at: datetime | None = None
+    priority: int = Field(default=3, ge=1, le=5)
+    category: str = Field(default="reminder", max_length=80)
+    related_task_id: str | None = Field(default=None, max_length=120)
+
+
+class NaturalCommandRequest(StrictModel):
+    command: str = Field(min_length=1, max_length=1000)

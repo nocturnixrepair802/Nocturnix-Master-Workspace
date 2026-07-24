@@ -121,3 +121,8 @@ Local HTTP cannot provide the same transport protection as production TLS. Regis
 ## Threat model summary
 
 Threats considered include credential theft, password database compromise, session theft/fixation, CSRF, brute force, account enumeration, privilege escalation, cross-user access, OAuth state theft, authorization-code interception, PKCE bypass, redirect abuse, scope escalation, token theft, key compromise, secret logging, audit leakage, malicious documents, prompt-injection approval bypass attempts, compromised developer machines, and SQLite disclosure. Mitigations include adaptive hashing, opaque hashed sessions, CSRF tokens, generic auth failures, account lockout, deny-by-default RBAC, owner-scoped queries, hashed OAuth state, PKCE, redirect allowlisting, disabled live providers, encrypted secret abstraction, audit redaction, and preserved approval controls. Remaining limitations require production TLS, distributed throttling, managed KMS/HSM, hardened deployment, monitoring, backups, and formal security review.
+
+
+# Nocturnix AI Assistant v0.1.6 Memory, Planning & Autonomous Task Engine
+
+Version 0.1.6 remains development-only and mock-only. It adds durable owner-scoped memories, conversation-summary storage, planning tasks, reminder readiness records, focus mode, dashboard/search APIs, and a natural-language command router for capture and retrieval. No repair-ticket platform, production AI provider, notification provider, deployment, or live integration is added.

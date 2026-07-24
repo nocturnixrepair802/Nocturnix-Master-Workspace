@@ -51,6 +51,12 @@ ALL_PERMISSIONS = {
     "repair_context.read",
     "repair_context.manage",
     "codex_tasks.manage",
+    "memories.read",
+    "memories.manage",
+    "planning.read",
+    "planning.manage",
+    "dashboard.read",
+    "search.read",
 }
 ROLE_PERMISSIONS = {
     "owner": sorted(ALL_PERMISSIONS),

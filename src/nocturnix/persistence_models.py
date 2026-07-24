@@ -432,3 +432,87 @@ class NotificationEventRow(Base):
     status: Mapped[str] = mapped_column(String(40), nullable=False)
     safe_summary: Mapped[str] = mapped_column(String(240), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class MemoryRow(Base):
+    __tablename__ = "memories"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    summary: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    body: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    category: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
+    tags: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    visibility: Mapped[str] = mapped_column(String(40), default="private", nullable=False)
+    confidence: Mapped[float] = mapped_column(nullable=False, default=1.0)
+    related_memory_ids: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    source: Mapped[str] = mapped_column(String(120), default="manual", nullable=False)
+    ai_generated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    manual: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False, index=True, nullable=False)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False, index=True, nullable=False)
+    pinned: Mapped[bool] = mapped_column(Boolean, default=False, index=True, nullable=False)
+    favorite: Mapped[bool] = mapped_column(Boolean, default=False, index=True, nullable=False)
+    search_vector: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
+
+class ConversationSummaryRow(Base):
+    __tablename__ = "conversation_summaries"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    conversation_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    rolling_summary: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    current_goals: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    unfinished_work: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    recent_decisions: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    token_budget_hint: Mapped[int] = mapped_column(Integer, default=1200, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PlanningTaskRow(Base):
+    __tablename__ = "planning_tasks"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    status: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    manual_order: Mapped[int] = mapped_column(Integer, default=100, nullable=False)
+    ai_suggested_order: Mapped[int] = mapped_column(Integer, default=100, nullable=False)
+    time_estimate_minutes: Mapped[int] = mapped_column(Integer, default=15, nullable=False)
+    effort_score: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    energy_score: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    focus_score: Mapped[int] = mapped_column(Integer, default=50, nullable=False)
+    deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    project_id: Mapped[str | None] = mapped_column(String(120), index=True)
+    tags: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class BusinessReminderRow(Base):
+    __tablename__ = "business_reminders"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    body: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    reminder_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    status: Mapped[str] = mapped_column(String(40), index=True, default="open", nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    category: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
+    related_task_id: Mapped[str | None] = mapped_column(String(120), index=True)
+    snooze_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    escalation_level: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    notification_ready: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    dismissed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
