@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import JSON
 
 from nocturnix.db import Base
 
@@ -137,3 +138,19 @@ class RepairTicketNoteRow(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     repair_ticket: Mapped[RepairTicketRow] = relationship(back_populates="notes")
+
+
+class RepairConfirmationRow(Base):
+    __tablename__ = "repair_confirmations"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    previous_response_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    tool_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    arguments_json: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
+    action_key: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), index=True, nullable=False
+    )
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
