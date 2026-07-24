@@ -1,0 +1,384 @@
+{
+  "profile_name": "Nocturnix Service Type Normalization Review",
+  "expected_sheets": [
+    "00 - Instructions",
+    "01 - Canonical Service Types",
+    "02 - Service Type Aliases",
+    "03 - Service Normalization",
+    "04 - Labor Normalization",
+    "05 - Service Labor Candidates",
+    "06 - Unresolved Review",
+    "07 - Validation Summary",
+    "08 - Revision History",
+    "09 - Import Metadata"
+  ],
+  "thresholds": {
+    "max_errors_for_pass": 0,
+    "max_warnings_for_pass": 0,
+    "max_errors_for_warning_status": 0
+  },
+  "sheets": {
+    "00 - Instructions": {
+      "checks": {
+        "required_fields": false,
+        "headers": true,
+        "row_count": false,
+        "duplicates": false,
+        "business_rules": false,
+        "freeze_panes": true,
+        "data_validations": false
+      },
+      "header_row": 1,
+      "required_headers": ["Topic", "Guidance"],
+      "required_fields": ["Topic", "Guidance"],
+      "duplicate_keys": [["Topic"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "merged_cells": "error",
+      "hidden": "warn"
+    },
+    "01 - Canonical Service Types": {
+      "checks": {
+        "required_fields": true,
+        "headers": true,
+        "row_count": true,
+        "duplicates": true,
+        "business_rules": true,
+        "freeze_panes": true,
+        "data_validations": true
+      },
+      "header_row": 1,
+      "required_headers": [
+        "Proposed Canonical Service Type ID",
+        "Service Type",
+        "Review Status"
+      ],
+      "required_fields": [
+        "Proposed Canonical Service Type ID",
+        "Service Type",
+        "Review Status"
+      ],
+      "duplicate_keys": [
+        ["Proposed Canonical Service Type ID"],
+        ["Service Type"]
+      ],
+      "expected_data_rows": 77,
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "merged_cells": "error",
+      "hidden": "warn",
+      "validation_fields": ["Review Status"],
+      "business_rules": [
+        {
+          "type": "regex",
+          "fields": ["Proposed Canonical Service Type ID"],
+          "pattern": "^STY\\d{6}$",
+          "code": "BUSINESS_SERVICE_TYPE_ID",
+          "message": "Canonical Service Type ID must match STY000000 format."
+        }
+      ]
+    },
+    "02 - Service Type Aliases": {
+      "checks": {
+        "required_fields": true,
+        "headers": true,
+        "row_count": false,
+        "duplicates": true,
+        "business_rules": true,
+        "freeze_panes": true,
+        "data_validations": true
+      },
+      "header_row": 1,
+      "required_headers": [
+        "Alias ID",
+        "Source Value",
+        "Proposed Canonical Service Type ID",
+        "Proposed Canonical Service Type",
+        "Alias Rule Type",
+        "Review Status"
+      ],
+      "required_fields": [
+        "Alias ID",
+        "Source Value",
+        "Alias Rule Type",
+        "Review Status"
+      ],
+      "duplicate_keys": [["Source System", "Source Field", "Source Value"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "merged_cells": "error",
+      "hidden": "warn",
+      "validation_fields": [
+        "Proposed Canonical Service Type ID",
+        "Proposed Canonical Service Type",
+        "Alias Rule Type",
+        "Review Status"
+      ],
+      "business_rules": [
+        {
+          "type": "paired_fields",
+          "fields": [
+            "Proposed Canonical Service Type ID",
+            "Proposed Canonical Service Type"
+          ],
+          "code": "BUSINESS_CANONICAL_PAIR",
+          "message": "Canonical ID and Service Type must both be populated or both blank."
+        }
+      ]
+    },
+    "03 - Service Normalization": {
+      "checks": {
+        "required_fields": true,
+        "headers": true,
+        "row_count": true,
+        "duplicates": true,
+        "business_rules": true,
+        "freeze_panes": true,
+        "data_validations": true
+      },
+      "header_row": 1,
+      "required_headers": [
+        "Service ID",
+        "Service Name",
+        "Proposed Canonical Service Type ID",
+        "Proposed Canonical Service Type",
+        "Mapping Method",
+        "Confidence",
+        "Review Status"
+      ],
+      "required_fields": [
+        "Service ID",
+        "Service Name",
+        "Mapping Method",
+        "Confidence",
+        "Review Status"
+      ],
+      "duplicate_keys": [["Service ID"]],
+      "expected_data_rows": 313,
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "merged_cells": "error",
+      "hidden": "warn",
+      "validation_fields": [
+        "Proposed Canonical Service Type ID",
+        "Proposed Canonical Service Type",
+        "Mapping Method",
+        "Confidence",
+        "Review Status"
+      ],
+      "business_rules": [
+        {
+          "type": "regex",
+          "fields": ["Service ID"],
+          "pattern": "^SVC\\d{6}$",
+          "code": "BUSINESS_SERVICE_ID",
+          "message": "Service ID must match SVC000000 format."
+        },
+        {
+          "type": "paired_fields",
+          "fields": [
+            "Proposed Canonical Service Type ID",
+            "Proposed Canonical Service Type"
+          ],
+          "code": "BUSINESS_CANONICAL_PAIR",
+          "message": "Canonical ID and Service Type must both be populated or both blank."
+        }
+      ]
+    },
+    "04 - Labor Normalization": {
+      "checks": {
+        "required_fields": true,
+        "headers": true,
+        "row_count": true,
+        "duplicates": true,
+        "business_rules": true,
+        "freeze_panes": true,
+        "data_validations": true
+      },
+      "header_row": 1,
+      "required_headers": [
+        "Labor Standard ID",
+        "Labor Name",
+        "Proposed Canonical Service Type ID",
+        "Proposed Canonical Service Type",
+        "Mapping Method",
+        "Confidence",
+        "Review Status"
+      ],
+      "required_fields": [
+        "Labor Standard ID",
+        "Labor Name",
+        "Mapping Method",
+        "Confidence",
+        "Review Status"
+      ],
+      "duplicate_keys": [["Labor Standard ID"]],
+      "expected_data_rows": 265,
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "merged_cells": "error",
+      "hidden": "warn",
+      "validation_fields": [
+        "Labor Standard ID",
+        "Proposed Canonical Service Type ID",
+        "Proposed Canonical Service Type",
+        "Mapping Method",
+        "Confidence",
+        "Review Status"
+      ],
+      "business_rules": [
+        {
+          "type": "regex",
+          "fields": ["Labor Standard ID"],
+          "pattern": "^LAB\\d{6}$",
+          "code": "BUSINESS_LABOR_ID",
+          "message": "Labor Standard ID must match LAB000000 format."
+        },
+        {
+          "type": "paired_fields",
+          "fields": [
+            "Proposed Canonical Service Type ID",
+            "Proposed Canonical Service Type"
+          ],
+          "code": "BUSINESS_CANONICAL_PAIR",
+          "message": "Canonical ID and Service Type must both be populated or both blank."
+        }
+      ]
+    },
+    "05 - Service Labor Candidates": {
+      "checks": {
+        "required_fields": true,
+        "headers": true,
+        "row_count": false,
+        "duplicates": true,
+        "business_rules": false,
+        "freeze_panes": true,
+        "data_validations": true
+      },
+      "header_row": 1,
+      "required_headers": [
+        "Service ID",
+        "Canonical Service Type ID",
+        "Suggested Labor Standard ID",
+        "Ambiguity Count",
+        "Review Status"
+      ],
+      "required_fields": [
+        "Service ID",
+        "Canonical Service Type ID",
+        "Ambiguity Count",
+        "Review Status"
+      ],
+      "duplicate_keys": [["Service ID"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "merged_cells": "error",
+      "hidden": "warn",
+      "validation_fields": [
+        "Suggested Labor Standard ID",
+        "Review Status"
+      ]
+    },
+    "06 - Unresolved Review": {
+      "checks": {
+        "required_fields": true,
+        "headers": true,
+        "row_count": false,
+        "duplicates": true,
+        "business_rules": false,
+        "freeze_panes": true,
+        "data_validations": true
+      },
+      "header_row": 1,
+      "required_headers": [
+        "Record Type",
+        "Source Record ID",
+        "Source Name",
+        "Ambiguity Reason",
+        "Required Action",
+        "Review Status"
+      ],
+      "required_fields": [
+        "Record Type",
+        "Source Record ID",
+        "Source Name",
+        "Ambiguity Reason",
+        "Required Action",
+        "Review Status"
+      ],
+      "duplicate_keys": [["Record Type", "Source Record ID"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "merged_cells": "error",
+      "hidden": "warn",
+      "validation_fields": ["Review Status"]
+    },
+    "07 - Validation Summary": {
+      "checks": {
+        "required_fields": true,
+        "headers": true,
+        "row_count": false,
+        "duplicates": true,
+        "business_rules": false,
+        "freeze_panes": true,
+        "data_validations": false
+      },
+      "header_row": 1,
+      "required_headers": ["Validation", "Result", "Count"],
+      "required_fields": ["Validation", "Result"],
+      "duplicate_keys": [["Validation"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "merged_cells": "error",
+      "hidden": "warn"
+    },
+    "08 - Revision History": {
+      "checks": {
+        "required_fields": true,
+        "headers": true,
+        "row_count": false,
+        "duplicates": true,
+        "business_rules": false,
+        "freeze_panes": true,
+        "data_validations": false
+      },
+      "header_row": 1,
+      "required_headers": [
+        "Version",
+        "Date",
+        "Change",
+        "Status"
+      ],
+      "required_fields": [
+        "Version",
+        "Date",
+        "Change",
+        "Status"
+      ],
+      "duplicate_keys": [["Version"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "merged_cells": "error",
+      "hidden": "warn"
+    },
+    "09 - Import Metadata": {
+      "checks": {
+        "required_fields": true,
+        "headers": true,
+        "row_count": false,
+        "duplicates": true,
+        "business_rules": false,
+        "freeze_panes": true,
+        "data_validations": false
+      },
+      "header_row": 1,
+      "required_headers": ["Metadata Field", "Value"],
+      "required_fields": ["Metadata Field", "Value"],
+      "duplicate_keys": [["Metadata Field"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "merged_cells": "error",
+      "hidden": "warn"
+    }
+  }
+}

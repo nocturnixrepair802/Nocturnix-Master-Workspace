@@ -1,0 +1,149 @@
+{
+  "workbook": "D:\\Business Portal\\300_Pricing\\Working\\Nocturnix_Service_Type_Normalization_Review_v1.1.xlsx",
+  "generated_at_utc": "2026-07-24T00:05:22.744830+00:00",
+  "profile": "Nocturnix Service Type Normalization Review",
+  "status": "FAIL",
+  "counts": {
+    "ERROR": 1,
+    "WARNING": 3,
+    "INFO": 0
+  },
+  "category_counts": {
+    "CONFIGURATION": 0,
+    "WORKBOOK": 4,
+    "BUSINESS_RULE": 0
+  },
+  "workbook_sha256": "b3d5804d1ef18942e9b1bc040ed88c5c5aead5b7021c9cde5368c42b40e3d1c4",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "category": "WORKBOOK",
+      "code": "TEXT_SURROUNDING_WHITESPACE",
+      "message": "Text contains leading or trailing whitespace.",
+      "sheet": "00 - Instructions",
+      "cell": "L18",
+      "value": "'LGE '",
+      "suggestion": "Trim the value before import."
+    },
+    {
+      "severity": "WARNING",
+      "category": "WORKBOOK",
+      "code": "USABILITY_FREEZE_PANES",
+      "message": "Freeze panes differ from the configured review layout.",
+      "sheet": "01 - Canonical Service Types",
+      "cell": null,
+      "value": {
+        "expected": "A2",
+        "actual": "A58"
+      },
+      "suggestion": null
+    },
+    {
+      "severity": "ERROR",
+      "category": "WORKBOOK",
+      "code": "DATA_REQUIRED_BLANK",
+      "message": "Required field is blank: Service Name",
+      "sheet": "03 - Service Normalization",
+      "cell": "B269",
+      "value": null,
+      "suggestion": null
+    },
+    {
+      "severity": "WARNING",
+      "category": "WORKBOOK",
+      "code": "USABILITY_FREEZE_PANES",
+      "message": "Freeze panes differ from the configured review layout.",
+      "sheet": "04 - Labor Normalization",
+      "cell": null,
+      "value": {
+        "expected": "A2",
+        "actual": "A163"
+      },
+      "suggestion": null
+    }
+  ],
+  "metrics": {
+    "sheets": {
+      "00 - Instructions": {
+        "rows": 265,
+        "columns": 12,
+        "tables": [
+          "tblSTNInstructions"
+        ],
+        "data_validations": 7
+      },
+      "01 - Canonical Service Types": {
+        "rows": 77,
+        "columns": 13,
+        "tables": [
+          "tblCanonicalServiceTypes"
+        ],
+        "data_validations": 3
+      },
+      "02 - Service Type Aliases": {
+        "rows": 17,
+        "columns": 13,
+        "tables": [
+          "tblServiceTypeAliases"
+        ],
+        "data_validations": 5
+      },
+      "03 - Service Normalization": {
+        "rows": 314,
+        "columns": 15,
+        "tables": [
+          "tblServiceNormalization"
+        ],
+        "data_validations": 7
+      },
+      "04 - Labor Normalization": {
+        "rows": 265,
+        "columns": 15,
+        "tables": [
+          "tblLaborNormalization"
+        ],
+        "data_validations": 6
+      },
+      "05 - Service Labor Candidates": {
+        "rows": 0,
+        "columns": 18,
+        "tables": [
+          "tblServiceLaborCandidates"
+        ],
+        "data_validations": 5
+      },
+      "06 - Unresolved Review": {
+        "rows": 147,
+        "columns": 12,
+        "tables": [
+          "tblSTNUnresolvedReview"
+        ],
+        "data_validations": 3
+      },
+      "07 - Validation Summary": {
+        "rows": 8,
+        "columns": 3,
+        "tables": [
+          "tblSTNValidationSummary"
+        ],
+        "data_validations": 0
+      },
+      "08 - Revision History": {
+        "rows": 1,
+        "columns": 4,
+        "tables": [
+          "tblSTNRevisionHistory"
+        ],
+        "data_validations": 0
+      },
+      "09 - Import Metadata": {
+        "rows": 20,
+        "columns": 2,
+        "tables": [
+          "tblSTNImportMetadata"
+        ],
+        "data_validations": 0
+      }
+    }
+  }
+}
