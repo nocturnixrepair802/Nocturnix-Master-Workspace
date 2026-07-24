@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 from fastapi import Cookie, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 
@@ -33,8 +35,9 @@ def _install_request_service_extension() -> None:
         original_init(self, container)
         self.repair_domain = RepairDomainService(self.session)
 
-    base_app.RequestServices.__init__ = integrated_init
-    base_app.RequestServices._repair_domain_installed = True
+    request_services_type = cast(Any, base_app.RequestServices)
+    request_services_type.__init__ = integrated_init
+    request_services_type._repair_domain_installed = True
 
 
 def create_app(settings: Settings | None = None):
@@ -112,9 +115,7 @@ def create_app(settings: Settings | None = None):
         return error_response(request, 404, "repair_not_found", str(exc))
 
     @app.exception_handler(InvalidRepairStatusTransition)
-    async def invalid_status_transition(
-        request: Request, exc: InvalidRepairStatusTransition
-    ):
+    async def invalid_status_transition(request: Request, exc: InvalidRepairStatusTransition):
         return error_response(request, 409, "invalid_repair_status_transition", str(exc))
 
     @app.exception_handler(RepairConflict)

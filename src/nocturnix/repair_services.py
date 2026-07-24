@@ -47,8 +47,12 @@ class RepairConflict(RepairDomainError):
 class InvalidRepairStatusTransition(RepairConflict):
     def __init__(self, current: RepairTicketStatus, requested: RepairTicketStatus) -> None:
         super().__init__(
+<<<<<<< HEAD
             f"cannot transition repair ticket from"
             f"{current.value} to {requested.value}"
+=======
+            f"cannot transition repair ticket from {current.value} to {requested.value}"
+>>>>>>> 437e3ca9aa84129803ba3df94111f204e4c31533
         )
         self.current = current
         self.requested = requested
@@ -108,9 +112,7 @@ class RepairService:
         self.tickets = SqlRepairTicketRepository(session)
         self.notes = SqlRepairTicketNoteRepository(session)
 
-    def create_customer(
-        self, owner_user_id: str, request: CustomerCreateRequest
-    ) -> CustomerRow:
+    def create_customer(self, owner_user_id: str, request: CustomerCreateRequest) -> CustomerRow:
         try:
             row = self.customers.create(owner_user_id, request)
             self.session.commit()

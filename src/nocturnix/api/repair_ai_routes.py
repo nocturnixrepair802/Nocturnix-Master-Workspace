@@ -155,11 +155,7 @@ def create_repair_ai_router(
             raise HTTPException(
                 status_code=provider_failure.status_code,
                 detail=provider_failure.public_detail,
-                headers=(
-                    {"Retry-After": "2"}
-                    if provider_failure.status_code == 429
-                    else None
-                ),
+                headers=({"Retry-After": "2"} if provider_failure.status_code == 429 else None),
             ) from exc
 
         proposed_actions: list[dict[str, Any]] = []

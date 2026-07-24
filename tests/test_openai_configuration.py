@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,7 +12,7 @@ OWNER_HEADERS = {"X-Nocturnix-Dev-User": "repair-owner-001"}
 
 
 def base_settings(tmp_path: Path, **overrides):
-    values = {
+    values: dict[str, Any] = {
         "database_url": f"sqlite:///{tmp_path / 'openai_config.db'}",
         "database_migration_mode": "auto-test-only",
         "auth_mode": "development_header",

@@ -12,10 +12,8 @@ from nocturnix.repair_ai_tools import (
 
 
 class ResponsesClient(Protocol):
-    class Responses(Protocol):
-        def create(self, **kwargs: Any) -> Any: ...
-
-    responses: Responses
+    @property
+    def responses(self) -> Any: ...
 
 
 @dataclass(frozen=True)
