@@ -303,3 +303,132 @@ class OAuthAuthorizationStateRow(Base):
     failure_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     failure_reason: Mapped[str | None] = mapped_column(String(200))
     correlation_id: Mapped[str] = mapped_column(String(120), nullable=False)
+
+
+class BusinessTaskRow(Base):
+    __tablename__ = "business_tasks"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    category: Mapped[str] = mapped_column(String(80), default="general", nullable=False)
+    related_repair_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    related_project_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    priority: Mapped[str] = mapped_column(String(20), default="normal", nullable=False)
+    estimated_effort_minutes: Mapped[int] = mapped_column(Integer, default=15, nullable=False)
+    status: Mapped[str] = mapped_column(String(30), index=True, default="inbox", nullable=False)
+    next_action: Mapped[str | None] = mapped_column(String(240))
+    due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    start_after_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    snoozed_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    waiting_on_type: Mapped[str | None] = mapped_column(String(40), index=True)
+    waiting_on_reference: Mapped[str | None] = mapped_column(String(160))
+    source: Mapped[str] = mapped_column(String(80), default="manual", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    recurrence_rule_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    recurrence_occurrence_key: Mapped[str | None] = mapped_column(String(80))
+    escalation_level: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    retention_metadata: Mapped[dict[str, object]] = mapped_column(
+        JSON, default=dict, nullable=False
+    )
+
+
+class ReminderRow(Base):
+    __tablename__ = "reminders"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    related_task_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    related_repair_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    reminder_type: Mapped[str] = mapped_column(String(40), default="scheduled", nullable=False)
+    scheduled_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), index=True, nullable=False
+    )
+    trigger_condition: Mapped[str | None] = mapped_column(String(240))
+    status: Mapped[str] = mapped_column(String(30), index=True, default="scheduled", nullable=False)
+    priority: Mapped[str] = mapped_column(String(20), default="normal", nullable=False)
+    delivery_channel: Mapped[str] = mapped_column(String(40), default="in_app_mock", nullable=False)
+    last_delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_delivery_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    snooze_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    escalation_level: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    quiet_hour_handling: Mapped[str] = mapped_column(String(40), default="bundle", nullable=False)
+    title: Mapped[str] = mapped_column(String(200), default="Reminder", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class RecurrenceRuleRow(Base):
+    __tablename__ = "recurrence_rules"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    frequency: Mapped[str] = mapped_column(String(30), nullable=False)
+    interval: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    weekdays: Mapped[list[int]] = mapped_column(JSON, default=list, nullable=False)
+    day_of_month: Mapped[int | None] = mapped_column(Integer)
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    end_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    template: Mapped[dict[str, object]] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class RepairContextRow(Base):
+    __tablename__ = "repair_contexts"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    context_mode: Mapped[str] = mapped_column(String(30), default="owner", nullable=False)
+    customer_scope_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    device_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    manufacturer: Mapped[str | None] = mapped_column(String(80))
+    model: Mapped[str | None] = mapped_column(String(80))
+    reported_issue: Mapped[str] = mapped_column(Text, nullable=False)
+    current_status: Mapped[str] = mapped_column(String(80), default="intake", nullable=False)
+    assigned_technician: Mapped[str | None] = mapped_column(String(120))
+    customer_approval_state: Mapped[str] = mapped_column(
+        String(40), default="not_requested", nullable=False
+    )
+    parts_state: Mapped[str] = mapped_column(String(40), default="not_checked", nullable=False)
+    last_customer_update_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    target_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    safety_flags: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CodexTaskRecordRow(Base):
+    __tablename__ = "codex_task_records"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    repository: Mapped[str] = mapped_column(String(200), nullable=False)
+    objective: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(40), index=True, default="tracked", nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completion_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    blocked_reason: Mapped[str | None] = mapped_column(Text)
+    commit_sha: Mapped[str | None] = mapped_column(String(80))
+    pull_request_reference: Mapped[str | None] = mapped_column(String(200))
+    test_result: Mapped[str | None] = mapped_column(String(120))
+    next_owner_action: Mapped[str | None] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class NotificationEventRow(Base):
+    __tablename__ = "notification_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+    reminder_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    provider: Mapped[str] = mapped_column(String(40), nullable=False)
+    channel: Mapped[str] = mapped_column(String(40), nullable=False)
+    status: Mapped[str] = mapped_column(String(40), nullable=False)
+    safe_summary: Mapped[str] = mapped_column(String(240), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
