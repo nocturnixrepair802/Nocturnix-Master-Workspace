@@ -4,9 +4,14 @@ from fastapi import Cookie, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from nocturnix.api import app as base_app
+from nocturnix.api.repair_ai_routes import create_repair_ai_router
 from nocturnix.api.repair_routes import create_repair_router
 from nocturnix.config import Settings
 from nocturnix.models import UserIdentity
+from nocturnix.repair_ai_tools import (
+    RepairToolConfirmationRequired,
+    RepairToolNotFound,
+)
 from nocturnix.repair_services import (
     InvalidRepairStatusTransition,
     RepairConflict,
@@ -114,8 +119,25 @@ def create_app(settings: Settings | None = None):
     async def repair_conflict(request: Request, exc: RepairConflict):
         return error_response(request, 409, "repair_conflict", str(exc))
 
+    @app.exception_handler(RepairToolConfirmationRequired)
+    async def repair_tool_confirmation_required(
+        request: Request, exc: RepairToolConfirmationRequired
+    ):
+        return error_response(request, 409, "repair_tool_confirmation_required", str(exc))
+
+    @app.exception_handler(RepairToolNotFound)
+    async def repair_tool_not_found(request: Request, exc: RepairToolNotFound):
+        return error_response(request, 404, "repair_tool_not_found", str(exc))
+
     app.include_router(
         create_repair_router(
+            base_app.get_services,
+            auth_identity,
+            require_csrf,
+        )
+    )
+    app.include_router(
+        create_repair_ai_router(
             base_app.get_services,
             auth_identity,
             require_csrf,
