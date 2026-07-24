@@ -196,6 +196,7 @@ class SqlRepairConfirmationStore:
                 RepairConfirmationRow.expires_at > now,
             )
             .values(consumed_at=now)
+            .execution_options(synchronize_session=False)
         )
         if result.rowcount != 1:
             self.session.rollback()
