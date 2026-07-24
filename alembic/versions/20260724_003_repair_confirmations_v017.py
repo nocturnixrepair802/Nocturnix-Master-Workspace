@@ -25,7 +25,7 @@ def upgrade() -> None:
         sa.Column("owner_user_id", sa.String(120), nullable=False),
         sa.Column("previous_response_id", sa.String(200), nullable=False),
         sa.Column("tool_name", sa.String(120), nullable=False),
-        sa.Column("arguments", sa.JSON(), nullable=False),
+        sa.Column("arguments_json", sa.JSON(), nullable=False),
         sa.Column("action_key", sa.Text(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
