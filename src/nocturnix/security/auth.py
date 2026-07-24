@@ -46,6 +46,11 @@ ALL_PERMISSIONS = {
     "security_sessions.revoke",
     "users.read",
     "users.manage",
+    "business_tasks.manage",
+    "reminders.manage",
+    "repair_context.read",
+    "repair_context.manage",
+    "codex_tasks.manage",
 }
 ROLE_PERMISSIONS = {
     "owner": sorted(ALL_PERMISSIONS),

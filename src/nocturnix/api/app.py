@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from collections import defaultdict
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime, timedelta
 from time import monotonic
+from typing import Any, cast
 from uuid import uuid4
 from weakref import finalize
 
@@ -39,7 +41,16 @@ from nocturnix.models import (
     RiskLevel,
     UserIdentity,
 )
-from nocturnix.persistence_models import ProviderAccountRow, SessionRow, UserRow
+from nocturnix.persistence_models import (
+    CodexTaskRecordRow,
+    ConversationRow,
+    ProviderAccountRow,
+    RecurrenceRuleRow,
+    ReminderRow,
+    RepairContextRow,
+    SessionRow,
+    UserRow,
+)
 from nocturnix.repositories.sql import (
     SqlApprovalRepository,
     SqlAuditRepository,
@@ -54,6 +65,11 @@ from nocturnix.security.auth import (
     OAuthService,
     PasswordResetService,
     stable_hash,
+)
+from nocturnix.services.business import (
+    BusinessService,
+    InAppMockNotificationProvider,
+    make_id,
 )
 from nocturnix.services.core import (
     ApprovalConflict,
@@ -799,6 +815,427 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ):
             raise HTTPException(status_code=404, detail="provider account not found")
         return {"revoked": True}
+
+    @app.get("/api/v1/widget/config")
+    def widget_config(user: UserIdentity = Depends(auth_identity)):
+        return {
+            "mock": True,
+            "version": APP_VERSION,
+            "development_warning": "Development-only mock widget. No live providers are connected.",
+            "context_modes": ["public", "customer", "technician", "owner"],
+            "features": ["chat", "tasks", "reminders", "focus_now", "repair_copilot"],
+            "user_id": user.user_id,
+        }
+
+    @app.get("/api/v1/conversations")
+    def list_conversations(
+        user: UserIdentity = Depends(require_perm("assistant.chat")),
+        services: RequestServices = Depends(get_services),
+    ):
+        rows = services.session.scalars(
+            select(ConversationRow)
+            .where(ConversationRow.owner_user_id == user.user_id)
+            .order_by(ConversationRow.updated_at.desc())
+        ).all()
+        return {
+            "items": [
+                {
+                    "id": r.id,
+                    "mode": r.mode,
+                    "status": r.status,
+                    "created_at": r.created_at,
+                    "updated_at": r.updated_at,
+                    "context_mode": r.mode,
+                }
+                for r in rows
+            ]
+        }
+
+    @app.post("/api/v1/conversations")
+    def create_conversation(
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        mode = str(req.get("context_mode") or "owner")
+        if mode not in {"public", "customer", "technician", "owner"}:
+            raise HTTPException(status_code=400, detail="invalid context mode")
+        if mode == "owner":
+            AuthorizationService(services.session).require(user, "assistant.chat")
+        now = datetime.now(UTC)
+        row = ConversationRow(
+            id=f"conv_{uuid4().hex[:12]}",
+            owner_user_id=user.user_id,
+            mode=mode,
+            status="active",
+            created_at=now,
+            updated_at=now,
+            retention_expires_at=now
+            + timedelta(days=services.container.settings.conversation_retention_days),
+        )
+        services.session.add(row)
+        return {"id": row.id, "context_mode": mode, "mock": True}
+
+    @app.post("/api/v1/widget/messages")
+    def widget_message(
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        text = str(req.get("message") or "").strip()
+        mode = str(req.get("context_mode") or "owner")
+        if "owner mode" in text.lower() and mode != "owner":
+            mode = str(req.get("context_mode") or "public")
+        biz = BusinessService(services.session)
+        if "focus" in text.lower():
+            payload = biz.focus_now(user.user_id)
+            response = "Here are up to three Focus Now items."
+        elif "waiting" in text.lower():
+            payload = biz.waiting_on(user.user_id)
+            response = "Here is what is waiting on someone or something else."
+        elif "briefing" in text.lower():
+            payload = biz.briefing(user.user_id)
+            response = "Here is a mock daily business briefing."
+        elif "close out" in text.lower() or "end of day" in text.lower():
+            payload = biz.end_of_day(user.user_id)
+            response = "Here are gentle end-of-day recovery choices."
+        elif text.lower().startswith("remind me"):
+            when = datetime.now(UTC) + timedelta(days=1)
+            row = ReminderRow(
+                id=make_id("rem"),
+                owner_user_id=user.user_id,
+                reminder_type="scheduled",
+                scheduled_at=when,
+                next_delivery_at=when,
+                status="scheduled",
+                priority="normal",
+                delivery_channel="in_app_mock",
+                title=text[:200],
+                created_at=datetime.now(UTC),
+            )
+            services.session.add(row)
+            payload = {"reminder_id": row.id}
+            response = "I captured that as a mock in-app reminder for tomorrow."
+        else:
+            payload = {
+                "supported_commands": [
+                    "remind me tomorrow",
+                    "what should I focus on",
+                    "what am I waiting on",
+                    "prepare my morning briefing",
+                    "close out my day",
+                    "track this Codex task",
+                    "draft a customer update for this repair",
+                ]
+            }
+            response = (
+                "Mock assistant response: I can help capture tasks, reminders, "
+                "focus items, and repair-copilot drafts."
+            )
+        return {
+            "mock": True,
+            "context_mode": mode,
+            "response": response,
+            "typing_simulation": True,
+            "payload": payload,
+            "proposed_actions": [],
+        }
+
+    @app.get("/api/v1/tasks")
+    def list_tasks(
+        status: str | None = None,
+        user: UserIdentity = Depends(require_perm("assistant.chat")),
+        services: RequestServices = Depends(get_services),
+    ):
+        return {"items": BusinessService(services.session).list_tasks(user.user_id, status)}
+
+    @app.post("/api/v1/tasks")
+    def create_task(
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        return BusinessService(services.session).create_task(user.user_id, req)
+
+    @app.post("/api/v1/tasks/{task_id}/complete")
+    def complete_task(
+        task_id: str,
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        try:
+            return BusinessService(services.session).complete(user.user_id, task_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="task not found") from exc
+
+    @app.post("/api/v1/tasks/{task_id}/snooze")
+    def snooze_task(
+        task_id: str,
+        req: dict[str, datetime],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        try:
+            return BusinessService(services.session).snooze(user.user_id, task_id, req["until"])
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="task not found") from exc
+
+    @app.post("/api/v1/tasks/{task_id}/reschedule")
+    def reschedule_task(
+        task_id: str,
+        req: dict[str, datetime],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        try:
+            return BusinessService(services.session).reschedule(
+                user.user_id, task_id, req["due_at"]
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="task not found") from exc
+
+    @app.get("/api/v1/waiting-on")
+    def waiting_on(
+        user: UserIdentity = Depends(require_perm("assistant.chat")),
+        services: RequestServices = Depends(get_services),
+    ):
+        return BusinessService(services.session).waiting_on(user.user_id)
+
+    @app.get("/api/v1/focus-now")
+    def focus_now(
+        available_minutes: int = 30,
+        user: UserIdentity = Depends(require_perm("assistant.chat")),
+        services: RequestServices = Depends(get_services),
+    ):
+        return BusinessService(services.session).focus_now(user.user_id, available_minutes)
+
+    @app.get("/api/v1/daily-briefing")
+    def daily_briefing(
+        user: UserIdentity = Depends(require_perm("assistant.chat")),
+        services: RequestServices = Depends(get_services),
+    ):
+        return BusinessService(services.session).briefing(user.user_id)
+
+    @app.get("/api/v1/end-of-day-review")
+    def eod(
+        user: UserIdentity = Depends(require_perm("assistant.chat")),
+        services: RequestServices = Depends(get_services),
+    ):
+        return BusinessService(services.session).end_of_day(user.user_id)
+
+    @app.get("/api/v1/reminders")
+    def list_reminders(
+        user: UserIdentity = Depends(require_perm("assistant.chat")),
+        services: RequestServices = Depends(get_services),
+    ):
+        rows = services.session.scalars(
+            select(ReminderRow)
+            .where(ReminderRow.owner_user_id == user.user_id)
+            .order_by(ReminderRow.scheduled_at)
+        ).all()
+        return {"items": [{c.name: getattr(r, c.name) for c in r.__table__.columns} for r in rows]}
+
+    @app.post("/api/v1/reminders")
+    def create_reminder(
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        scheduled = req.get("scheduled_at") or datetime.now(UTC) + timedelta(hours=1)
+        now = datetime.now(UTC)
+        row = ReminderRow(
+            id=make_id("rem"),
+            owner_user_id=user.user_id,
+            related_task_id=req.get("related_task_id"),
+            related_repair_id=req.get("related_repair_id"),
+            reminder_type=str(req.get("reminder_type") or "scheduled"),
+            scheduled_at=scheduled,
+            next_delivery_at=scheduled,
+            trigger_condition=req.get("trigger_condition"),
+            status="scheduled",
+            priority=str(req.get("priority") or "normal"),
+            delivery_channel="in_app_mock",
+            quiet_hour_handling=str(req.get("quiet_hour_handling") or "bundle"),
+            title=str(req.get("title") or "Reminder")[:200],
+            created_at=now,
+        )
+        services.session.add(row)
+        return {"id": row.id, "mock": True}
+
+    @app.post("/api/v1/reminders/{reminder_id}/deliver-mock")
+    def deliver_mock(
+        reminder_id: str,
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        row = services.session.get(ReminderRow, reminder_id)
+        if not row or row.owner_user_id != user.user_id:
+            raise HTTPException(status_code=404, detail="reminder not found")
+        return {
+            "event_id": InAppMockNotificationProvider().deliver(services.session, row).id,
+            "mock": True,
+        }
+
+    @app.get("/api/v1/reminder-preferences")
+    def reminder_preferences(user: UserIdentity = Depends(require_perm("preferences.read"))):
+        return {
+            "workday_start": "09:00",
+            "workday_end": "17:00",
+            "quiet_hours": {"start": "20:00", "end": "08:00"},
+            "maximum_non_urgent_reminders_per_hour": 3,
+            "digest_mode": True,
+            "urgent_only_mode": False,
+            "default_snooze_minutes": 30,
+            "reminder_categories_enabled": ["scheduled", "follow_up", "review", "safety"],
+            "morning_briefing_time": "08:45",
+            "end_of_day_review_time": "16:45",
+            "critical_safety_requires_confirmation_to_disable": True,
+        }
+
+    @app.post("/api/v1/recurrence-rules")
+    def create_recurrence(
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        freq = str(req.get("frequency") or "daily")
+        if freq not in {"daily", "selected_weekdays", "weekly", "monthly", "interval"}:
+            raise HTTPException(status_code=400, detail="invalid recurrence frequency")
+        row = RecurrenceRuleRow(
+            id=make_id("recur"),
+            owner_user_id=user.user_id,
+            frequency=freq,
+            interval=int(cast(Any, req.get("interval") or 1)),
+            weekdays=req.get("weekdays") or [],
+            day_of_month=req.get("day_of_month"),
+            start_at=req.get("start_at") or datetime.now(UTC),
+            end_at=req.get("end_at"),
+            template=req.get("template") or {},
+            created_at=datetime.now(UTC),
+        )
+        services.session.add(row)
+        return {"id": row.id, "mock": True}
+
+    @app.get("/api/v1/repair-contexts")
+    def repair_contexts(
+        context_mode: str = "owner",
+        user: UserIdentity = Depends(require_perm("repair_intake.read")),
+        services: RequestServices = Depends(get_services),
+    ):
+        if context_mode == "public":
+            return {"items": []}
+        rows = services.session.scalars(
+            select(RepairContextRow).where(RepairContextRow.owner_user_id == user.user_id)
+        ).all()
+        return {"items": [{c.name: getattr(r, c.name) for c in r.__table__.columns} for r in rows]}
+
+    @app.post("/api/v1/repair-contexts")
+    def create_repair_context(
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        AuthorizationService(services.session).require(user, "repair_intake.create")
+        now = datetime.now(UTC)
+        row = RepairContextRow(
+            id=make_id("rctx"),
+            owner_user_id=user.user_id,
+            context_mode=str(req.get("context_mode") or "owner"),
+            device_type=str(req.get("device_type") or "device"),
+            manufacturer=req.get("manufacturer"),
+            model=req.get("model"),
+            reported_issue=str(req.get("reported_issue") or "Mock issue"),
+            current_status=str(req.get("current_status") or "intake"),
+            assigned_technician=req.get("assigned_technician"),
+            customer_approval_state=str(req.get("customer_approval_state") or "not_requested"),
+            parts_state=str(req.get("parts_state") or "not_checked"),
+            target_at=req.get("target_at"),
+            safety_flags=req.get("safety_flags") or [],
+            created_at=now,
+            updated_at=now,
+        )
+        services.session.add(row)
+        return {"id": row.id, "mock": True}
+
+    @app.post("/api/v1/repair-contexts/{repair_id}/proposals")
+    def repair_proposals(
+        repair_id: str,
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        row = services.session.get(RepairContextRow, repair_id)
+        if not row or row.owner_user_id != user.user_id:
+            raise HTTPException(status_code=404, detail="repair context not found")
+        action = str(req.get("action") or "customer_update_draft")
+        approval = services.approvals.create(
+            user,
+            ApprovalCreateRequest(
+                action_type="repair_copilot_proposal",
+                provider="mock_repair_copilot",
+                resource=repair_id,
+                title=f"Approve mock {action}",
+                proposed_content={
+                    "action": action,
+                    "repair_id": repair_id,
+                    "draft": "Mock-only proposed action; no status is changed until approved.",
+                },
+                risk_level=RiskLevel.medium,
+            ),
+        )
+        return {
+            "mock": True,
+            "approval": approval,
+            "proposals": [
+                "diagnostic_checklist",
+                "missing_information_checklist",
+                "customer_update_draft",
+                "internal_note_draft",
+                "parts_needed_list",
+                "status_change_proposal",
+                "follow_up_reminder",
+                "safety_escalation",
+            ],
+        }
+
+    @app.get("/api/v1/codex-task-records")
+    def codex_tasks(
+        user: UserIdentity = Depends(require_perm("assistant.chat")),
+        services: RequestServices = Depends(get_services),
+    ):
+        rows = services.session.scalars(
+            select(CodexTaskRecordRow).where(CodexTaskRecordRow.owner_user_id == user.user_id)
+        ).all()
+        return {
+            "items": [{c.name: getattr(r, c.name) for c in r.__table__.columns} for r in rows],
+            "mock": True,
+        }
+
+    @app.post("/api/v1/codex-task-records")
+    def create_codex_task(
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        now = datetime.now(UTC)
+        row = CodexTaskRecordRow(
+            id=make_id("codex"),
+            owner_user_id=user.user_id,
+            repository=str(req.get("repository") or "mock/repository"),
+            objective=str(req.get("objective") or "Mock delegated task"),
+            status=str(req.get("status") or "tracked"),
+            started_at=req.get("started_at"),
+            completion_at=req.get("completion_at"),
+            blocked_reason=req.get("blocked_reason"),
+            commit_sha=req.get("commit_sha"),
+            pull_request_reference=req.get("pull_request_reference"),
+            test_result=req.get("test_result"),
+            next_owner_action=req.get("next_owner_action"),
+            created_at=now,
+            updated_at=now,
+        )
+        services.session.add(row)
+        return {"id": row.id, "mock": True}
 
     static_root = __import__("pathlib").Path(__file__).resolve().parents[1] / "static"
     app.mount("/static", StaticFiles(directory=static_root), name="static")
