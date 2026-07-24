@@ -6,12 +6,13 @@ from time import monotonic
 from uuid import uuid4
 from weakref import finalize
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
+from fastapi import Cookie, Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import select
 
 from nocturnix.config import Settings
 from nocturnix.db import (
@@ -38,6 +39,7 @@ from nocturnix.models import (
     RiskLevel,
     UserIdentity,
 )
+from nocturnix.persistence_models import ProviderAccountRow, SessionRow, UserRow
 from nocturnix.repositories.sql import (
     SqlApprovalRepository,
     SqlAuditRepository,
@@ -45,6 +47,13 @@ from nocturnix.repositories.sql import (
     SqlMessageRepository,
     SqlPreferenceRepository,
     SqlRepairIntakeRepository,
+)
+from nocturnix.security.auth import (
+    AuthorizationService,
+    AuthService,
+    OAuthService,
+    PasswordResetService,
+    stable_hash,
 )
 from nocturnix.services.core import (
     ApprovalConflict,
@@ -132,7 +141,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         CORSMiddleware,
         allow_origins=resolved.cors_origins,
         allow_methods=["GET", "POST", "PUT"],
-        allow_headers=["Content-Type", "X-Nocturnix-Dev-User", "X-Request-ID"],
+        allow_headers=["Content-Type", "X-Nocturnix-Dev-User", "X-Request-ID", "X-CSRF-Token"],
         expose_headers=["X-Request-ID"],
     )
 
@@ -196,6 +205,61 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def approval_conflict(request: Request, exc: ApprovalConflict):
         return error_response(request, 409, "approval_conflict", str(exc))
 
+    def auth_identity(
+        request: Request,
+        services: RequestServices = Depends(get_services),
+        x_nocturnix_dev_user: str | None = Header(default=None),
+        nocturnix_session: str | None = Cookie(default=None),
+    ) -> UserIdentity:
+        settings = services.container.settings
+        if settings.auth_mode == "disabled":
+            raise HTTPException(status_code=401, detail="authentication disabled")
+        if settings.auth_mode == "development_header":
+            if (
+                not settings.allow_development_header_auth
+                or not settings.dev_identity_enabled
+                or not x_nocturnix_dev_user
+            ):
+                raise HTTPException(status_code=401, detail="development identity header required")
+            return UserIdentity(
+                user_id=x_nocturnix_dev_user,
+                display_name="Development Header User",
+                auth_mode="development_header",
+            )
+        raw = request.cookies.get(settings.session_cookie_name) or nocturnix_session
+        if not raw:
+            raise HTTPException(status_code=401, detail="authenticated session required")
+        resolved_user = AuthService(services.session, settings).user_for_token(raw)
+        if not resolved_user:
+            raise HTTPException(status_code=401, detail="authenticated session required")
+        user, session = resolved_user
+        request.state.nocturnix_session_id = session.id
+        request.state.nocturnix_csrf_hash = session.csrf_token_hash
+        return UserIdentity(user_id=user.id, display_name=user.display_name, auth_mode="session")
+
+    def require_csrf(
+        request: Request,
+        user: UserIdentity = Depends(auth_identity),
+        x_csrf_token: str | None = Header(default=None),
+    ) -> UserIdentity:
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+            expected = getattr(request.state, "nocturnix_csrf_hash", None)
+            if user.auth_mode == "session" and (
+                not x_csrf_token or stable_hash(x_csrf_token) != expected
+            ):
+                raise HTTPException(status_code=403, detail="invalid CSRF token")
+        return user
+
+    def require_perm(permission: str):
+        def checker(
+            user: UserIdentity = Depends(auth_identity),
+            services: RequestServices = Depends(get_services),
+        ) -> UserIdentity:
+            AuthorizationService(services.session).require(user, permission)
+            return user
+
+        return checker
+
     @app.get("/api/v1/health")
     def health(container: AppContainer = Depends(get_container)):
         return {
@@ -212,12 +276,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "application": APP_NAME,
             "version": APP_VERSION,
             "contact_message": container.settings.public_contact_message,
-            "auth_mode": "mock-development-only",
+            "auth_mode": container.settings.auth_mode,
         }
 
     @app.get("/api/v1/status")
     def status(
-        container: AppContainer = Depends(get_container), user: UserIdentity = Depends(current_user)
+        container: AppContainer = Depends(get_container),
+        user: UserIdentity = Depends(auth_identity),
     ):
         return {
             "mock_ai_provider_enabled": True,
@@ -231,6 +296,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "persistence_provider": safe_database_provider(container.settings.database_url),
             "database_ready": database_ready(container.settings.database_url),
             "migration_revision": current_revision(container.settings.database_url),
+            "authentication_mode": container.settings.auth_mode,
+            "session_storage_available": True,
+            "rbac_available": True,
+            "secret_storage_enabled": container.settings.secret_storage_enabled,
+            "mock_oauth_available": container.settings.mock_oauth_enabled,
+            "provider_integrations_disabled": True,
             "retention_configured": True,
             "ready": True,
             "user_id": user.user_id,
@@ -240,7 +311,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def chat(
         req: ChatRequest,
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(require_perm("assistant.chat")),
     ):
         sources, _placeholder = services.container.knowledge.search(req.message, limit=3)
         response = services.container.assistant.respond(req.message, req.conversation_id, sources)
@@ -252,7 +323,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def knowledge_search(
         req: KnowledgeSearchRequest,
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(require_perm("assistant.chat")),
     ):
         services.audit.record(user, "knowledge", "searched")
         results, placeholder = services.container.knowledge.search(req.query, req.limit)
@@ -262,7 +333,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def repair_intake(
         req: RepairIntakeRequest,
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(require_perm("repair_intake.create")),
     ):
         resp = services.repair.create(user, req, services.audit)
         from datetime import UTC, datetime, timedelta
@@ -300,14 +371,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def create_approval(
         req: ApprovalCreateRequest,
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(auth_identity),
     ):
         return services.approvals.create(user, req)
 
     @app.get("/api/v1/approvals")
     def list_approvals(
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(auth_identity),
     ):
         return {"items": services.approvals.list(user)}
 
@@ -315,7 +386,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def get_approval(
         approval_id: str,
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(auth_identity),
     ):
         return services.approvals.get(user, approval_id)
 
@@ -323,7 +394,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def approve(
         approval_id: str,
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(auth_identity),
     ):
         return services.approvals.approve(user, approval_id)
 
@@ -331,7 +402,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def reject(
         approval_id: str,
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(auth_identity),
     ):
         return services.approvals.reject(user, approval_id)
 
@@ -341,7 +412,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         limit: int = 20,
         category: str | None = None,
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(auth_identity),
     ):
         return {
             "items": services.audit.list(user, category, offset, limit),
@@ -371,18 +442,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     ]
 
     @app.get("/api/v1/mock/email/messages")
-    def list_email(user: UserIdentity = Depends(current_user)):
+    def list_email(user: UserIdentity = Depends(auth_identity)):
         return {"mock": True, "items": email_messages}
 
     @app.get("/api/v1/mock/email/messages/{message_id}")
-    def get_email(message_id: str, user: UserIdentity = Depends(current_user)):
+    def get_email(message_id: str, user: UserIdentity = Depends(auth_identity)):
         return next(
             (m for m in email_messages if m["id"] == message_id),
             (_ for _ in ()).throw(NotFound("email not found")),
         )
 
     @app.post("/api/v1/mock/email/messages/{message_id}/summarize")
-    def summarize_email(message_id: str, user: UserIdentity = Depends(current_user)):
+    def summarize_email(message_id: str, user: UserIdentity = Depends(auth_identity)):
         return {
             "mock": True,
             "message_id": message_id,
@@ -393,7 +464,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def email_draft(
         message_id: str,
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(auth_identity),
     ):
         approval = services.approvals.create(
             user,
@@ -426,14 +497,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     ]
 
     @app.get("/api/v1/mock/calendar/events")
-    def list_calendar(user: UserIdentity = Depends(current_user)):
+    def list_calendar(user: UserIdentity = Depends(auth_identity)):
         return {"mock": True, "items": calendar_events}
 
     @app.post("/api/v1/mock/calendar/event-proposals")
     def calendar_proposal(
         req: CalendarProposal,
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(auth_identity),
     ):
         conflict = any(
             str(event["start"]).startswith(req.start.strftime("%Y-%m-%dT%H"))
@@ -454,7 +525,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/api/v1/preferences")
     def get_preferences(
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(auth_identity),
     ):
         return services.preferences.get(user)
 
@@ -462,7 +533,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def put_preferences(
         req: PreferencesUpdateRequest,
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(auth_identity),
     ):
         return services.preferences.update(user, req)
 
@@ -470,9 +541,264 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def retention_cleanup(
         req: RetentionCleanupRequest,
         services: RequestServices = Depends(get_services),
-        user: UserIdentity = Depends(current_user),
+        user: UserIdentity = Depends(auth_identity),
     ):
         return services.retention.cleanup(user, dry_run=req.dry_run)
+
+    @app.post("/api/v1/auth/register")
+    def auth_register(
+        req: dict[str, str],
+        response: Response,
+        request: Request,
+        services: RequestServices = Depends(get_services),
+    ):
+        if not services.container.settings.allow_development_registration:
+            raise HTTPException(status_code=403, detail="development registration disabled")
+        user = AuthService(services.session, services.container.settings).create_user(
+            req.get("email", ""),
+            req.get("password", ""),
+            req.get("display_name", "Development User"),
+            req.get("role", "owner"),
+        )
+        return {
+            "id": user.id,
+            "login_identifier": user.login_identifier,
+            "display_name": user.display_name,
+            "account_status": user.account_status,
+            "roles": [req.get("role", "owner")],
+        }
+
+    @app.post("/api/v1/auth/login")
+    def auth_login(
+        req: dict[str, str],
+        response: Response,
+        request: Request,
+        services: RequestServices = Depends(get_services),
+    ):
+        try:
+            user, token, csrf = AuthService(services.session, services.container.settings).login(
+                req.get("email", ""), req.get("password", ""), request.headers.get("user-agent")
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=401, detail=str(exc)) from exc
+        settings = services.container.settings
+        response.set_cookie(
+            settings.session_cookie_name,
+            token,
+            httponly=True,
+            secure=settings.session_cookie_secure,
+            samesite="lax",
+            max_age=settings.session_absolute_hours * 3600,
+        )
+        return {
+            "user": {
+                "id": user.id,
+                "login_identifier": user.login_identifier,
+                "display_name": user.display_name,
+            },
+            "csrf_token": csrf,
+        }
+
+    @app.get("/api/v1/auth/me")
+    def auth_me(
+        user: UserIdentity = Depends(auth_identity),
+        services: RequestServices = Depends(get_services),
+    ):
+        permissions = sorted(
+            AuthorizationService(services.session).permissions_for_user(user.user_id)
+        )
+        return {
+            "id": user.user_id,
+            "display_name": user.display_name,
+            "auth_mode": user.auth_mode,
+            "permissions": permissions,
+        }
+
+    @app.post("/api/v1/auth/logout")
+    def auth_logout(
+        response: Response,
+        request: Request,
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        sid = getattr(request.state, "nocturnix_session_id", None)
+        if sid:
+            AuthService(services.session, services.container.settings).revoke(
+                sid, user.user_id, "logout"
+            )
+        response.delete_cookie(services.container.settings.session_cookie_name)
+        return {"revoked": True}
+
+    @app.get("/api/v1/auth/sessions")
+    def auth_sessions(
+        user: UserIdentity = Depends(require_perm("security_sessions.read")),
+        services: RequestServices = Depends(get_services),
+    ):
+        rows = services.session.scalars(
+            select(SessionRow).where(SessionRow.user_id == user.user_id)
+        ).all()
+        return {
+            "items": [
+                {
+                    "id": r.id,
+                    "created_at": r.created_at,
+                    "last_seen_at": r.last_seen_at,
+                    "expires_at": r.expires_at,
+                    "absolute_expires_at": r.absolute_expires_at,
+                    "revoked_at": r.revoked_at,
+                    "revocation_reason": r.revocation_reason,
+                }
+                for r in rows
+            ]
+        }
+
+    @app.post("/api/v1/auth/sessions/revoke-all")
+    def auth_revoke_all(
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        count = AuthService(services.session, services.container.settings).revoke_all(user.user_id)
+        return {"revoked_count": count}
+
+    @app.post("/api/v1/auth/sessions/{session_id}/revoke")
+    def auth_revoke_session(
+        session_id: str,
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        ok = AuthService(services.session, services.container.settings).revoke(
+            session_id, user.user_id, "user_requested"
+        )
+        if not ok:
+            raise HTTPException(status_code=404, detail="session not found")
+        return {"revoked": True}
+
+    @app.post("/api/v1/auth/password/change")
+    def auth_password_change(
+        req: dict[str, str],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        row = services.session.get(UserRow, user.user_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="user not found")
+        try:
+            AuthService(services.session, services.container.settings).change_password(
+                row, req.get("current_password", ""), req.get("new_password", "")
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"changed": True}
+
+    @app.post("/api/v1/auth/password/reset/request")
+    def auth_reset_request(req: dict[str, str], services: RequestServices = Depends(get_services)):
+        return PasswordResetService(services.session, services.container.settings).request(
+            req.get("email", "")
+        )
+
+    @app.post("/api/v1/auth/password/reset/complete")
+    def auth_reset_complete(req: dict[str, str], services: RequestServices = Depends(get_services)):
+        try:
+            PasswordResetService(services.session, services.container.settings).complete(
+                req.get("reset_token", ""), req.get("new_password", "")
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"reset": True}
+
+    def _oauth_scopes(req: dict[str, object]) -> list[str]:
+        value = req.get("scopes")
+        if not isinstance(value, list):
+            return []
+        return [str(scope) for scope in value]
+
+    @app.post("/api/v1/oauth/{provider}/authorize")
+    def oauth_authorize(
+        provider: str,
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        try:
+            return OAuthService(services.session, services.container.settings).start(
+                user.user_id,
+                provider,
+                str(req.get("redirect_uri", "")),
+                _oauth_scopes(req),
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.get("/api/v1/oauth/{provider}/callback")
+    def oauth_callback(
+        provider: str,
+        state: str,
+        pkce_verifier: str,
+        error: str | None = None,
+        user: UserIdentity = Depends(auth_identity),
+        services: RequestServices = Depends(get_services),
+    ):
+        try:
+            acct = OAuthService(services.session, services.container.settings).callback(
+                user.user_id, provider, state, pkce_verifier, error
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"mock": True, "provider_account_id": acct.id, "status": acct.status}
+
+    @app.get("/api/v1/provider-accounts")
+    def provider_accounts(
+        user: UserIdentity = Depends(require_perm("provider_accounts.read")),
+        services: RequestServices = Depends(get_services),
+    ):
+        rows = services.session.scalars(
+            select(ProviderAccountRow).where(ProviderAccountRow.owner_user_id == user.user_id)
+        ).all()
+        return {
+            "items": [
+                {
+                    "id": r.id,
+                    "provider_name": r.provider_name,
+                    "display_label": r.display_label,
+                    "requested_scopes": r.requested_scopes,
+                    "granted_scopes": r.granted_scopes,
+                    "linked_at": r.linked_at,
+                    "revoked_at": r.revoked_at,
+                    "status": r.status,
+                    "mock": True,
+                }
+                for r in rows
+            ]
+        }
+
+    @app.get("/api/v1/provider-accounts/{provider_account_id}")
+    def provider_account(
+        provider_account_id: str,
+        user: UserIdentity = Depends(require_perm("provider_accounts.read")),
+        services: RequestServices = Depends(get_services),
+    ):
+        r = services.session.get(ProviderAccountRow, provider_account_id)
+        if not r or r.owner_user_id != user.user_id:
+            raise HTTPException(status_code=404, detail="provider account not found")
+        return {
+            "id": r.id,
+            "provider_name": r.provider_name,
+            "display_label": r.display_label,
+            "status": r.status,
+            "mock": True,
+        }
+
+    @app.post("/api/v1/provider-accounts/{provider_account_id}/revoke")
+    def provider_revoke(
+        provider_account_id: str,
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        if not OAuthService(services.session, services.container.settings).revoke(
+            user.user_id, provider_account_id
+        ):
+            raise HTTPException(status_code=404, detail="provider account not found")
+        return {"revoked": True}
 
     static_root = __import__("pathlib").Path(__file__).resolve().parents[1] / "static"
     app.mount("/static", StaticFiles(directory=static_root), name="static")

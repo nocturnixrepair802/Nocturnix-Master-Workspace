@@ -157,3 +157,149 @@ class MockCalendarMetadataRow(Base):
     metadata_json: Mapped[dict[str, object]] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class UserRow(Base):
+    __tablename__ = "users"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    login_identifier: Mapped[str] = mapped_column(String(254), nullable=False)
+    normalized_login_identifier: Mapped[str] = mapped_column(
+        String(254), unique=True, index=True, nullable=False
+    )
+    display_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    account_status: Mapped[str] = mapped_column(String(30), index=True, nullable=False)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_successful_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_failed_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    failed_login_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    security_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+
+class RoleRow(Base):
+    __tablename__ = "roles"
+    name: Mapped[str] = mapped_column(String(80), primary_key=True)
+    description: Mapped[str] = mapped_column(String(200), nullable=False)
+
+
+class PermissionRow(Base):
+    __tablename__ = "permissions"
+    name: Mapped[str] = mapped_column(String(120), primary_key=True)
+    description: Mapped[str] = mapped_column(String(240), nullable=False)
+
+
+class UserRoleRow(Base):
+    __tablename__ = "user_roles"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    role_name: Mapped[str] = mapped_column(ForeignKey("roles.name"), primary_key=True)
+
+
+class RolePermissionRow(Base):
+    __tablename__ = "role_permissions"
+    role_name: Mapped[str] = mapped_column(ForeignKey("roles.name"), primary_key=True)
+    permission_name: Mapped[str] = mapped_column(ForeignKey("permissions.name"), primary_key=True)
+
+
+class SessionRow(Base):
+    __tablename__ = "sessions"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    session_token_hash: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True, nullable=False
+    )
+    csrf_token_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), index=True, nullable=False
+    )
+    absolute_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revocation_reason: Mapped[str | None] = mapped_column(String(120))
+    user_agent: Mapped[str | None] = mapped_column(String(200))
+    security_version: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class PasswordResetChallengeRow(Base):
+    __tablename__ = "password_reset_challenges"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    reset_token_hash: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), index=True, nullable=False
+    )
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    invalidated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
+class ProviderAccountRow(Base):
+    __tablename__ = "provider_accounts"
+    __table_args__ = (UniqueConstraint("provider_name", "provider_subject_identifier"),)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    provider_name: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
+    provider_subject_identifier: Mapped[str] = mapped_column(String(200), nullable=False)
+    display_label: Mapped[str] = mapped_column(String(160), nullable=False)
+    normalized_provider_email: Mapped[str | None] = mapped_column(String(254))
+    requested_scopes: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    granted_scopes: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    consent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    linked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_refresh_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(30), index=True, nullable=False)
+    safe_provider_metadata: Mapped[dict[str, object]] = mapped_column(
+        JSON, default=dict, nullable=False
+    )
+
+
+class EncryptedSecretRecordRow(Base):
+    __tablename__ = "encrypted_secret_records"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    provider_account_id: Mapped[str | None] = mapped_column(
+        ForeignKey("provider_accounts.id"), index=True
+    )
+    secret_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    encrypted_payload: Mapped[str] = mapped_column(Text, nullable=False)
+    encryption_algorithm: Mapped[str] = mapped_column(String(80), nullable=False)
+    key_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    rotated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class OAuthAuthorizationStateRow(Base):
+    __tablename__ = "oauth_authorization_states"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    provider: Mapped[str] = mapped_column(String(80), nullable=False)
+    state_token_hash: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True, nullable=False
+    )
+    pkce_verifier_protected: Mapped[str] = mapped_column(String(128), nullable=False)
+    pkce_challenge: Mapped[str] = mapped_column(String(128), nullable=False)
+    redirect_uri: Mapped[str] = mapped_column(String(500), nullable=False)
+    requested_scopes: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), index=True, nullable=False
+    )
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    failure_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    failure_reason: Mapped[str | None] = mapped_column(String(200))
+    correlation_id: Mapped[str] = mapped_column(String(120), nullable=False)

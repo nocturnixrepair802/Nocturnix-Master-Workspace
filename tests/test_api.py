@@ -32,6 +32,8 @@ def client(rate: int = 120, db_path: Path | None = None) -> TestClient:
                 rate_limit_per_minute=rate,
                 database_url=f"sqlite:///{db_path}",
                 database_migration_mode="auto-test-only",
+                auth_mode="development_header",
+                allow_development_header_auth=True,
             )
         )
     )
