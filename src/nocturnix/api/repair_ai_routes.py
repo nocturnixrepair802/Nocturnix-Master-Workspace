@@ -15,9 +15,8 @@ from nocturnix.repair_confirmation_store import (
     RepairConfirmationExpired,
     RepairConfirmationNotFound,
     RepairConfirmationStore,
+    SqlRepairConfirmationStore,
 )
-
-_CONFIRMATIONS = RepairConfirmationStore()
 
 
 class RepairToolExecuteRequest(StrictModel):
@@ -52,7 +51,6 @@ def create_repair_ai_router(
     confirmation_store: RepairConfirmationStore | None = None,
 ) -> APIRouter:
     router = APIRouter(prefix="/api/v1/ai/repair-tools", tags=["repair-ai-tools"])
-    confirmations = confirmation_store or _CONFIRMATIONS
 
     @router.get("")
     def list_tools(
@@ -98,6 +96,7 @@ def create_repair_ai_router(
         if not settings.openai_api_key:
             raise HTTPException(status_code=503, detail="OpenAI API key is not configured")
 
+        confirmations = confirmation_store or SqlRepairConfirmationStore(services.session)
         previous_response_id = req.previous_response_id
         confirmed_actions: set[str] = set()
         if req.confirmation_id:
@@ -158,6 +157,7 @@ def create_repair_ai_router(
             metadata={
                 "model": settings.openai_model,
                 "confirmation_used": bool(req.confirmation_id),
+                "confirmation_store": "memory" if confirmation_store else "sql",
                 "proposed_action_count": len(proposed_actions),
                 "tool_result_count": len(result.tool_results),
             },
