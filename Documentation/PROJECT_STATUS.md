@@ -4,6 +4,33 @@ Last updated: 2026-07-23
 Version: 0.7.0 alpha
 State: Active development; stabilization in progress
 
+## Phase 2 canonical shadow-import milestone
+
+- Phase 2 Canonical Data Integration Architecture is complete.
+- `Source/import_engine/` provides an application-independent Import Engine,
+  read-only approved-workbook validator, structured release manifest, and isolated
+  SQLite shadow store.
+- Approved Service Type Normalization v1.0 remains protected by exact SHA-256
+  verification before validation, after read-only extraction, and before returning
+  an idempotent prior manifest.
+- Exact worksheet/table schemas, row counts, row-status distributions, governed
+  identifiers, canonical references, and the `SVC000343` exclusion reconcile before
+  persistence.
+- Shadow tables contain 77 Canonical Service Types, 17 aliases, 313 Service
+  normalization rows, and 265 Labor normalization rows.
+- Every imported row retains source workbook, approved version, source SHA-256,
+  worksheet/table, source row identity/number, import timestamp, exact source status,
+  row digest, and lossless raw payload.
+- Database constraints require `activation_approved = 0`, `runtime_active = 0`, and
+  `imported_status = SHADOW_REFERENCE`.
+- No runtime repository, application composition, production database read, pricing,
+  compatibility, quote, or repair workflow consumes the shadow tables.
+- Architecture, sequence, class, state-machine, rollback, and test-plan documentation
+  is recorded in
+  [CANONICAL_DATA_INTEGRATION_ARCHITECTURE.md](CANONICAL_DATA_INTEGRATION_ARCHITECTURE.md).
+- Row-level import and activation governance is recorded in
+  [SERVICE_TYPE_IMPORT_READINESS_CONTRACT.md](SERVICE_TYPE_IMPORT_READINESS_CONTRACT.md).
+
 ## Service Type Normalization QA milestone
 
 - Service Type Normalization review is complete.
@@ -26,11 +53,9 @@ State: Active development; stabilization in progress
 
 - Phase 0 is complete.
 - Phase 1A compatibility stabilization is complete.
+- Phase 2 canonical shadow import is complete.
 - Phase 1B has not started.
-- `main` is synchronized with `origin/main` at commit
-  `139145bc5b558bbd599c33c7168be16a079052ba` (`139145b`).
-- The current milestone tag is `v0.3.0-alpha`, which points to the current HEAD.
-- The repository was clean before this documentation-only closeout.
+- Phase 2 is ready for the closeout commit and annotated milestone tag.
 
 ## Verified working
 
@@ -44,9 +69,10 @@ State: Active development; stabilization in progress
 
 ## In progress
 
-- Phase 1B pricing stabilization is the next planned engine slice, but it has not
-  been approved or started.
-- Pricing business-rule questions must be resolved before Phase 1B implementation.
+- Competitive Pricing discovery is the next read-only work item. Pricing entry and
+  Phase 1B runtime stabilization have not started.
+- Pricing workbook readiness, missing inputs, identifier alignment, and unresolved
+  business rules must be assessed before pricing implementation.
 - The Master Pricing review package is documentation-first and remains
   uncommitted. ADR-007 resolves pricing-record identity and approves its
   47-column schema; generator execution and workbook creation have not occurred.
@@ -101,15 +127,22 @@ State: Active development; stabilization in progress
 
 ## Closeout validation
 
-- Ruff: passed.
-- Focused Pyright for Phase 1A files: 0 errors and 0 warnings.
-- Phase 0 and Phase 1A tests: 37 passed and 1 strict xfailed.
-- Remaining strict xfail: rejection of negative pricing inputs.
-- Application startup smoke test: passed; 20 tables loaded and compatibility
-  repository/engine sharing verified.
-- `git diff --check`: passed before the documentation closeout edits.
+- Phase 2 Ruff checks: passed.
+- Phase 2 focused Pyright: 0 errors, 0 warnings.
+- Import Engine tests: 8 passed.
+- Maintained `Tests/` suite: 52 passed and 1 xfailed.
+- Remaining expected failure: rejection of negative pricing inputs.
+- Approved-release temporary integration import: passed with exact
+  77/17/313/265 shadow counts, `314 = 313 + 1` Service reconciliation,
+  0 runtime-active rows, and 0 rows missing provenance.
+- Approved workbook SHA-256 matched before and after integration validation.
+- The four `Source/tests/` collection failures remain the pre-existing outdated
+  manager/workflow attribute references documented under Known failures and risks;
+  Phase 2 does not modify those paths.
+- `git diff --check`: passed.
 
 ## Next milestone
 
-Begin Phase 1B pricing stabilization only after reviewing and resolving the pricing
-business-rule questions recorded in the next-session handoff.
+Resume Competitive Pricing with read-only workbook and supporting-script discovery.
+Do not enter or infer pricing values until workbook readiness, source evidence,
+identifier alignment, and business-rule decisions are documented.

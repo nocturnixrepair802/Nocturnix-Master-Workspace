@@ -25,6 +25,15 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
 - ADR-007 accepting the `PRC######` Master Pricing identity namespace and the
   47-column Master Pricing review schema.
 - Documentation-first Master Pricing generator and independent validator.
+- Phase 2 shadow-only canonical data Import Engine with approved-release hash
+  verification, exact contract validation, structured manifests, and idempotent
+  SQLite persistence.
+- Namespaced shadow tables for Canonical Service Types, Service Type aliases,
+  Service normalization, and Labor normalization with complete row provenance.
+- Canonical data integration architecture, sequence diagram, class diagram, import
+  state machine, rollback boundary, and test plan.
+- Service Type Import Readiness Contract defining worksheet/status eligibility,
+  activation gates, reconciliation, governance, and failure conditions.
 
 ### Changed
 
@@ -49,6 +58,10 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
   namespace and later continue after the highest valid canonical PRC ID.
 - `RepairManager.validate_part()` remains as a deprecated compatibility alias while
   existing references are retired.
+- Approved workbook releases are now consumed through an isolated import boundary
+  rather than being exposed as a new runtime read path.
+- Phase 2 imports are constrained to `SHADOW_REFERENCE`; activation and runtime
+  consumption remain unimplemented.
 
 ### Fixed
 
@@ -64,6 +77,9 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
 - Phase 1A is complete. The compatibility path now uses an internal translation
   layer over the unchanged workbook schema, while temporary caller shims remain
   explicitly marked for removal after canonical workbook migration.
+- Phase 2 is complete. The canonical import boundary validates approved workbook
+  releases and persists inactive shadow/reference records without changing the
+  current application composition or production data path.
 
 ### Verification
 
@@ -81,6 +97,17 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
 - The application startup smoke test loaded all 20 configured workbook tables and
   verified shared compatibility repository and engine ownership.
 - `git diff --check` passed before the documentation-only closeout changes.
+- Phase 2 Import Engine tests passed: 8 passed.
+- The maintained `Tests/` suite passed: 52 passed and 1 expected failure.
+- Phase 2 Ruff checks passed; focused Pyright reported 0 errors and 0 warnings.
+- Approved Service Type Normalization v1.0 imported successfully into an
+  automatically deleted temporary shadow database with exact 77/17/313/265 counts,
+  zero runtime-active rows, and complete provenance.
+- The approved workbook SHA-256 remained
+  `DE0F0957F687DF4866A2D06C4DF85A542FF58B61897481741EB1E6A04D825FBA`
+  before and after integration validation.
+- Four legacy `Source/tests/` collection errors remain pre-existing and separately
+  documented; Phase 2 does not modify their manager/workflow paths.
 
 ## Historical summary
 
