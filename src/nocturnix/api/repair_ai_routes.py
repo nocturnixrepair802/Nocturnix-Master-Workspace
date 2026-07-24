@@ -10,6 +10,14 @@ from pydantic import Field
 from nocturnix.models import StrictModel, UserIdentity
 from nocturnix.openai_repair_agent import OpenAIRepairAgent
 from nocturnix.repair_ai_tools import RepairAssistantTools
+from nocturnix.repair_confirmation_store import (
+    RepairConfirmationConsumed,
+    RepairConfirmationExpired,
+    RepairConfirmationNotFound,
+    RepairConfirmationStore,
+)
+
+_CONFIRMATIONS = RepairConfirmationStore()
 
 
 class RepairToolExecuteRequest(StrictModel):
@@ -27,7 +35,7 @@ class RepairToolExecuteResponse(StrictModel):
 class RepairAgentChatRequest(StrictModel):
     message: str = Field(min_length=1, max_length=4000)
     previous_response_id: str | None = Field(default=None, max_length=200)
-    confirmed_actions: list[str] = Field(default_factory=list, max_length=20)
+    confirmation_id: str | None = Field(default=None, max_length=80)
 
 
 class RepairAgentChatResponse(StrictModel):
@@ -41,8 +49,10 @@ def create_repair_ai_router(
     get_services: Callable[..., Any],
     auth_identity: Callable[..., UserIdentity],
     require_csrf: Callable[..., UserIdentity],
+    confirmation_store: RepairConfirmationStore | None = None,
 ) -> APIRouter:
     router = APIRouter(prefix="/api/v1/ai/repair-tools", tags=["repair-ai-tools"])
+    confirmations = confirmation_store or _CONFIRMATIONS
 
     @router.get("")
     def list_tools(
@@ -88,6 +98,23 @@ def create_repair_ai_router(
         if not settings.openai_api_key:
             raise HTTPException(status_code=503, detail="OpenAI API key is not configured")
 
+        previous_response_id = req.previous_response_id
+        confirmed_actions: set[str] = set()
+        if req.confirmation_id:
+            try:
+                pending = confirmations.consume(
+                    confirmation_id=req.confirmation_id,
+                    owner_user_id=user.user_id,
+                )
+            except RepairConfirmationNotFound as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+            except RepairConfirmationExpired as exc:
+                raise HTTPException(status_code=410, detail=str(exc)) from exc
+            except RepairConfirmationConsumed as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
+            previous_response_id = pending.previous_response_id
+            confirmed_actions.add(pending.action_key)
+
         client = OpenAI(
             api_key=settings.openai_api_key,
             timeout=settings.openai_timeout_seconds,
@@ -101,24 +128,36 @@ def create_repair_ai_router(
         result = agent.run(
             owner_user_id=user.user_id,
             message=req.message,
-            previous_response_id=req.previous_response_id,
-            confirmed_actions=set(req.confirmed_actions),
+            previous_response_id=previous_response_id,
+            confirmed_actions=confirmed_actions,
         )
-        proposed_actions = [
-            {
-                "tool_name": action.tool_name,
-                "arguments": action.arguments,
-                "call_id": action.call_id,
-                "confirmation_key": agent.action_key(action.tool_name, action.arguments),
-            }
-            for action in result.proposed_actions
-        ]
+
+        proposed_actions: list[dict[str, Any]] = []
+        if result.response_id:
+            for action in result.proposed_actions:
+                pending = confirmations.create(
+                    owner_user_id=user.user_id,
+                    previous_response_id=result.response_id,
+                    tool_name=action.tool_name,
+                    arguments=action.arguments,
+                    action_key=agent.action_key(action.tool_name, action.arguments),
+                )
+                proposed_actions.append(
+                    {
+                        "tool_name": action.tool_name,
+                        "arguments": action.arguments,
+                        "confirmation_id": pending.id,
+                        "expires_at": pending.expires_at.isoformat(),
+                    }
+                )
+
         services.audit.record(
             user,
             "repair_ai_agent",
             "chat",
             metadata={
                 "model": settings.openai_model,
+                "confirmation_used": bool(req.confirmation_id),
                 "proposed_action_count": len(proposed_actions),
                 "tool_result_count": len(result.tool_results),
             },
