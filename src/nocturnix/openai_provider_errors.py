@@ -99,7 +99,11 @@ def classify_openai_exception(exc: Exception) -> OpenAIProviderFailure | None:
             return OpenAIProviderFailure(
                 category="rate_limit",
                 status_code=429,
-                public_detail="The AI provider is temporarily rate limited. Please try again shortly.",
+
+                public_detail=(
+                "The AI provider is temporarily rate limited. "
+                "Please try again shortly."
+                ),
                 retryable=True,
                 request_id=request_id,
             )

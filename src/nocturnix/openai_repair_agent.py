@@ -99,8 +99,8 @@ class OpenAIRepairAgent:
             proposed: list[ProposedRepairAction] = []
             outputs: list[dict[str, Any]] = []
             for call in calls:
-                name = str(getattr(call, "name"))
-                call_id = str(getattr(call, "call_id"))
+                name = str(call.name)
+                call_id = str(call.call_id)
                 arguments = self._arguments(call)
                 action_key = self.action_key(name, arguments)
 
@@ -151,7 +151,7 @@ class OpenAIRepairAgent:
             response = self.client.responses.create(
                 model=self.model,
                 instructions=SYSTEM_INSTRUCTIONS,
-                previous_response_id=getattr(response, "id"),
+                previous_response_id=response.id,
                 input=outputs,
                 tools=self.tools.openai_tools(),
                 tool_choice="auto",

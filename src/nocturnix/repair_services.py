@@ -46,7 +46,10 @@ class RepairConflict(RepairDomainError):
 
 class InvalidRepairStatusTransition(RepairConflict):
     def __init__(self, current: RepairTicketStatus, requested: RepairTicketStatus) -> None:
-        super().__init__(f"cannot transition repair ticket from {current.value} to {requested.value}")
+        super().__init__(
+            f"cannot transition repair ticket from"
+            f"{current.value} to {requested.value}"
+        )
         self.current = current
         self.requested = requested
 

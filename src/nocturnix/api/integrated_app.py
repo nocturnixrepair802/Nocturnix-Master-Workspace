@@ -16,6 +16,8 @@ from nocturnix.repair_services import (
     InvalidRepairStatusTransition,
     RepairConflict,
     RepairResourceNotFound,
+)
+from nocturnix.repair_services import (
     RepairService as RepairDomainService,
 )
 from nocturnix.security.auth import AuthService, stable_hash

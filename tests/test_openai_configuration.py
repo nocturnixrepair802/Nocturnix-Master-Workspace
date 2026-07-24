@@ -7,7 +7,6 @@ from pydantic import ValidationError
 from nocturnix import create_app
 from nocturnix.config import Settings
 
-
 OWNER_HEADERS = {"X-Nocturnix-Dev-User": "repair-owner-001"}
 
 
