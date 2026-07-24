@@ -8,7 +8,7 @@ from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 APP_NAME = "Nocturnix AI Assistant"
-APP_VERSION = "0.1.3"
+APP_VERSION = "0.1.4"
 DEV_USER_ID = "dev-user-001"
 
 

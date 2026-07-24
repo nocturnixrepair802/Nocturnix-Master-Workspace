@@ -11,3 +11,6 @@ bandit[toml]>=1.7
 pip-audit>=2.7
 SQLAlchemy>=2.0
 alembic>=1.13
+
+cryptography>=42
+pwdlib[argon2]>=0.2

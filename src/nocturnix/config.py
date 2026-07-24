@@ -27,20 +27,48 @@ class Settings(BaseSettings):
     audit_retention_days: int = Field(default=365, ge=1, le=3650)
     conversation_retention_days: int = Field(default=30, ge=1, le=3650)
     repair_intake_retention_days: int = Field(default=90, ge=1, le=3650)
+    auth_mode: str = "session"
+    allow_development_registration: bool = False
+    allow_development_header_auth: bool = False
+    allow_development_password_reset_delivery: bool = False
+    session_cookie_name: str = "nocturnix_session"
+    session_idle_minutes: int = Field(default=30, ge=1, le=1440)
+    session_absolute_hours: int = Field(default=12, ge=1, le=720)
+    session_cookie_secure: bool = False
+    session_cookie_samesite: str = "lax"
+    login_max_attempts: int = Field(default=5, ge=1, le=20)
+    login_lockout_minutes: int = Field(default=15, ge=1, le=1440)
+    password_reset_minutes: int = Field(default=20, ge=1, le=1440)
+    oauth_state_minutes: int = Field(default=10, ge=1, le=120)
+    allowed_redirect_uris: list[str] = Field(default_factory=lambda: ["http://127.0.0.1:8000/"])
+    secret_storage_enabled: bool = False
+    secret_encryption_key: str = ""
+    secret_key_version: str = "development-v1"  # noqa: S105
+    mock_oauth_enabled: bool = True
 
     @field_validator("external_providers_enabled")
     @classmethod
     def reject_live_providers(cls, value: bool) -> bool:
         if value:
-            raise ValueError("external providers are disabled for development v0.1.3")
+            raise ValueError("external providers are disabled for development v0.1.4")
         return value
 
     @model_validator(mode="after")
     def validate_database_settings(self) -> "Settings":
         if self.database_migration_mode not in {"manual", "auto-test-only"}:
-            raise ValueError("DATABASE_MIGRATION_MODE must be manual")
+            raise ValueError("DATABASE_MIGRATION_MODE must be manual or auto-test-only")
+        if self.auth_mode not in {"session", "development_header", "disabled"}:
+            raise ValueError("AUTH_MODE must be session, development_header, or disabled")
+        if self.auth_mode == "development_header" and (
+            self.environment != "development" or not self.allow_development_header_auth
+        ):
+            raise ValueError(
+                "development_header auth requires development environment and explicit opt-in"
+            )
+        if self.session_cookie_samesite not in {"lax", "strict", "none"}:
+            raise ValueError("SESSION_COOKIE_SAMESITE must be lax, strict, or none")
         if not self.database_url.startswith(("sqlite:///", "sqlite:///:memory:")):
-            raise ValueError("only development SQLite DATABASE_URL is enabled in v0.1.3")
+            raise ValueError("only development SQLite DATABASE_URL is enabled in v0.1.4")
         return self
 
     @property
