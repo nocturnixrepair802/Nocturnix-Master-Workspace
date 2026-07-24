@@ -4,6 +4,24 @@ Last updated: 2026-07-23
 Version: 0.7.0 alpha
 State: Active development; stabilization in progress
 
+## Service Type Normalization QA milestone
+
+- Service Type Normalization review is complete.
+- Review v1.3 passed the read-only QA validator with 0 errors and 0 warnings.
+- The validated review contains 313 populated Service Normalization records.
+- Approved production release v1.0 was created at
+  `D:\Business Portal\300_Pricing\Approved\Nocturnix_Service_Type_Normalization_Approved_v1.0.xlsx`.
+- Validated source SHA-256:
+  `DD9DE1EC80BAAED00ABA14976C12755C3E55DBBF68EF69556037BFF23E5E1B11`.
+- Final approved-release SHA-256:
+  `DE0F0957F687DF4866A2D06C4DF85A542FF58B61897481741EB1E6A04D825FBA`.
+- QA reports:
+  `Output\Nocturnix_Service_Type_Normalization_Approved_v1.0_QA.md` and
+  `Output\Nocturnix_Service_Type_Normalization_Approved_v1.0_QA.json`.
+- Release date: 2026-07-23.
+- Only Import Metadata changed for release; all service mappings and all
+  non-metadata worksheet content and structure were preserved.
+
 ## Session closeout
 
 - Phase 0 is complete.

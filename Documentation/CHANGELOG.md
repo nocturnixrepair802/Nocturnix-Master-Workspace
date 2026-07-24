@@ -7,6 +7,12 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
 
 ### Added
 
+- First approved Service Type Normalization production workbook:
+  `Nocturnix_Service_Type_Normalization_Approved_v1.0.xlsx`.
+- Reusable worksheet-specific Excel QA validation with configurable checks for
+  structure, populated rows, business rules, validations, and freeze panes.
+- SHA-256 integrity verification for validated source and approved release
+  workbooks, including read-only validator before/after checks.
 - Root `pyproject.toml` with packaging, dependency, Ruff, Pyright, and pytest
   configuration.
 - Root `README.md` with setup and GUI launch instructions.
@@ -22,6 +28,13 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
 
 ### Changed
 
+- Validated 313 Service Normalization records after removing incomplete
+  placeholder `SVC000343`.
+- Corrected workbook freeze panes to `A2` for the Instructions and Service
+  Normalization worksheets.
+- Published Service Type Normalization Approved v1.0 from validated review v1.3.
+- Approved release metadata records version v1.0, review source v1.3, QA PASS,
+  validation date 2026-07-23, and the validated source SHA-256.
 - `Source/run_gui.py` can be imported safely and still launches the PySide6 app when
   executed directly.
 - Workbook-loader status messages use ASCII output.
@@ -54,6 +67,12 @@ actively reviewed work; planned work belongs in `MASTER_DEVELOPMENT_PLAN.md`.
 
 ### Verification
 
+- Service Type Normalization review v1.3 and approved v1.0 both passed the
+  read-only QA validator with 0 errors and 0 warnings.
+- Structural comparison confirmed that the approved release preserved all
+  service mappings and all non-metadata workbook content from review v1.3.
+- Approved-release SHA-256:
+  `DE0F0957F687DF4866A2D06C4DF85A542FF58B61897481741EB1E6A04D825FBA`.
 - Session closeout at `v0.3.0-alpha` / `139145b` confirmed `main` synchronized with
   `origin/main` and a clean pre-closeout working tree.
 - Ruff passed and focused Phase 1A Pyright reported 0 errors and 0 warnings.
