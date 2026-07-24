@@ -118,17 +118,17 @@ Version 0.1.4 remains development-only and mock-only. It adds durable user accou
 
 ## Permission matrix
 
-| Permission | Owner | Administrator | Operator | Viewer |
-| --- | --- | --- | --- | --- |
-| assistant.chat | yes | yes | yes | yes |
-| repair_intake.create/read | yes | yes | yes | no |
-| approvals.create/read/decide | yes | yes | yes | read only |
-| audit.read | yes | yes | no | yes |
-| preferences.read/update | yes | yes | read only | read only |
-| email_mock.read/calendar_mock.read | yes | yes | yes | yes |
-| provider_accounts.read/manage | yes | yes | read only | read only |
-| security_sessions.read/revoke | yes | yes | no | no |
-| users.read/manage | yes | read only | no | no |
+| Permission                         | Owner | Administrator | Operator  | Viewer    |
+| ---------------------------------- | ----- | ------------- | --------- | --------- |
+| assistant.chat                     | yes   | yes           | yes       | yes       |
+| repair_intake.create/read          | yes   | yes           | yes       | no        |
+| approvals.create/read/decide       | yes   | yes           | yes       | read only |
+| audit.read                         | yes   | yes           | no        | yes       |
+| preferences.read/update            | yes   | yes           | read only | read only |
+| email_mock.read/calendar_mock.read | yes   | yes           | yes       | yes       |
+| provider_accounts.read/manage      | yes   | yes           | read only | read only |
+| security_sessions.read/revoke      | yes   | yes           | no        | no        |
+| users.read/manage                  | yes   | read only     | no        | no        |
 
 ## Development limitations and owner decisions
 
