@@ -77,9 +77,7 @@ class Settings(BaseSettings):
         if self.openai_enabled and not self.openai_api_key:
             raise ValueError("OPENAI_ENABLED requires OPENAI_API_KEY")
         if self.external_providers_enabled and not self.openai_enabled:
-            raise ValueError(
-                "EXTERNAL_PROVIDERS_ENABLED currently requires OPENAI_ENABLED"
-            )
+            raise ValueError("EXTERNAL_PROVIDERS_ENABLED currently requires OPENAI_ENABLED")
         return self
 
     @property

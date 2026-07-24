@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -117,7 +118,10 @@ REPAIR_TOOL_DEFINITIONS = (
     ),
     RepairToolDefinition(
         "search_repair_tickets",
-        "Search repair tickets using customer, device, status, priority, assignee, or text filters.",
+        (
+            "Search repair tickets using customer, device, status, "
+            "priority, assignee, or text filters."
+        ),
         RepairTicketSearchInput,
         False,
     ),

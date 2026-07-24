@@ -3,10 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from threading import RLock
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy import delete, select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.orm import Session
 
 from nocturnix.repair_persistence_models import RepairConfirmationRow
@@ -187,20 +188,25 @@ class SqlRepairConfirmationStore:
             self.session.commit()
             raise RepairConfirmationExpired("repair confirmation expired")
 
-        result = self.session.execute(
-            update(RepairConfirmationRow)
-            .where(
-                RepairConfirmationRow.id == confirmation_id,
-                RepairConfirmationRow.owner_user_id == owner_user_id,
-                RepairConfirmationRow.consumed_at.is_(None),
-                RepairConfirmationRow.expires_at > now,
-            )
-            .values(consumed_at=now)
-            .execution_options(synchronize_session=False)
+        result = cast(
+            CursorResult[Any],
+            self.session.execute(
+                update(RepairConfirmationRow)
+                .where(
+                    RepairConfirmationRow.id == confirmation_id,
+                    RepairConfirmationRow.owner_user_id == owner_user_id,
+                    RepairConfirmationRow.consumed_at.is_(None),
+                    RepairConfirmationRow.expires_at > now,
+                )
+                .values(consumed_at=now)
+                .execution_options(synchronize_session=False)
+            ),
         )
+
         if result.rowcount != 1:
             self.session.rollback()
             raise RepairConfirmationConsumed("repair confirmation was already used")
+
         self.session.commit()
         return PendingRepairConfirmation(
             id=row.id,

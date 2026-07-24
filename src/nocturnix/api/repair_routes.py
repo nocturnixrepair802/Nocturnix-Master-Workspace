@@ -102,9 +102,7 @@ def create_repair_router(
     ):
         return services.repair_domain.update_device(user.user_id, device_id, req)
 
-    @router.get(
-        "/customers/{customer_id}/devices", response_model=CustomerDeviceListResponse
-    )
+    @router.get("/customers/{customer_id}/devices", response_model=CustomerDeviceListResponse)
     def list_customer_devices(
         customer_id: str,
         offset: int = Query(default=0, ge=0),
@@ -168,9 +166,7 @@ def create_repair_router(
     ):
         return services.repair_domain.update_ticket(user.user_id, ticket_id, req)
 
-    @router.post(
-        "/repair-tickets/{ticket_id}/status", response_model=RepairTicketResponse
-    )
+    @router.post("/repair-tickets/{ticket_id}/status", response_model=RepairTicketResponse)
     def change_ticket_status(
         ticket_id: str,
         req: RepairTicketStatusChangeRequest,
@@ -206,9 +202,7 @@ def create_repair_router(
         services: Any = Depends(get_services),
         user: UserIdentity = Depends(require_csrf),
     ):
-        return services.repair_domain.create_ticket_note(
-            user.user_id, ticket_id, user.user_id, req
-        )
+        return services.repair_domain.create_ticket_note(user.user_id, ticket_id, user.user_id, req)
 
     @router.get(
         "/repair-tickets/{ticket_id}/notes",
