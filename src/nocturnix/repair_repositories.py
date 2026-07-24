@@ -50,7 +50,7 @@ class CustomerRepository(Protocol):
         status: str | None = None,
         offset: int = 0,
         limit: int = 20,
-    ) -> tuple[list[CustomerRow], int]: ...
+    ) -> tuple[builtins.list[CustomerRow], int]: ...
 
     def update(
         self,
@@ -74,7 +74,7 @@ class CustomerDeviceRepository(Protocol):
         *,
         offset: int = 0,
         limit: int = 20,
-    ) -> tuple[list[CustomerDeviceRow], int]: ...
+    ) -> tuple[builtins.list[CustomerDeviceRow], int]: ...
 
     def update(
         self,
@@ -108,7 +108,7 @@ class RepairTicketRepository(Protocol):
         search: str | None = None,
         offset: int = 0,
         limit: int = 20,
-    ) -> tuple[list[RepairTicketRow], int]: ...
+    ) -> tuple[builtins.list[RepairTicketRow], int]: ...
 
     def update(
         self,
@@ -147,7 +147,7 @@ class RepairTicketNoteRepository(Protocol):
         customer_visible_only: bool = False,
         offset: int = 0,
         limit: int = 100,
-    ) -> tuple[list[RepairTicketNoteRow], int]: ...
+    ) -> tuple[builtins.list[RepairTicketNoteRow], int]: ...
 
     def update(
         self,
@@ -190,7 +190,7 @@ class SqlCustomerRepository:
         status: str | None = None,
         offset: int = 0,
         limit: int = 20,
-    ) -> tuple[list[CustomerRow], int]:
+    ) -> tuple[builtins.list[CustomerRow], int]:
         stmt: Select[tuple[CustomerRow]] = select(CustomerRow).where(
             CustomerRow.owner_user_id == owner_user_id
         )
@@ -260,7 +260,7 @@ class SqlCustomerDeviceRepository:
         *,
         offset: int = 0,
         limit: int = 20,
-    ) -> tuple[list[CustomerDeviceRow], int]:
+    ) -> tuple[builtins.list[CustomerDeviceRow], int]:
         stmt = select(CustomerDeviceRow).where(
             CustomerDeviceRow.owner_user_id == owner_user_id,
             CustomerDeviceRow.customer_id == customer_id,
@@ -352,7 +352,7 @@ class SqlRepairTicketRepository:
         search: str | None = None,
         offset: int = 0,
         limit: int = 20,
-    ) -> tuple[list[RepairTicketRow], int]:
+    ) -> tuple[builtins.list[RepairTicketRow], int]:
         stmt: Select[tuple[RepairTicketRow]] = select(RepairTicketRow).where(
             RepairTicketRow.owner_user_id == owner_user_id
         )
@@ -490,7 +490,7 @@ class SqlRepairTicketNoteRepository:
         customer_visible_only: bool = False,
         offset: int = 0,
         limit: int = 100,
-    ) -> tuple[list[RepairTicketNoteRow], int]:
+    ) -> tuple[builtins.list[RepairTicketNoteRow], int]:
         stmt = select(RepairTicketNoteRow).where(
             RepairTicketNoteRow.owner_user_id == owner_user_id,
             RepairTicketNoteRow.repair_ticket_id == ticket_id,
