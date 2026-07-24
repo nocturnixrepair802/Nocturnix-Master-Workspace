@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     mock_providers_enabled: bool = True
     external_providers_enabled: bool = False
+    openai_enabled: bool = False
+    openai_api_key: str = Field(default="", repr=False)
+    openai_model: str = "gpt-5-mini"
+    openai_timeout_seconds: float = Field(default=30.0, ge=1.0, le=300.0)
+    openai_max_tool_rounds: int = Field(default=6, ge=1, le=20)
     cors_origins: list[str] = Field(
         default_factory=lambda: ["http://127.0.0.1:8000", "http://localhost:8000"]
     )
@@ -46,12 +51,10 @@ class Settings(BaseSettings):
     secret_key_version: str = "development-v1"  # noqa: S105
     mock_oauth_enabled: bool = True
 
-    @field_validator("external_providers_enabled")
+    @field_validator("openai_api_key")
     @classmethod
-    def reject_live_providers(cls, value: bool) -> bool:
-        if value:
-            raise ValueError("external providers are disabled for development v0.1.4")
-        return value
+    def clean_openai_api_key(cls, value: str) -> str:
+        return value.strip()
 
     @model_validator(mode="after")
     def validate_database_settings(self) -> "Settings":
@@ -69,6 +72,14 @@ class Settings(BaseSettings):
             raise ValueError("SESSION_COOKIE_SAMESITE must be lax, strict, or none")
         if not self.database_url.startswith(("sqlite:///", "sqlite:///:memory:")):
             raise ValueError("only development SQLite DATABASE_URL is enabled in v0.1.4")
+        if self.openai_enabled and not self.external_providers_enabled:
+            raise ValueError("OPENAI_ENABLED requires EXTERNAL_PROVIDERS_ENABLED")
+        if self.openai_enabled and not self.openai_api_key:
+            raise ValueError("OPENAI_ENABLED requires OPENAI_API_KEY")
+        if self.external_providers_enabled and not self.openai_enabled:
+            raise ValueError(
+                "EXTERNAL_PROVIDERS_ENABLED currently requires OPENAI_ENABLED"
+            )
         return self
 
     @property
