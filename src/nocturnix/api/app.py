@@ -1237,6 +1237,446 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         services.session.add(row)
         return {"id": row.id, "mock": True}
 
+    def row_dict(row):
+        return {c.name: getattr(row, c.name) for c in row.__table__.columns}
+
+    def list_value(value: object) -> list[object]:
+        return value if isinstance(value, list) else []
+
+    def int_value(value: object, default: int) -> int:
+        return value if isinstance(value, int) else default
+
+    def float_value(value: object, default: float) -> float:
+        return float(value) if isinstance(value, int | float | str) else default
+
+    @app.post("/api/v1/memories")
+    def create_memory(
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import MemoryRow
+
+        now = datetime.now(UTC)
+        tags = list_value(req.get("tags"))
+        body = str(req.get("body") or "")
+        summary = str(req.get("summary") or "")
+        row = MemoryRow(
+            id=make_id("mem"),
+            owner_user_id=user.user_id,
+            title=str(req.get("title") or "Untitled memory")[:200],
+            summary=summary[:500],
+            body=body[:5000],
+            category=str(req.get("category") or "business"),
+            tags=tags,
+            priority=int_value(req.get("priority"), 3),
+            created_at=now,
+            updated_at=now,
+            expires_at=req.get("expires_at"),
+            visibility=str(req.get("visibility") or "private"),
+            confidence=float_value(req.get("confidence"), 1.0),
+            related_memory_ids=list_value(req.get("related_memory_ids")),
+            source=str(req.get("source") or "manual"),
+            ai_generated=bool(req.get("ai_generated") or False),
+            manual=bool(req.get("manual", True)),
+            archived=False,
+            deleted=False,
+            pinned=bool(req.get("pinned") or False),
+            favorite=bool(req.get("favorite") or False),
+            search_vector=" ".join(
+                [str(req.get("title") or ""), summary, body, " ".join(map(str, tags))]
+            ).lower(),
+        )
+        services.session.add(row)
+        services.audit.record(user, "memory", "created", resource_id=row.id)
+        return row_dict(row)
+
+    @app.get("/api/v1/memories")
+    def list_memories(
+        q: str | None = None,
+        category: str | None = None,
+        tag: str | None = None,
+        recent: bool = False,
+        user: UserIdentity = Depends(require_perm("memories.read")),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import MemoryRow
+
+        stmt = select(MemoryRow).where(
+            MemoryRow.owner_user_id == user.user_id, MemoryRow.deleted.is_(False)
+        )
+        if category:
+            stmt = stmt.where(MemoryRow.category == category)
+        rows = list(services.session.scalars(stmt).all())
+        if tag:
+            rows = [r for r in rows if tag in r.tags]
+        if q:
+            rows = [r for r in rows if q.lower() in r.search_vector]
+        rows.sort(
+            key=lambda r: (not r.pinned, not r.favorite, -r.priority, r.updated_at), reverse=False
+        )
+        if recent:
+            rows = sorted(rows, key=lambda r: r.updated_at, reverse=True)[:10]
+        return {"items": [row_dict(r) for r in rows], "mock": True}
+
+    @app.get("/api/v1/memories/tags")
+    def memory_tags(
+        user: UserIdentity = Depends(require_perm("memories.read")),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import MemoryRow
+
+        tags = sorted(
+            {
+                t
+                for r in services.session.scalars(
+                    select(MemoryRow).where(
+                        MemoryRow.owner_user_id == user.user_id, MemoryRow.deleted.is_(False)
+                    )
+                ).all()
+                for t in r.tags
+            }
+        )
+        return {"items": tags}
+
+    @app.put("/api/v1/memories/{memory_id}")
+    def update_memory(
+        memory_id: str,
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import MemoryRow
+
+        row = services.session.get(MemoryRow, memory_id)
+        if not row or row.owner_user_id != user.user_id or row.deleted:
+            raise NotFound("memory not found")
+        for key in [
+            "title",
+            "summary",
+            "body",
+            "category",
+            "tags",
+            "priority",
+            "expires_at",
+            "visibility",
+            "confidence",
+            "related_memory_ids",
+            "pinned",
+            "favorite",
+            "archived",
+            "deleted",
+        ]:
+            if key in req:
+                setattr(row, key, req[key])
+        row.updated_at = datetime.now(UTC)
+        row.search_vector = " ".join(
+            [row.title, row.summary, row.body, " ".join(map(str, row.tags))]
+        ).lower()
+        services.audit.record(user, "memory", "updated", resource_id=row.id)
+        return row_dict(row)
+
+    @app.delete("/api/v1/memories/{memory_id}")
+    def delete_memory(
+        memory_id: str,
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import MemoryRow
+
+        row = services.session.get(MemoryRow, memory_id)
+        if not row or row.owner_user_id != user.user_id:
+            raise NotFound("memory not found")
+        row.deleted = True
+        row.updated_at = datetime.now(UTC)
+        services.audit.record(user, "memory", "soft_deleted", resource_id=row.id)
+        return {"deleted": True, "id": memory_id}
+
+    @app.post("/api/v1/planning/tasks")
+    def create_plan_task(
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import PlanningTaskRow
+
+        now = datetime.now(UTC)
+        effort = int_value(req.get("effort_score"), 3)
+        energy = int_value(req.get("energy_score"), 3)
+        priority = int_value(req.get("priority"), 3)
+        row = PlanningTaskRow(
+            id=make_id("task"),
+            owner_user_id=user.user_id,
+            title=str(req.get("title") or "Untitled task")[:200],
+            description=str(req.get("description") or ""),
+            status=str(req.get("status") or "today"),
+            priority=priority,
+            manual_order=int_value(req.get("manual_order"), 100),
+            ai_suggested_order=int_value(req.get("ai_suggested_order"), 100),
+            time_estimate_minutes=int_value(req.get("time_estimate_minutes"), 15),
+            effort_score=effort,
+            energy_score=energy,
+            focus_score=max(1, min(100, priority * 20 + energy * 8 - effort * 5)),
+            deadline=req.get("deadline"),
+            project_id=req.get("project_id"),
+            tags=list_value(req.get("tags")),
+            created_at=now,
+            updated_at=now,
+        )
+        services.session.add(row)
+        services.audit.record(user, "planning", "task_created", resource_id=row.id)
+        return row_dict(row)
+
+    @app.get("/api/v1/planning/tasks")
+    def list_plan_tasks(
+        status: str | None = None,
+        user: UserIdentity = Depends(require_perm("planning.read")),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import PlanningTaskRow
+
+        stmt = select(PlanningTaskRow).where(PlanningTaskRow.owner_user_id == user.user_id)
+        if status:
+            stmt = stmt.where(PlanningTaskRow.status == status)
+        rows = services.session.scalars(stmt).all()
+        return {
+            "items": [
+                row_dict(r)
+                for r in sorted(
+                    rows, key=lambda r: (r.manual_order, -r.focus_score, r.deadline or datetime.max)
+                )
+            ]
+        }
+
+    @app.post("/api/v1/business-reminders")
+    def create_business_reminder(
+        req: dict[str, object],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import BusinessReminderRow
+
+        now = datetime.now(UTC)
+        scheduled = req.get("scheduled_at")
+        row = BusinessReminderRow(
+            id=make_id("rem"),
+            owner_user_id=user.user_id,
+            title=str(req.get("title") or "Reminder")[:200],
+            body=str(req.get("body") or ""),
+            reminder_type=str(req.get("reminder_type") or "one_time"),
+            scheduled_at=scheduled,
+            status="open",
+            priority=int_value(req.get("priority"), 3),
+            category=str(req.get("category") or "reminder"),
+            related_task_id=req.get("related_task_id"),
+            snooze_count=0,
+            escalation_level=0,
+            notification_ready=scheduled is None,
+            created_at=now,
+            updated_at=now,
+        )
+        services.session.add(row)
+        services.audit.record(user, "reminder", "created", resource_id=row.id)
+        return row_dict(row)
+
+    @app.get("/api/v1/business-reminders")
+    def list_business_reminders(
+        status: str = "open",
+        user: UserIdentity = Depends(require_perm("planning.read")),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import BusinessReminderRow
+
+        rows = services.session.scalars(
+            select(BusinessReminderRow).where(
+                BusinessReminderRow.owner_user_id == user.user_id,
+                BusinessReminderRow.status == status,
+            )
+        ).all()
+        return {"items": [row_dict(r) for r in rows], "notifications_mock_only": True}
+
+    @app.post("/api/v1/business-reminders/{reminder_id}/{action}")
+    def reminder_action(
+        reminder_id: str,
+        action: str,
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import BusinessReminderRow
+
+        row = services.session.get(BusinessReminderRow, reminder_id)
+        if not row or row.owner_user_id != user.user_id:
+            raise NotFound("reminder not found")
+        now = datetime.now(UTC)
+        if action in {"complete", "dismiss"}:
+            row.status = "completed" if action == "complete" else "dismissed"
+            row.completed_at = now if action == "complete" else None
+            row.dismissed_at = now if action == "dismiss" else None
+        elif action == "snooze":
+            row.snooze_count += 1
+            row.status = "snoozed"
+        elif action == "escalate":
+            row.escalation_level += 1
+        else:
+            raise NotFound("reminder action not found")
+        row.updated_at = now
+        services.audit.record(user, "reminder", action, resource_id=row.id)
+        return row_dict(row)
+
+    @app.get("/api/v1/focus")
+    def focus_mode(
+        user: UserIdentity = Depends(require_perm("planning.read")),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import PlanningTaskRow
+
+        tasks = list(
+            services.session.scalars(
+                select(PlanningTaskRow).where(
+                    PlanningTaskRow.owner_user_id == user.user_id,
+                    PlanningTaskRow.status.in_(["today", "waiting", "blocked"]),
+                )
+            ).all()
+        )
+        ordered = sorted(tasks, key=lambda r: (r.status != "today", r.manual_order, -r.focus_score))
+        return {
+            "focus_now": ordered[0].title if ordered else None,
+            "top_3_tasks": [row_dict(r) for r in ordered[:3]],
+            "quick_win": next(
+                (row_dict(r) for r in ordered if r.time_estimate_minutes <= 15), None
+            ),
+            "deep_work": next(
+                (row_dict(r) for r in ordered if r.time_estimate_minutes >= 60), None
+            ),
+            "waiting_on": [row_dict(r) for r in tasks if r.status == "waiting"],
+            "brain_dump": [],
+            "parking_lot": [row_dict(r) for r in tasks if r.status == "deferred"],
+            "recent_wins": [row_dict(r) for r in tasks if r.status == "completed"][-5:],
+            "next_suggested_action": ordered[0].title if ordered else "Capture a brain dump item.",
+        }
+
+    @app.get("/api/v1/dashboard")
+    def business_dashboard(
+        user: UserIdentity = Depends(require_perm("dashboard.read")),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import BusinessReminderRow, MemoryRow, PlanningTaskRow
+
+        priorities = services.session.scalars(
+            select(PlanningTaskRow).where(
+                PlanningTaskRow.owner_user_id == user.user_id, PlanningTaskRow.status == "today"
+            )
+        ).all()
+        reminders = services.session.scalars(
+            select(BusinessReminderRow).where(
+                BusinessReminderRow.owner_user_id == user.user_id,
+                BusinessReminderRow.status == "open",
+            )
+        ).all()
+        memories = services.session.scalars(
+            select(MemoryRow)
+            .where(MemoryRow.owner_user_id == user.user_id, MemoryRow.deleted.is_(False))
+            .limit(5)
+        ).all()
+        approvals = services.approvals.list(user)
+        focus_score = (
+            int(sum([p.focus_score for p in priorities]) / max(len(priorities), 1))
+            if priorities
+            else 0
+        )
+        return {
+            "today_priorities": [row_dict(r) for r in priorities],
+            "open_reminders": [row_dict(r) for r in reminders],
+            "recent_memories": [row_dict(r) for r in memories],
+            "pending_approvals": [a for a in approvals if a.status == "pending"],
+            "recent_activity": services.audit.list(user, None, 0, 5),
+            "projects": sorted({r.project_id for r in priorities if r.project_id}),
+            "business_focus_score": focus_score,
+            "development_only": True,
+        }
+
+    @app.get("/api/v1/search")
+    def assistant_search(
+        q: str,
+        user: UserIdentity = Depends(require_perm("search.read")),
+        services: RequestServices = Depends(get_services),
+    ):
+        from nocturnix.persistence_models import BusinessReminderRow, MemoryRow, PlanningTaskRow
+
+        query = q.lower()
+        results = []
+        searchable_tables = cast(
+            Any,
+            [
+                ("memory", MemoryRow, ["title", "summary", "body"]),
+                ("task", PlanningTaskRow, ["title", "description"]),
+                ("reminder", BusinessReminderRow, ["title", "body"]),
+            ],
+        )
+        for kind, cls, fields in searchable_tables:
+            for r in services.session.scalars(
+                select(cls).where(cls.owner_user_id == user.user_id)
+            ).all():
+                text = " ".join(str(getattr(r, f, "")) for f in fields).lower()
+                if query in text:
+                    results.append(
+                        {
+                            "type": kind,
+                            "id": r.id,
+                            "title": r.title,
+                            "score": (10 if query in getattr(r, "title", "").lower() else 1)
+                            + getattr(r, "priority", 1),
+                        }
+                    )
+        return {"items": sorted(results, key=lambda x: x["score"], reverse=True)}
+
+    @app.post("/api/v1/assistant/commands")
+    def natural_command(
+        req: dict[str, str],
+        user: UserIdentity = Depends(require_csrf),
+        services: RequestServices = Depends(get_services),
+    ):
+        text = (req.get("command") or "").strip()
+        lower = text.lower()
+        if lower.startswith("remember this"):
+            return create_memory(
+                {"title": text[:80], "body": text, "source": "natural_command"}, user, services
+            )
+        if lower.startswith("remind me"):
+            return create_business_reminder(
+                {"title": text[:120], "body": text, "reminder_type": "one_time"}, user, services
+            )
+        if lower.startswith("add task") or lower.startswith("brain dump"):
+            return create_plan_task(
+                {
+                    "title": text[:120],
+                    "description": text,
+                    "status": "today" if lower.startswith("add task") else "deferred",
+                },
+                user,
+                services,
+            )
+        if "waiting on" in lower:
+            return list_plan_tasks("waiting", user, services)
+        if "today" in lower:
+            return business_dashboard(user, services)
+        if lower.startswith("search memory"):
+            return list_memories(
+                text.removeprefix("search memory").strip(), None, None, False, user, services
+            )
+        return {
+            "understood": False,
+            "supported_commands": [
+                "remember this",
+                "remind me",
+                "add task",
+                "brain dump",
+                "show today's tasks",
+                "what am I waiting on",
+                "search memory",
+            ],
+        }
+
     static_root = __import__("pathlib").Path(__file__).resolve().parents[1] / "static"
     app.mount("/static", StaticFiles(directory=static_root), name="static")
 

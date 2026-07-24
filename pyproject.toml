@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nocturnix-ai-assistant"
-version = "0.1.5"
+version = "0.1.6"
 description = "Development-only FastAPI foundation with authentication and OAuth security foundation for Nocturnix AI Assistant"
 requires-python = ">=3.11"
 dependencies = ["fastapi>=0.115", "uvicorn>=0.30", "pydantic>=2.8", "pydantic-settings>=2.4", "SQLAlchemy>=2.0", "alembic>=1.13", "cryptography>=42", "pwdlib[argon2]>=0.2"]
