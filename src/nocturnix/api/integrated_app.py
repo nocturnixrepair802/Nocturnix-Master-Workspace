@@ -6,8 +6,8 @@ from fastapi import Cookie, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from nocturnix.api import app as base_app
-from nocturnix.api.repair_dashboard import create_repair_dashboard_router
 from nocturnix.api.repair_ai_routes import create_repair_ai_router
+from nocturnix.api.repair_dashboard import create_repair_dashboard_router
 from nocturnix.api.repair_routes import create_repair_router
 from nocturnix.config import Settings
 from nocturnix.models import UserIdentity
