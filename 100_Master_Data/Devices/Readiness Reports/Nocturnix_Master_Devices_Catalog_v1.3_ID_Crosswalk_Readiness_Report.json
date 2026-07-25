@@ -1,0 +1,12 @@
+{
+  "status": "STRUCTURALLY VALID\nLOOKUP REVIEW DRAFT\nCENTRAL LOOKUP CATALOG DRAFT CREATED\nID CROSSWALKS PENDING REVIEW\nDUPLICATE CANDIDATES NOT ADJUDICATED\nDATA DICTIONARY PENDING REVIEW\nDEPENDENCIES REQUIRE REVIEW\nMANUAL REVIEW REQUIRED\nGOVERNANCE BLOCKED\nNOT DATABASE-IMPORT READY\nNOT PRODUCTION READY",
+  "database_import_ready": false,
+  "production_ready": false,
+  "blockers": [
+    "Mappings pending review",
+    "Duplicate candidates not adjudicated",
+    "Dependencies require review",
+    "Not database-import ready",
+    "Not production ready"
+  ]
+}

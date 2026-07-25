@@ -1,0 +1,99 @@
+{
+  "artifact": "Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx",
+  "workbook_sha256": "24A26319432D919C8D14B4B44377FB3826D7282657347D7283E90A73635412B9",
+  "source_hashes_before": {
+    "Nocturnix_Master_Devices_Catalog_v1.xlsx": "23840312B08A55031021E73AED6EA8835DDCCBE215B8BF133751B64FD44AAD96",
+    "Nocturnix_Master_Parts_Catalog_v1.xlsx": "3F6387B43647AA63C69F2995FBC0C272D9F85C0DD1A340EBAAB842704D3C3464",
+    "Nocturnix_Master_Services_Catalog_v1.xlsx": "F1A85069F3F7655E2FD375CF2EE63C5C716422E1A7D2BEFE61073005396E34C2",
+    "Nocturnix_Master_Labor_Catalog_v1.xlsx": "3ADB7D1A736EF618D79A095346234E6FC40BBB9424CDB1FCA1D2AD48AC5C8280",
+    "Nocturnix_Master_Compatibility_Catalog_v1.xlsx": "58442236FA3587EB29E86F70AC5439E5CBA9681FEB26B7C1848C290E9287BAF4",
+    "Nocturnix_Master_Pricing_Catalog_v1.xlsx": "FE9E719435293555EA708AD238C492B386C1F78A826C62E93A66ED344EE3137A",
+    "Nocturnix_Legacy_Catalog_Staging_Preview_v1.xlsx": "AE52E160D3524D516BB35C8AA707E075AE96F8CA87E75600EAEE4C28AEC9E382",
+    "Nocturnix_Legacy_Catalog_Deduplication_Proposal_v1.xlsx": "FE78CD36C7C71A4838A0A28344789AF8D813AB0AA0888BCBE5E610919C38275D",
+    "Nocturnix_Service_Type_Normalization_Review_v1.3.xlsx": "DD9DE1EC80BAAED00ABA14976C12755C3E55DBBF68EF69556037BFF23E5E1B11"
+  },
+  "source_hashes_after": {
+    "Nocturnix_Master_Devices_Catalog_v1.xlsx": "23840312B08A55031021E73AED6EA8835DDCCBE215B8BF133751B64FD44AAD96",
+    "Nocturnix_Master_Parts_Catalog_v1.xlsx": "3F6387B43647AA63C69F2995FBC0C272D9F85C0DD1A340EBAAB842704D3C3464",
+    "Nocturnix_Master_Services_Catalog_v1.xlsx": "F1A85069F3F7655E2FD375CF2EE63C5C716422E1A7D2BEFE61073005396E34C2",
+    "Nocturnix_Master_Labor_Catalog_v1.xlsx": "3ADB7D1A736EF618D79A095346234E6FC40BBB9424CDB1FCA1D2AD48AC5C8280",
+    "Nocturnix_Master_Compatibility_Catalog_v1.xlsx": "58442236FA3587EB29E86F70AC5439E5CBA9681FEB26B7C1848C290E9287BAF4",
+    "Nocturnix_Master_Pricing_Catalog_v1.xlsx": "FE9E719435293555EA708AD238C492B386C1F78A826C62E93A66ED344EE3137A",
+    "Nocturnix_Legacy_Catalog_Staging_Preview_v1.xlsx": "AE52E160D3524D516BB35C8AA707E075AE96F8CA87E75600EAEE4C28AEC9E382",
+    "Nocturnix_Legacy_Catalog_Deduplication_Proposal_v1.xlsx": "FE78CD36C7C71A4838A0A28344789AF8D813AB0AA0888BCBE5E610919C38275D",
+    "Nocturnix_Service_Type_Normalization_Review_v1.3.xlsx": "DD9DE1EC80BAAED00ABA14976C12755C3E55DBBF68EF69556037BFF23E5E1B11"
+  },
+  "checks": {
+    "worksheet_order": {
+      "status": "PASS",
+      "detail": [
+        "00 - Instructions",
+        "01 - Manufacturer Registry",
+        "02 - Alias Registry",
+        "03 - Source Observations",
+        "04 - Identity Conflicts",
+        "05 - Review Queue",
+        "06 - Validation Summary",
+        "07 - Revision History",
+        "08 - Import Metadata"
+      ]
+    },
+    "registry_count": {
+      "status": "PASS",
+      "detail": 35
+    },
+    "registry_id_unique": {
+      "status": "PASS",
+      "detail": 35
+    },
+    "legacy_code_unique": {
+      "status": "PASS",
+      "detail": 35
+    },
+    "all_pending_verification": {
+      "status": "PASS",
+      "detail": 35
+    },
+    "approval_fields_blank": {
+      "status": "PASS",
+      "detail": "Evidence, verifier, and verification date blank"
+    },
+    "source_hashes_unchanged": {
+      "status": "PASS",
+      "detail": 9
+    },
+    "production_blocked": {
+      "status": "PASS",
+      "detail": "Production Authorization = Prohibited"
+    },
+    "placeholder_excluded": {
+      "status": "PASS",
+      "detail": "MFR-LEGACY-001/N/A routed to conflict queue"
+    },
+    "tables_present": {
+      "status": "PASS",
+      "detail": {
+        "00 - Instructions": 1,
+        "01 - Manufacturer Registry": 1,
+        "02 - Alias Registry": 1,
+        "03 - Source Observations": 1,
+        "04 - Identity Conflicts": 1,
+        "05 - Review Queue": 1,
+        "06 - Validation Summary": 1,
+        "07 - Revision History": 1,
+        "08 - Import Metadata": 1
+      }
+    },
+    "qa_read_only_hash": {
+      "status": "PASS",
+      "detail": "24A26319432D919C8D14B4B44377FB3826D7282657347D7283E90A73635412B9"
+    }
+  },
+  "counts": {
+    "registry": 35,
+    "aliases": 80,
+    "source_observations": 780,
+    "conflicts": 25,
+    "review_queue": 25
+  }
+}

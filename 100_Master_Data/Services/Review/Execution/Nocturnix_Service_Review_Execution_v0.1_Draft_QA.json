@@ -1,0 +1,196 @@
+{
+  "runtimeGate": {
+    "loadWorkspaceDependencies": "PASS",
+    "managedSpreadsheetDependencies": "PASS",
+    "artifactToolImport": "PASS",
+    "artifactToolVersion": "2.8.24",
+    "prohibitedLibrariesUsed": false
+  },
+  "sourceHashes": {
+    "Manufacturer Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Manufacturers/Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx",
+      "sha256": "24A26319432D919C8D14B4B44377FB3826D7282657347D7283E90A73635412B9"
+    },
+    "Device Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Devices/Nocturnix_Device_Registry_v0.1_Draft.xlsx",
+      "sha256": "B43DD38C8897E3665605F039591A0CFFFD3554FA1F3144A242A0FFD7971D9D9A"
+    },
+    "Parts Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Parts/Nocturnix_Parts_Registry_v0.1_Draft.xlsx",
+      "sha256": "EEA22D165381546F92D43D6CB93E86A95D7539C0BE97B69B252A2E8E2EE56FBB"
+    },
+    "Phase 4 Services Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Nocturnix_Services_Registry_v0.1_Draft.xlsx",
+      "sha256": "0DA12582EA01BB5BC37B8126098B5359CDC45077C9B9B9C89FD50EC6387852E3"
+    },
+    "Phase 4A Remediation": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Remediation/Nocturnix_Services_Registry_Remediation_v0.1_Draft.xlsx",
+      "sha256": "3A4CF9ABE3BD954D93C50094AB08D53ADB64FAE143AFC7AB7DBD312245B15EF7"
+    },
+    "Phase 4B Review Pack": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Review/Nocturnix_Service_Governance_Review_Pack_v0.1_Draft.xlsx",
+      "sha256": "01830AEE1271593101F4188ED06C86C01A2FCF5DBBF7BD3432DF7DB12940FCC9"
+    }
+  },
+  "output": {
+    "workbook": "D:/Business Portal/100_Master_Data/Services/Review/Execution/Nocturnix_Service_Review_Execution_v0.1_Draft.xlsx",
+    "sha256BeforeQa": "31AFD8E03A916C0FE36448DA30892AA552CF5B8959D7624C2A3CD79F794C8CA9",
+    "sha256AfterQa": "31AFD8E03A916C0FE36448DA30892AA552CF5B8959D7624C2A3CD79F794C8CA9"
+  },
+  "counts": {
+    "duplicateQueue": 15,
+    "serviceIdentityQueue": 314,
+    "manufacturerQueue": 314,
+    "deviceQueue": 314,
+    "partQueue": 314,
+    "laborQueue": 314,
+    "escalationQueue": 329
+  },
+  "controls": {
+    "dependencyControlsCreated": true,
+    "reviewerInputControlsCreated": true,
+    "dashboardFormulasCreated": true
+  },
+  "validation": [
+    {
+      "gate": "Runtime gate - load_workspace_dependencies",
+      "result": "PASS",
+      "details": "Managed dependencies available."
+    },
+    {
+      "gate": "Runtime gate - artifact-tool import",
+      "result": "PASS",
+      "details": "Loaded through managed Node dependency loader; no npm install or substitute library used."
+    },
+    {
+      "gate": "Duplicate groups included",
+      "result": "PASS",
+      "details": "15"
+    },
+    {
+      "gate": "Service identity items included",
+      "result": "PASS",
+      "details": "314"
+    },
+    {
+      "gate": "Manufacturer items included",
+      "result": "PASS",
+      "details": "314"
+    },
+    {
+      "gate": "Device items included",
+      "result": "PASS",
+      "details": "314"
+    },
+    {
+      "gate": "Part items included",
+      "result": "PASS",
+      "details": "314"
+    },
+    {
+      "gate": "Labor items included",
+      "result": "PASS",
+      "details": "314"
+    },
+    {
+      "gate": "Escalation items initialized",
+      "result": "PASS",
+      "details": "329"
+    },
+    {
+      "gate": "Service IDs exist",
+      "result": "PASS",
+      "details": "Queues use Phase 4B governed Service IDs."
+    },
+    {
+      "gate": "Governed ID dropdowns",
+      "result": "PASS",
+      "details": "Manufacturer, Device, Part, and Service ID dropdowns use governed IDs."
+    },
+    {
+      "gate": "Dependency formulas exist",
+      "result": "PASS",
+      "details": "Review Sequence and downstream queues include dependency formulas/checks."
+    },
+    {
+      "gate": "Blocked items surface correctly",
+      "result": "PASS",
+      "details": "Blocked Items sheet formula-surfaces dependency/current status/blocking reasons."
+    },
+    {
+      "gate": "Dashboard reconciles",
+      "result": "PASS",
+      "details": "Progress Dashboard formulas reference queue sheets."
+    },
+    {
+      "gate": "Approval fields blank or Pending",
+      "result": "PASS",
+      "details": "Approval names/dates blank; approval statuses Pending."
+    },
+    {
+      "gate": "Import Eligibility",
+      "result": "PASS",
+      "details": "Approval Preparation defaults to Not Eligible."
+    },
+    {
+      "gate": "Production/Pricing controls",
+      "result": "PASS",
+      "details": "Production and pricing activation prohibited in metadata/readiness."
+    },
+    {
+      "gate": "Formula error search",
+      "result": "PASS",
+      "details": "No formula error matches found."
+    },
+    {
+      "gate": "Source hashes unchanged",
+      "result": "PASS",
+      "details": "Pre/post source hashes match."
+    }
+  ],
+  "formulaErrorSearch": {
+    "result": "PASS",
+    "matches": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}"
+  },
+  "readinessStatus": "STRUCTURALLY VALID; REVIEW EXECUTION READY; GOVERNANCE BLOCKED; NOT PRODUCTION READY",
+  "governanceBlockers": [
+    "Manual review required",
+    "Reviewer proposals only",
+    "Second-level approval required",
+    "Import Eligibility remains Not Eligible",
+    "Production import and pricing activation prohibited"
+  ],
+  "postSourceHashes": {
+    "Manufacturer Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Manufacturers/Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx",
+      "sha256": "24A26319432D919C8D14B4B44377FB3826D7282657347D7283E90A73635412B9",
+      "unchanged": true
+    },
+    "Device Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Devices/Nocturnix_Device_Registry_v0.1_Draft.xlsx",
+      "sha256": "B43DD38C8897E3665605F039591A0CFFFD3554FA1F3144A242A0FFD7971D9D9A",
+      "unchanged": true
+    },
+    "Parts Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Parts/Nocturnix_Parts_Registry_v0.1_Draft.xlsx",
+      "sha256": "EEA22D165381546F92D43D6CB93E86A95D7539C0BE97B69B252A2E8E2EE56FBB",
+      "unchanged": true
+    },
+    "Phase 4 Services Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Nocturnix_Services_Registry_v0.1_Draft.xlsx",
+      "sha256": "0DA12582EA01BB5BC37B8126098B5359CDC45077C9B9B9C89FD50EC6387852E3",
+      "unchanged": true
+    },
+    "Phase 4A Remediation": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Remediation/Nocturnix_Services_Registry_Remediation_v0.1_Draft.xlsx",
+      "sha256": "3A4CF9ABE3BD954D93C50094AB08D53ADB64FAE143AFC7AB7DBD312245B15EF7",
+      "unchanged": true
+    },
+    "Phase 4B Review Pack": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Review/Nocturnix_Service_Governance_Review_Pack_v0.1_Draft.xlsx",
+      "sha256": "01830AEE1271593101F4188ED06C86C01A2FCF5DBBF7BD3432DF7DB12940FCC9",
+      "unchanged": true
+    }
+  },
+  "sourceFilesUnchanged": true
+}

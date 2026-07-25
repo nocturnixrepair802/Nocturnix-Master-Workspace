@@ -1,0 +1,177 @@
+{
+  "runtimeGate": {
+    "loadWorkspaceDependencies": "PASS",
+    "managedSpreadsheetDependencies": "PASS",
+    "artifactToolImport": "PASS",
+    "artifactToolVersion": "2.8.24",
+    "prohibitedLibrariesUsed": false
+  },
+  "sourceHashes": {
+    "Manufacturer Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Manufacturers/Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx",
+      "sha256": "24A26319432D919C8D14B4B44377FB3826D7282657347D7283E90A73635412B9"
+    },
+    "Device Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Devices/Nocturnix_Device_Registry_v0.1_Draft.xlsx",
+      "sha256": "B43DD38C8897E3665605F039591A0CFFFD3554FA1F3144A242A0FFD7971D9D9A"
+    },
+    "Parts Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Parts/Nocturnix_Parts_Registry_v0.1_Draft.xlsx",
+      "sha256": "EEA22D165381546F92D43D6CB93E86A95D7539C0BE97B69B252A2E8E2EE56FBB"
+    },
+    "Phase 4 Services Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Nocturnix_Services_Registry_v0.1_Draft.xlsx",
+      "sha256": "0DA12582EA01BB5BC37B8126098B5359CDC45077C9B9B9C89FD50EC6387852E3"
+    },
+    "Phase 4A Remediation": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Remediation/Nocturnix_Services_Registry_Remediation_v0.1_Draft.xlsx",
+      "sha256": "3A4CF9ABE3BD954D93C50094AB08D53ADB64FAE143AFC7AB7DBD312245B15EF7"
+    },
+    "Phase 4B Review Pack": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Review/Nocturnix_Service_Governance_Review_Pack_v0.1_Draft.xlsx",
+      "sha256": "01830AEE1271593101F4188ED06C86C01A2FCF5DBBF7BD3432DF7DB12940FCC9"
+    },
+    "Phase 4C Execution Pack": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Review/Execution/Nocturnix_Service_Review_Execution_v0.1_Draft.xlsx",
+      "sha256": "31AFD8E03A916C0FE36448DA30892AA552CF5B8959D7624C2A3CD79F794C8CA9"
+    }
+  },
+  "output": {
+    "workbook": "D:/Business Portal/100_Master_Data/Services/Review/Decisions/Nocturnix_Service_Duplicate_Decision_Pack_v0.1_Draft.xlsx",
+    "sha256BeforeQa": "892094C9F04201D3803AFA59C19C1E6F6F55A3679AE49324097B6DC73ADBD279",
+    "sha256AfterQa": "892094C9F04201D3803AFA59C19C1E6F6F55A3679AE49324097B6DC73ADBD279"
+  },
+  "counts": {
+    "duplicateGroups": 15,
+    "groupMembers": 38,
+    "evidenceRows": 76,
+    "reviewerDecisionRows": 15,
+    "escalationRows": 15,
+    "approvalPreparationRows": 15
+  },
+  "dashboardFormulasCreated": true,
+  "validation": [
+    {
+      "gate": "Runtime gate - load_workspace_dependencies",
+      "result": "PASS",
+      "details": "Managed dependencies available."
+    },
+    {
+      "gate": "Runtime gate - artifact-tool import",
+      "result": "PASS",
+      "details": "Loaded through managed Node dependency loader; no npm install or substitute library used."
+    },
+    {
+      "gate": "Duplicate groups included",
+      "result": "PASS",
+      "details": "15"
+    },
+    {
+      "gate": "Decision rows",
+      "result": "PASS",
+      "details": "15"
+    },
+    {
+      "gate": "Group members included",
+      "result": "PASS",
+      "details": "38"
+    },
+    {
+      "gate": "Service IDs exist",
+      "result": "PASS",
+      "details": "Every group member Service ID exists in Services Registry."
+    },
+    {
+      "gate": "Evidence rows traceable",
+      "result": "PASS",
+      "details": "76 traceable rows."
+    },
+    {
+      "gate": "Dropdown validations",
+      "result": "PASS",
+      "details": "Required decision, approval, escalation, import, priority, and Service ID controls applied."
+    },
+    {
+      "gate": "Approval fields",
+      "result": "PASS",
+      "details": "Approver names/dates blank; approval statuses Pending."
+    },
+    {
+      "gate": "Import/production/pricing",
+      "result": "PASS",
+      "details": "Import Not Eligible; production/pricing Prohibited."
+    },
+    {
+      "gate": "No merge/retirement executed",
+      "result": "PASS",
+      "details": "Workbook captures proposals only."
+    },
+    {
+      "gate": "Dashboard formulas reconcile",
+      "result": "PASS",
+      "details": "Dashboard formulas reference decision and summary sheets."
+    },
+    {
+      "gate": "Formula error search",
+      "result": "PASS",
+      "details": "No formula error matches found."
+    },
+    {
+      "gate": "Source hashes unchanged",
+      "result": "PASS",
+      "details": "Pre/post source hashes match."
+    }
+  ],
+  "formulaErrorSearch": {
+    "result": "PASS",
+    "matches": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}"
+  },
+  "readinessStatus": "STRUCTURALLY VALID; DUPLICATE REVIEW READY; MANUAL DECISION REQUIRED; GOVERNANCE BLOCKED; NOT PRODUCTION READY",
+  "governanceBlockers": [
+    "Manual duplicate review required",
+    "Reviewer proposals only",
+    "Second-level approval required",
+    "Import Eligibility remains Not Eligible",
+    "Production and pricing activation prohibited"
+  ],
+  "sourceFilesUnchanged": true,
+  "postSourceHashes": {
+    "Manufacturer Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Manufacturers/Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx",
+      "sha256": "24A26319432D919C8D14B4B44377FB3826D7282657347D7283E90A73635412B9",
+      "unchanged": true
+    },
+    "Device Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Devices/Nocturnix_Device_Registry_v0.1_Draft.xlsx",
+      "sha256": "B43DD38C8897E3665605F039591A0CFFFD3554FA1F3144A242A0FFD7971D9D9A",
+      "unchanged": true
+    },
+    "Parts Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Parts/Nocturnix_Parts_Registry_v0.1_Draft.xlsx",
+      "sha256": "EEA22D165381546F92D43D6CB93E86A95D7539C0BE97B69B252A2E8E2EE56FBB",
+      "unchanged": true
+    },
+    "Phase 4 Services Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Nocturnix_Services_Registry_v0.1_Draft.xlsx",
+      "sha256": "0DA12582EA01BB5BC37B8126098B5359CDC45077C9B9B9C89FD50EC6387852E3",
+      "unchanged": true
+    },
+    "Phase 4A Remediation": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Remediation/Nocturnix_Services_Registry_Remediation_v0.1_Draft.xlsx",
+      "sha256": "3A4CF9ABE3BD954D93C50094AB08D53ADB64FAE143AFC7AB7DBD312245B15EF7",
+      "unchanged": true
+    },
+    "Phase 4B Review Pack": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Review/Nocturnix_Service_Governance_Review_Pack_v0.1_Draft.xlsx",
+      "sha256": "01830AEE1271593101F4188ED06C86C01A2FCF5DBBF7BD3432DF7DB12940FCC9",
+      "unchanged": true
+    },
+    "Phase 4C Execution Pack": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Review/Execution/Nocturnix_Service_Review_Execution_v0.1_Draft.xlsx",
+      "sha256": "31AFD8E03A916C0FE36448DA30892AA552CF5B8959D7624C2A3CD79F794C8CA9",
+      "unchanged": true
+    }
+  },
+  "sheetInspection": "{\"kind\":\"sheet\",\"id\":\"ws/7aprw0\",\"name\":\"Instructions\",\"index\":0,\"range\":\"A1:B6\",\"address\":\"A1:B6\"}\n{\"kind\":\"sheet\",\"id\":\"ws/lgjij6\",\"name\":\"Duplicate Review Dashboard\",\"index\":1,\"range\":\"A1:B15\",\"address\":\"A1:B15\"}\n{\"kind\":\"sheet\",\"id\":\"ws/mcja6a\",\"name\":\"Duplicate Group Summary\",\"index\":2,\"range\":\"A1:R16\",\"address\":\"A1:R16\"}\n{\"kind\":\"sheet\",\"id\":\"ws/0ixv37\",\"name\":\"Group Member Comparison\",\"index\":3,\"range\":\"A1:T39\",\"address\":\"A1:T39\"}\n{\"kind\":\"sheet\",\"id\":\"ws/azi0td\",\"name\":\"Evidence Comparison\",\"index\":4,\"range\":\"A1:M77\",\"address\":\"A1:M77\"}\n{\"kind\":\"sheet\",\"id\":\"ws/nhsh0g\",\"name\":\"Reviewer Decision Entry\",\"index\":5,\"range\":\"A1:W16\",\"address\":\"A1:W16\"}\n{\"kind\":\"sheet\",\"id\":\"ws/31kk8e\",\"name\":\"Second-Level Approval Preparation\",\"index\":6,\"range\":\"A1:Q16\",\"address\":\"A1:Q16\"}\n{\"kind\":\"sheet\",\"id\":\"ws/xdgru5\",\"name\":\"Escalation Queue\",\"index\":7,\"range\":\"A1:K16\",\"address\":\"A1:K16\"}\n{\"kind\":\"sheet\",\"id\":\"ws/ga9d5g\",\"name\":\"Decision Export Preview\",\"index\":8,\"range\":\"A1:O16\",\"address\":\"A1:O16\"}\n{\"kind\":\"sheet\",\"id\":\"ws/czk3kh\",\"name\":\"Validation Summary\",\"index\":9,\"range\":\"A1:C15\",\"address\":\"A1:C15\"}\n{\"kind\":\"sheet\",\"id\":\"ws/wy22qq\",\"name\":\"Revision History\",\"index\":10,\"range\":\"A1:D2\",\"address\":\"A1:D2\"}\n{\"kind\":\"sheet\",\"id\":\"ws/vbxqwt\",\"name\":\"Import Metadata\",\"index\":11,\"range\":\"A1:C13\",\"address\":\"A1:C13\"}",
+  "dashboardInspection": "{\"kind\":\"table\",\"sheet\":\"Duplicate Review Dashboard\",\"address\":\"A1:B15\",\"rows\":15,\"cols\":2,\"values\":[[\"Duplicate Review Dashboard\",null],[null,null],[\"Metric\",\"Formula Result\"],[\"Total duplicate groups\",15],[\"Groups not started\",15],[\"Groups in review\",0],[\"Groups reviewer-complete\",0],[\"Groups escalated\",0],[\"Groups awaiting second-level approval\",15],[\"Groups returned for rework\",0],[\"Groups closed without approval\",0],[\"Groups with proposed merges\",0],[\"Groups marked keep separate\",0],[\"Groups with proposed renames\",0],[\"Groups with proposed parent-child relationships\",0]]}"
+}

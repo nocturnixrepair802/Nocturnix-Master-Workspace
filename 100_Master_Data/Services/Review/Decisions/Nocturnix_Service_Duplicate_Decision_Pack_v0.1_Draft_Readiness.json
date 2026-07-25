@@ -1,0 +1,13 @@
+{
+  "readinessStatus": "STRUCTURALLY VALID; DUPLICATE REVIEW READY; MANUAL DECISION REQUIRED; GOVERNANCE BLOCKED; NOT PRODUCTION READY",
+  "productionReady": false,
+  "importEligible": false,
+  "pricingActivationEligible": false,
+  "blockers": [
+    "Manual duplicate review required",
+    "Reviewer proposals only",
+    "Second-level approval required",
+    "Import Eligibility remains Not Eligible",
+    "Production and pricing activation prohibited"
+  ]
+}

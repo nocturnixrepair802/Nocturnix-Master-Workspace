@@ -1,0 +1,7 @@
+Central lookup catalog QA Report
+Execution timestamp: 20260725T045827Z
+Runtime: Python 3.13.7; openpyxl 3.1.5
+ZIP integrity/openpyxl load: PASS for selected and output XLSX artifacts.
+Excel COM status: Not executed; non-blocking.
+Source-hash preservation: PASS
+QA status: PASS WITH WARNINGS

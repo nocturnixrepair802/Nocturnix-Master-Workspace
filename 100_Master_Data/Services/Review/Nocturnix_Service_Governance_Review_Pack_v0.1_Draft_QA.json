@@ -1,0 +1,209 @@
+{
+  "runtimeGate": {
+    "loadWorkspaceDependencies": "PASS",
+    "managedSpreadsheetDependencies": "PASS",
+    "artifactToolImport": "PASS",
+    "artifactToolVersion": "2.8.24",
+    "prohibitedLibrariesUsed": false
+  },
+  "sourceHashes": {
+    "Manufacturer Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Manufacturers/Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx",
+      "sha256": "24A26319432D919C8D14B4B44377FB3826D7282657347D7283E90A73635412B9"
+    },
+    "Device Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Devices/Nocturnix_Device_Registry_v0.1_Draft.xlsx",
+      "sha256": "B43DD38C8897E3665605F039591A0CFFFD3554FA1F3144A242A0FFD7971D9D9A"
+    },
+    "Parts Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Parts/Nocturnix_Parts_Registry_v0.1_Draft.xlsx",
+      "sha256": "EEA22D165381546F92D43D6CB93E86A95D7539C0BE97B69B252A2E8E2EE56FBB"
+    },
+    "Services Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Nocturnix_Services_Registry_v0.1_Draft.xlsx",
+      "sha256": "0DA12582EA01BB5BC37B8126098B5359CDC45077C9B9B9C89FD50EC6387852E3"
+    },
+    "Phase 4A Remediation": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Remediation/Nocturnix_Services_Registry_Remediation_v0.1_Draft.xlsx",
+      "sha256": "3A4CF9ABE3BD954D93C50094AB08D53ADB64FAE143AFC7AB7DBD312245B15EF7"
+    },
+    "Master Services Catalog": {
+      "path": "D:/Business Portal/300_Pricing/Working/Nocturnix_Master_Services_Catalog_v1.xlsx",
+      "sha256": "F1A85069F3F7655E2FD375CF2EE63C5C716422E1A7D2BEFE61073005396E34C2"
+    },
+    "Master Devices Catalog": {
+      "path": "D:/Business Portal/300_Pricing/Working/Nocturnix_Master_Devices_Catalog_v1.xlsx",
+      "sha256": "23840312B08A55031021E73AED6EA8835DDCCBE215B8BF133751B64FD44AAD96"
+    },
+    "Master Parts Catalog": {
+      "path": "D:/Business Portal/300_Pricing/Working/Nocturnix_Master_Parts_Catalog_v1.xlsx",
+      "sha256": "3F6387B43647AA63C69F2995FBC0C272D9F85C0DD1A340EBAAB842704D3C3464"
+    },
+    "Master Compatibility Catalog": {
+      "path": "D:/Business Portal/300_Pricing/Working/Nocturnix_Master_Compatibility_Catalog_v1.xlsx",
+      "sha256": "58442236FA3587EB29E86F70AC5439E5CBA9681FEB26B7C1848C290E9287BAF4"
+    },
+    "Master Labor Catalog": {
+      "path": "D:/Business Portal/300_Pricing/Working/Nocturnix_Master_Labor_Catalog_v1.xlsx",
+      "sha256": "3ADB7D1A736EF618D79A095346234E6FC40BBB9424CDB1FCA1D2AD48AC5C8280"
+    },
+    "Master Pricing Catalog": {
+      "path": "D:/Business Portal/300_Pricing/Working/Nocturnix_Master_Pricing_Catalog_v1.xlsx",
+      "sha256": "FE9E719435293555EA708AD238C492B386C1F78A826C62E93A66ED344EE3137A"
+    }
+  },
+  "output": {
+    "workbook": "D:/Business Portal/100_Master_Data/Services/Review/Nocturnix_Service_Governance_Review_Pack_v0.1_Draft.xlsx",
+    "sha256BeforeQa": "01830AEE1271593101F4188ED06C86C01A2FCF5DBBF7BD3432DF7DB12940FCC9",
+    "sha256AfterQa": "01830AEE1271593101F4188ED06C86C01A2FCF5DBBF7BD3432DF7DB12940FCC9"
+  },
+  "counts": {
+    "serviceIdentityReviewItems": 314,
+    "manufacturerReviewItems": 314,
+    "deviceReviewItems": 314,
+    "partReviewItems": 314,
+    "laborReviewItems": 314,
+    "duplicateGroups": 15,
+    "unsupportedRelationships": 314,
+    "escalationItems": 329,
+    "reviewerInputFieldsCreated": true,
+    "governedDropdownListsCreated": true
+  },
+  "validation": [
+    {
+      "gate": "Runtime gate - load_workspace_dependencies",
+      "result": "PASS",
+      "details": "Managed dependencies available."
+    },
+    {
+      "gate": "Runtime gate - artifact-tool import",
+      "result": "PASS",
+      "details": "Loaded through managed Node dependency loader; no npm install or substitute library used."
+    },
+    {
+      "gate": "Services review count",
+      "result": "PASS",
+      "details": "314 service rows."
+    },
+    {
+      "gate": "Unsupported relationship count",
+      "result": "PASS",
+      "details": "314 unsupported rows."
+    },
+    {
+      "gate": "Duplicate group count",
+      "result": "PASS",
+      "details": "15 duplicate groups."
+    },
+    {
+      "gate": "Service ID registry integrity",
+      "result": "PASS",
+      "details": "Every review Service ID exists in Services Registry."
+    },
+    {
+      "gate": "Governed ID dropdowns",
+      "result": "PASS",
+      "details": "Manufacturer, Device, Part, and Service ID dropdowns use governed IDs."
+    },
+    {
+      "gate": "Import eligibility",
+      "result": "PASS",
+      "details": "Decision Register defaults to Not Eligible."
+    },
+    {
+      "gate": "Production status",
+      "result": "PASS",
+      "details": "Production Import Prohibited retained."
+    },
+    {
+      "gate": "Pricing activation",
+      "result": "PASS",
+      "details": "Pricing Activation Prohibited retained."
+    },
+    {
+      "gate": "Approvals",
+      "result": "PASS",
+      "details": "Approval names/dates blank; statuses Pending."
+    },
+    {
+      "gate": "Formula error search",
+      "result": "PASS",
+      "details": "No formula errors found during artifact-tool scan."
+    },
+    {
+      "gate": "Source hash preservation",
+      "result": "PASS",
+      "details": "Pre/post source hashes match."
+    }
+  ],
+  "formulaErrorSearch": {
+    "result": "PASS",
+    "matches": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}"
+  },
+  "readinessStatus": "STRUCTURALLY VALID; MANUAL REVIEW REQUIRED; GOVERNANCE BLOCKED; NOT PRODUCTION READY",
+  "governanceBlockers": [
+    "Manual review required",
+    "Second-level approvals pending",
+    "Unsupported relationships not promotable",
+    "Import eligibility remains Not Eligible",
+    "Production import and pricing activation prohibited"
+  ],
+  "postSourceHashes": {
+    "Manufacturer Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Manufacturers/Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx",
+      "sha256": "24A26319432D919C8D14B4B44377FB3826D7282657347D7283E90A73635412B9",
+      "unchanged": true
+    },
+    "Device Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Devices/Nocturnix_Device_Registry_v0.1_Draft.xlsx",
+      "sha256": "B43DD38C8897E3665605F039591A0CFFFD3554FA1F3144A242A0FFD7971D9D9A",
+      "unchanged": true
+    },
+    "Parts Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Parts/Nocturnix_Parts_Registry_v0.1_Draft.xlsx",
+      "sha256": "EEA22D165381546F92D43D6CB93E86A95D7539C0BE97B69B252A2E8E2EE56FBB",
+      "unchanged": true
+    },
+    "Services Registry": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Nocturnix_Services_Registry_v0.1_Draft.xlsx",
+      "sha256": "0DA12582EA01BB5BC37B8126098B5359CDC45077C9B9B9C89FD50EC6387852E3",
+      "unchanged": true
+    },
+    "Phase 4A Remediation": {
+      "path": "D:/Business Portal/100_Master_Data/Services/Remediation/Nocturnix_Services_Registry_Remediation_v0.1_Draft.xlsx",
+      "sha256": "3A4CF9ABE3BD954D93C50094AB08D53ADB64FAE143AFC7AB7DBD312245B15EF7",
+      "unchanged": true
+    },
+    "Master Services Catalog": {
+      "path": "D:/Business Portal/300_Pricing/Working/Nocturnix_Master_Services_Catalog_v1.xlsx",
+      "sha256": "F1A85069F3F7655E2FD375CF2EE63C5C716422E1A7D2BEFE61073005396E34C2",
+      "unchanged": true
+    },
+    "Master Devices Catalog": {
+      "path": "D:/Business Portal/300_Pricing/Working/Nocturnix_Master_Devices_Catalog_v1.xlsx",
+      "sha256": "23840312B08A55031021E73AED6EA8835DDCCBE215B8BF133751B64FD44AAD96",
+      "unchanged": true
+    },
+    "Master Parts Catalog": {
+      "path": "D:/Business Portal/300_Pricing/Working/Nocturnix_Master_Parts_Catalog_v1.xlsx",
+      "sha256": "3F6387B43647AA63C69F2995FBC0C272D9F85C0DD1A340EBAAB842704D3C3464",
+      "unchanged": true
+    },
+    "Master Compatibility Catalog": {
+      "path": "D:/Business Portal/300_Pricing/Working/Nocturnix_Master_Compatibility_Catalog_v1.xlsx",
+      "sha256": "58442236FA3587EB29E86F70AC5439E5CBA9681FEB26B7C1848C290E9287BAF4",
+      "unchanged": true
+    },
+    "Master Labor Catalog": {
+      "path": "D:/Business Portal/300_Pricing/Working/Nocturnix_Master_Labor_Catalog_v1.xlsx",
+      "sha256": "3ADB7D1A736EF618D79A095346234E6FC40BBB9424CDB1FCA1D2AD48AC5C8280",
+      "unchanged": true
+    },
+    "Master Pricing Catalog": {
+      "path": "D:/Business Portal/300_Pricing/Working/Nocturnix_Master_Pricing_Catalog_v1.xlsx",
+      "sha256": "FE9E719435293555EA708AD238C492B386C1F78A826C62E93A66ED344EE3137A",
+      "unchanged": true
+    }
+  },
+  "sourceFilesUnchanged": true
+}

@@ -1,0 +1,124 @@
+{
+  "workbook": "D:/Business Portal/100_Master_Data/Services/Nocturnix_Services_Registry_v0.1_Draft.xlsx",
+  "profile": "Nocturnix Services Registry v0.1 Draft",
+  "generatedUtc": "2026-07-24T20:21:56.225Z",
+  "artifactToolVersion": "2.8.24",
+  "sourceSha256Before": {
+    "Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx": "24A26319432D919C8D14B4B44377FB3826D7282657347D7283E90A73635412B9",
+    "Nocturnix_Device_Registry_v0.1_Draft.xlsx": "B43DD38C8897E3665605F039591A0CFFFD3554FA1F3144A242A0FFD7971D9D9A",
+    "Nocturnix_Parts_Registry_v0.1_Draft.xlsx": "EEA22D165381546F92D43D6CB93E86A95D7539C0BE97B69B252A2E8E2EE56FBB",
+    "Nocturnix_Master_Services_Catalog_v1.xlsx": "F1A85069F3F7655E2FD375CF2EE63C5C716422E1A7D2BEFE61073005396E34C2",
+    "Nocturnix_Master_Parts_Catalog_v1.xlsx": "3F6387B43647AA63C69F2995FBC0C272D9F85C0DD1A340EBAAB842704D3C3464",
+    "Nocturnix_Master_Compatibility_Catalog_v1.xlsx": "58442236FA3587EB29E86F70AC5439E5CBA9681FEB26B7C1848C290E9287BAF4",
+    "Nocturnix_Master_Labor_Catalog_v1.xlsx": "3ADB7D1A736EF618D79A095346234E6FC40BBB9424CDB1FCA1D2AD48AC5C8280",
+    "Nocturnix_Master_Pricing_Catalog_v1.xlsx": "FE9E719435293555EA708AD238C492B386C1F78A826C62E93A66ED344EE3137A"
+  },
+  "sourceSha256After": {
+    "Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx": "24A26319432D919C8D14B4B44377FB3826D7282657347D7283E90A73635412B9",
+    "Nocturnix_Device_Registry_v0.1_Draft.xlsx": "B43DD38C8897E3665605F039591A0CFFFD3554FA1F3144A242A0FFD7971D9D9A",
+    "Nocturnix_Parts_Registry_v0.1_Draft.xlsx": "EEA22D165381546F92D43D6CB93E86A95D7539C0BE97B69B252A2E8E2EE56FBB",
+    "Nocturnix_Master_Services_Catalog_v1.xlsx": "F1A85069F3F7655E2FD375CF2EE63C5C716422E1A7D2BEFE61073005396E34C2",
+    "Nocturnix_Master_Parts_Catalog_v1.xlsx": "3F6387B43647AA63C69F2995FBC0C272D9F85C0DD1A340EBAAB842704D3C3464",
+    "Nocturnix_Master_Compatibility_Catalog_v1.xlsx": "58442236FA3587EB29E86F70AC5439E5CBA9681FEB26B7C1848C290E9287BAF4",
+    "Nocturnix_Master_Labor_Catalog_v1.xlsx": "3ADB7D1A736EF618D79A095346234E6FC40BBB9424CDB1FCA1D2AD48AC5C8280",
+    "Nocturnix_Master_Pricing_Catalog_v1.xlsx": "FE9E719435293555EA708AD238C492B386C1F78A826C62E93A66ED344EE3137A"
+  },
+  "sourceFilesRemainedUnchanged": true,
+  "outputSha256BeforeQa": "0DA12582EA01BB5BC37B8126098B5359CDC45077C9B9B9C89FD50EC6387852E3",
+  "outputSha256AfterQa": "0DA12582EA01BB5BC37B8126098B5359CDC45077C9B9B9C89FD50EC6387852E3",
+  "outputWorkbookUnchangedByQa": true,
+  "counts": {
+    "services": 314,
+    "aliases": 942,
+    "deviceApplicabilityObservations": 0,
+    "partRequirementObservations": 0,
+    "laborReferenceObservations": 0,
+    "mappedManufacturers": 0,
+    "unresolvedManufacturerMappings": 314,
+    "mappedDevices": 0,
+    "unresolvedDeviceMappings": 0,
+    "mappedParts": 0,
+    "unresolvedPartMappings": 0,
+    "suspectedDuplicates": 19,
+    "identityConflicts": 333,
+    "reviewItems": 333
+  },
+  "validation": {
+    "Unique Service IDs": {
+      "result": "PASS",
+      "details": "314 service records."
+    },
+    "Unique Applicability IDs": {
+      "result": "PASS",
+      "details": "0 applicability observations."
+    },
+    "Unique Requirement IDs": {
+      "result": "PASS",
+      "details": "0 part requirement observations."
+    },
+    "Unique Labor Reference Record IDs": {
+      "result": "PASS",
+      "details": "0 labor reference observations."
+    },
+    "Manufacturer Reference Integrity": {
+      "result": "WARN",
+      "details": "0 mapped; 314 unresolved."
+    },
+    "Device Reference Integrity": {
+      "result": "PASS",
+      "details": "0 mapped; 0 unresolved."
+    },
+    "Part Reference Integrity": {
+      "result": "PASS",
+      "details": "0 mapped; 0 unresolved."
+    },
+    "Source Record Traceability": {
+      "result": "PASS",
+      "details": "Source workbook, worksheet, and record fields included."
+    },
+    "Required Fields": {
+      "result": "PASS",
+      "details": "Required governed registry fields populated where source-supported."
+    },
+    "Duplicate Detection": {
+      "result": "WARN",
+      "details": "19 suspected duplicate service records queued."
+    },
+    "Alias Consistency": {
+      "result": "PASS",
+      "details": "Aliases remain Pending Verification."
+    },
+    "Worksheet and Table Integrity": {
+      "result": "PASS",
+      "details": "All required worksheets created."
+    },
+    "Formula Integrity": {
+      "result": "PASS",
+      "details": "Workbook contains no generated formulas."
+    },
+    "Governance Gates": {
+      "result": "PASS",
+      "details": "Pending Verification and production/pricing prohibitions retained."
+    },
+    "Blank Approval Fields": {
+      "result": "PASS",
+      "details": "No approvals or verifiers populated."
+    },
+    "Prohibited Production Status": {
+      "result": "PASS",
+      "details": "Production Import Prohibited."
+    },
+    "Prohibited Pricing Activation": {
+      "result": "PASS",
+      "details": "Pricing Activation Not Authorized."
+    }
+  },
+  "formulaScan": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}",
+  "readinessStatus": "STRUCTURALLY VALID; GOVERNANCE BLOCKED; NOT PRODUCTION READY",
+  "governanceBlockers": [
+    "All service identities and aliases remain Pending Verification.",
+    "Manufacturer mappings are unresolved unless exact approved Manufacturer Registry IDs are present.",
+    "Device applicability, part requirements, and labor references remain observation-only until approved.",
+    "Production import and pricing activation are prohibited."
+  ]
+}

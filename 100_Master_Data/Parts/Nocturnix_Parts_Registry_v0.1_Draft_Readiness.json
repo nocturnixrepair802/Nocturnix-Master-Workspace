@@ -1,0 +1,25 @@
+{
+  "artifact": "Nocturnix_Parts_Registry_v0.1_Draft.xlsx",
+  "status": "STRUCTURALLY VALID; GOVERNANCE BLOCKED; NOT PRODUCTION READY",
+  "gates": {
+    "Structural Validity": "PASS",
+    "Source Integrity": "PASS",
+    "Identity Verification": "BLOCKED",
+    "Alias Approval": "BLOCKED",
+    "Conflict Resolution": "BLOCKED",
+    "Production Import": "PROHIBITED"
+  },
+  "blocking_counts": {
+    "pending_identity_verification": 48,
+    "open_conflicts": 96,
+    "pending_aliases": 144,
+    "review_queue": 96
+  },
+  "next_actions": [
+    "Resolve canonical manufacturer mappings for parts.",
+    "Fill or approve missing part descriptions.",
+    "Verify canonical part identities using approved evidence.",
+    "Approve or reject legacy SKU and name aliases.",
+    "Authorize downstream mappings only after governance approval."
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "artifact": "Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx",
+  "status": "STRUCTURALLY VALID; GOVERNANCE BLOCKED; NOT PRODUCTION READY",
+  "gates": {
+    "Structural Validity": "PASS",
+    "Source Integrity": "PASS",
+    "Identity Verification": "BLOCKED",
+    "Alias Approval": "BLOCKED",
+    "Conflict Resolution": "BLOCKED",
+    "Production Import": "PROHIBITED"
+  },
+  "blocking_counts": {
+    "pending_identity_verification": 35,
+    "open_conflicts": 25,
+    "pending_aliases": 80,
+    "review_queue": 25
+  },
+  "next_actions": [
+    "Verify canonical manufacturer identities using approved evidence.",
+    "Decide whether Maxwest, TCL, and Zhang Xiao Quan require new registry identities.",
+    "Route supplier/vendor names out of manufacturer taxonomy.",
+    "Resolve product-line and category values used as manufacturers.",
+    "Approve or reject legacy-code and alias mappings."
+  ]
+}
