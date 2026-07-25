@@ -81,7 +81,7 @@ class RepairToolDefinition:
             "name": self.name,
             "description": self.description,
             "parameters": self.input_model.model_json_schema(),
-            "strict": True,
+            "strict": False,
         }
 
 

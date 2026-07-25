@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from time import monotonic
 from typing import Any
@@ -19,6 +20,8 @@ from nocturnix.repair_confirmation_store import (
     RepairConfirmationStore,
     SqlRepairConfirmationStore,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class RepairToolExecuteRequest(StrictModel):
@@ -94,13 +97,20 @@ def create_repair_ai_router(
     ):
         settings = services.container.settings
         if not settings.openai_enabled or not settings.external_providers_enabled:
-            raise HTTPException(status_code=503, detail="OpenAI repair agent is not enabled")
+            raise HTTPException(
+                status_code=503, detail="OpenAI repair agent is not enabled"
+            )
         if not settings.openai_api_key:
-            raise HTTPException(status_code=503, detail="OpenAI API key is not configured")
+            raise HTTPException(
+                status_code=503, detail="OpenAI API key is not configured"
+            )
 
-        confirmations = confirmation_store or SqlRepairConfirmationStore(services.session)
+        confirmations = confirmation_store or SqlRepairConfirmationStore(
+            services.session
+        )
         previous_response_id = req.previous_response_id
         confirmed_actions: set[str] = set()
+
         if req.confirmation_id:
             try:
                 pending = confirmations.consume(
@@ -113,6 +123,7 @@ def create_repair_ai_router(
                 raise HTTPException(status_code=410, detail=str(exc)) from exc
             except RepairConfirmationConsumed as exc:
                 raise HTTPException(status_code=409, detail=str(exc)) from exc
+
             previous_response_id = pending.previous_response_id
             confirmed_actions.add(pending.action_key)
 
@@ -121,13 +132,16 @@ def create_repair_ai_router(
             timeout=settings.openai_timeout_seconds,
             max_retries=2,
         )
+
         agent = OpenAIRepairAgent(
             client,
             services.repair_domain,
             model=settings.openai_model,
             max_tool_rounds=settings.openai_max_tool_rounds,
         )
+
         started_at = monotonic()
+
         try:
             result = agent.run(
                 owner_user_id=user.user_id,
@@ -136,9 +150,20 @@ def create_repair_ai_router(
                 confirmed_actions=confirmed_actions,
             )
         except Exception as exc:
+            logger.exception(
+                "OpenAI repair agent failed: "
+                "type=%s status=%s request_id=%s body=%r",
+                type(exc).__name__,
+                getattr(exc, "status_code", None),
+                getattr(exc, "request_id", None),
+                getattr(exc, "body", None),
+            )
+
             provider_failure = classify_openai_exception(exc)
+
             if provider_failure is None:
                 raise
+
             services.audit.record(
                 user,
                 "repair_ai_agent",
@@ -152,13 +177,19 @@ def create_repair_ai_router(
                     "confirmation_used": bool(req.confirmation_id),
                 },
             )
+
             raise HTTPException(
                 status_code=provider_failure.status_code,
                 detail=provider_failure.public_detail,
-                headers=({"Retry-After": "2"} if provider_failure.status_code == 429 else None),
+                headers=(
+                    {"Retry-After": "2"}
+                    if provider_failure.status_code == 429
+                    else None
+                ),
             ) from exc
 
         proposed_actions: list[dict[str, Any]] = []
+
         if result.response_id:
             for action in result.proposed_actions:
                 pending = confirmations.create(
@@ -166,8 +197,12 @@ def create_repair_ai_router(
                     previous_response_id=result.response_id,
                     tool_name=action.tool_name,
                     arguments=action.arguments,
-                    action_key=agent.action_key(action.tool_name, action.arguments),
+                    action_key=agent.action_key(
+                        action.tool_name,
+                        action.arguments,
+                    ),
                 )
+
                 proposed_actions.append(
                     {
                         "tool_name": action.tool_name,
@@ -191,6 +226,7 @@ def create_repair_ai_router(
                 "latency_ms": int((monotonic() - started_at) * 1000),
             },
         )
+
         return {
             "response": result.text,
             "response_id": result.response_id,
