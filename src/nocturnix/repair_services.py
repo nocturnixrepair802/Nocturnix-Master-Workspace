@@ -10,6 +10,10 @@ from nocturnix.repair_models import (
     CustomerDeviceCreateRequest,
     CustomerDeviceUpdateRequest,
     CustomerUpdateRequest,
+    RepairDashboardQueueItem,
+    RepairDashboardResponse,
+    RepairDashboardSummary,
+    RepairPriority,
     RepairTicketCreateRequest,
     RepairTicketNoteCreateRequest,
     RepairTicketNoteUpdateRequest,
@@ -29,6 +33,8 @@ from nocturnix.repair_repositories import (
     SqlCustomerRepository,
     SqlRepairTicketNoteRepository,
     SqlRepairTicketRepository,
+    count_customers,
+    count_devices,
 )
 
 
@@ -371,6 +377,56 @@ class RepairService:
             customer_visible_only=customer_visible_only,
             offset=offset,
             limit=limit,
+        )
+
+    def repair_dashboard(self, owner_user_id: str) -> RepairDashboardResponse:
+        status_counts = self.tickets.count_by_status(owner_user_id)
+        priority_counts = self.tickets.count_by_priority(owner_user_id)
+        by_status = {
+            status: status_counts.get(status.value, 0) for status in RepairTicketStatus
+        }
+        by_priority = {
+            priority: priority_counts.get(priority.value, 0) for priority in RepairPriority
+        }
+        terminal_statuses = {RepairTicketStatus.completed, RepairTicketStatus.cancelled}
+        recent_queue = []
+        for ticket, customer, device in self.tickets.recent_dashboard_queue(owner_user_id):
+            manufacturer = device.manufacturer or ""
+            model = device.model or device.device_type
+            device_label = " ".join(part for part in [manufacturer, model] if part).strip()
+            recent_queue.append(
+                RepairDashboardQueueItem(
+                    id=ticket.id,
+                    ticket_number=ticket.ticket_number,
+                    status=RepairTicketStatus(ticket.status),
+                    priority=RepairPriority(ticket.priority),
+                    issue_description=ticket.issue_description,
+                    customer_name=f"{customer.first_name} {customer.last_name}".strip(),
+                    device_label=device_label or device.device_type,
+                    estimated_cost_cents=ticket.estimated_cost_cents,
+                    approved_cost_cents=ticket.approved_cost_cents,
+                    currency=ticket.currency,
+                    due_at=ticket.due_at,
+                    updated_at=ticket.updated_at,
+                )
+            )
+        total_tickets = sum(by_status.values())
+        return RepairDashboardResponse(
+            summary=RepairDashboardSummary(
+                total_customers=count_customers(self.session, owner_user_id),
+                total_devices=count_devices(self.session, owner_user_id),
+                total_tickets=total_tickets,
+                open_tickets=sum(
+                    count for status, count in by_status.items() if status not in terminal_statuses
+                ),
+                urgent_tickets=by_priority[RepairPriority.urgent],
+                awaiting_approval=by_status[RepairTicketStatus.awaiting_approval],
+                ready_for_pickup=by_status[RepairTicketStatus.ready_for_pickup],
+                completed_tickets=by_status[RepairTicketStatus.completed],
+            ),
+            tickets_by_status=by_status,
+            tickets_by_priority=by_priority,
+            recent_queue=recent_queue,
         )
 
     def update_ticket_note(
