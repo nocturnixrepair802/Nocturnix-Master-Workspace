@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Any, cast
 
@@ -5,7 +6,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from nocturnix import create_app
+from nocturnix.api import repair_ai_routes
 from nocturnix.config import Settings
+from nocturnix.repair_ai_tools import REPAIR_TOOL_DEFINITIONS, RepairAssistantTools
 
 OWNER_HEADERS = {"X-Nocturnix-Dev-User": "repair-ai-owner-001"}
 OTHER_HEADERS = {"X-Nocturnix-Dev-User": "repair-ai-owner-002"}
@@ -58,8 +61,27 @@ def test_repair_ai_tool_catalog_requires_authentication(repair_ai_client: TestCl
     assert "search_customers" in tools
     assert "create_customer" in tools
     assert tools["create_customer"]["type"] == "function"
-    assert tools["create_customer"]["strict"] is True
+    assert tools["create_customer"]["strict"] is False
     assert "parameters" in tools["create_customer"]
+
+
+def test_repair_ai_tool_definitions_are_serializable_and_non_strict() -> None:
+    tools = [definition.as_openai_tool() for definition in REPAIR_TOOL_DEFINITIONS]
+
+    assert tools
+    assert all(tool["type"] == "function" for tool in tools)
+    assert all(tool["strict"] is False for tool in tools)
+    assert all(isinstance(tool["parameters"], dict) for tool in tools)
+    json.dumps(tools)
+
+
+def test_repair_ai_tool_module_imports_without_agent_cycle() -> None:
+    from nocturnix.api.integrated_app import create_app as create_integrated_app
+    from nocturnix.openai_repair_agent import OpenAIRepairAgent
+
+    assert OpenAIRepairAgent.__name__ == "OpenAIRepairAgent"
+    assert RepairAssistantTools(None).openai_tools()
+    assert create_integrated_app()
 
 
 def test_repair_ai_tool_confirmation_and_execution(repair_ai_client: TestClient) -> None:
@@ -135,3 +157,85 @@ def test_repair_ai_tool_unknown_name_and_owner_isolation(repair_ai_client: TestC
     )
     assert hidden.status_code == 404
     assert hidden.json()["error"]["code"] == "repair_not_found"
+
+
+def test_repair_agent_chat_translates_known_provider_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class RateLimitError(Exception):
+        status_code = 429
+        request_id = "req_test_rate_limit"
+        body = {"error": {"message": "sanitized test body"}}
+
+    class FailingAgent:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def run(self, **kwargs: Any) -> Any:
+            raise RateLimitError("sensitive provider failure")
+
+    monkeypatch.setattr(repair_ai_routes, "OpenAI", lambda **kwargs: object())
+    monkeypatch.setattr(repair_ai_routes, "OpenAIRepairAgent", FailingAgent)
+    app = create_app(
+        Settings(
+            database_url=f"sqlite:///{tmp_path / 'provider_failure.db'}",
+            database_migration_mode="auto-test-only",
+            auth_mode="development_header",
+            allow_development_header_auth=True,
+            external_providers_enabled=True,
+            openai_enabled=True,
+            openai_api_key="test-key",
+            rate_limit_per_minute=500,
+        )
+    )
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/ai/repair-tools/chat",
+            headers=OWNER_HEADERS,
+            json={"message": "Find Ada"},
+        )
+
+    cast(Any, app).state.container.engine.dispose()
+    assert response.status_code == 429
+    assert response.headers["retry-after"] == "2"
+    assert response.json()["detail"] == (
+        "The AI provider is temporarily rate limited. Please try again shortly."
+    )
+
+
+def test_repair_agent_chat_reraises_unknown_exception(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FailingAgent:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def run(self, **kwargs: Any) -> Any:
+            raise RuntimeError("programming failure")
+
+    monkeypatch.setattr(repair_ai_routes, "OpenAI", lambda **kwargs: object())
+    monkeypatch.setattr(repair_ai_routes, "OpenAIRepairAgent", FailingAgent)
+    app = create_app(
+        Settings(
+            database_url=f"sqlite:///{tmp_path / 'unknown_failure.db'}",
+            database_migration_mode="auto-test-only",
+            auth_mode="development_header",
+            allow_development_header_auth=True,
+            external_providers_enabled=True,
+            openai_enabled=True,
+            openai_api_key="test-key",
+            rate_limit_per_minute=500,
+        )
+    )
+
+    with TestClient(app) as client, pytest.raises(RuntimeError, match="programming failure"):
+        client.post(
+            "/api/v1/ai/repair-tools/chat",
+            headers=OWNER_HEADERS,
+            json={"message": "Find Ada"},
+        )
+
+    cast(Any, app).state.container.engine.dispose()
