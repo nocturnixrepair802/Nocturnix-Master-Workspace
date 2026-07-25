@@ -439,3 +439,37 @@ class RepairTicketListResponse(StrictModel):
     total: int = Field(ge=0)
     offset: int = Field(ge=0)
     limit: int = Field(ge=1, le=100)
+
+
+class RepairDashboardSummary(StrictModel):
+    total_customers: int = Field(ge=0)
+    total_devices: int = Field(ge=0)
+    total_tickets: int = Field(ge=0)
+    open_tickets: int = Field(ge=0)
+    urgent_tickets: int = Field(ge=0)
+    awaiting_approval: int = Field(ge=0)
+    ready_for_pickup: int = Field(ge=0)
+    completed_tickets: int = Field(ge=0)
+
+
+class RepairDashboardQueueItem(StrictModel):
+    id: str
+    ticket_number: str
+    status: RepairTicketStatus
+    priority: RepairPriority
+    issue_description: str
+    customer_name: str
+    device_label: str
+    estimated_cost_cents: int | None
+    approved_cost_cents: int | None
+    currency: str
+    due_at: datetime | None
+    updated_at: datetime
+
+
+class RepairDashboardResponse(StrictModel):
+    summary: RepairDashboardSummary
+    tickets_by_status: dict[RepairTicketStatus, int]
+    tickets_by_priority: dict[RepairPriority, int]
+    recent_queue: list[RepairDashboardQueueItem]
+    development_only: bool = True

@@ -448,6 +448,57 @@ class SqlRepairTicketRepository:
             ).all()
         )
 
+    def count_by_status(self, owner_user_id: str) -> dict[str, int]:
+        rows = self.session.execute(
+            select(RepairTicketRow.status, func.count())
+            .where(RepairTicketRow.owner_user_id == owner_user_id)
+            .group_by(RepairTicketRow.status)
+        ).all()
+        return {str(status): int(count) for status, count in rows}
+
+    def count_by_priority(self, owner_user_id: str) -> dict[str, int]:
+        rows = self.session.execute(
+            select(RepairTicketRow.priority, func.count())
+            .where(RepairTicketRow.owner_user_id == owner_user_id)
+            .group_by(RepairTicketRow.priority)
+        ).all()
+        return {str(priority): int(count) for priority, count in rows}
+
+    def recent_dashboard_queue(
+        self, owner_user_id: str, *, limit: int = 10
+    ) -> builtins.list[tuple[RepairTicketRow, CustomerRow, CustomerDeviceRow]]:
+        rows = self.session.execute(
+            select(RepairTicketRow, CustomerRow, CustomerDeviceRow)
+            .join(CustomerRow, RepairTicketRow.customer_id == CustomerRow.id)
+            .join(CustomerDeviceRow, RepairTicketRow.customer_device_id == CustomerDeviceRow.id)
+            .where(RepairTicketRow.owner_user_id == owner_user_id)
+            .order_by(RepairTicketRow.updated_at.desc(), RepairTicketRow.created_at.desc())
+            .limit(limit)
+        ).all()
+        return [(ticket, customer, device) for ticket, customer, device in rows]
+
+
+def count_customers(session: Session, owner_user_id: str) -> int:
+    return int(
+        session.scalar(
+            select(func.count())
+            .select_from(CustomerRow)
+            .where(CustomerRow.owner_user_id == owner_user_id)
+        )
+        or 0
+    )
+
+
+def count_devices(session: Session, owner_user_id: str) -> int:
+    return int(
+        session.scalar(
+            select(func.count()).select_from(CustomerDeviceRow).where(
+                CustomerDeviceRow.owner_user_id == owner_user_id
+            )
+        )
+        or 0
+    )
+
 
 class SqlRepairTicketNoteRepository:
     def __init__(self, session: Session) -> None:

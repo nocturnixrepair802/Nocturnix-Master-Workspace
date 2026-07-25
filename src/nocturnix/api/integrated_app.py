@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from nocturnix.api import app as base_app
 from nocturnix.api.repair_ai_routes import create_repair_ai_router
+from nocturnix.api.repair_dashboard import create_repair_dashboard_router
 from nocturnix.api.repair_routes import create_repair_router
 from nocturnix.config import Settings
 from nocturnix.models import UserIdentity
@@ -137,6 +138,12 @@ def create_app(settings: Settings | None = None):
             base_app.get_services,
             auth_identity,
             require_csrf,
+        )
+    )
+    app.include_router(
+        create_repair_dashboard_router(
+            base_app.get_services,
+            auth_identity,
         )
     )
     app.include_router(
