@@ -342,7 +342,7 @@
         status.textContent = "Loading repair queue...";
         status.className = "muted";
         try {
-          const response = await fetch("/api/v1/repair-dashboard", {
+          const response = await fetch("/api/v1/dashboard/repairs", {
             headers: { "X-Nocturnix-Dev-User": document.querySelector("#devUser").value.trim() }
           });
           if (!response.ok) throw new Error(`Dashboard request failed: ${response.status}`);

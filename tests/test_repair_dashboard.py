@@ -99,7 +99,7 @@ def test_repair_dashboard_aggregates_owner_repair_queue(client: TestClient) -> N
     other_device = create_device(client, other_customer["id"], OTHER_HEADERS)
     create_ticket(client, other_customer["id"], other_device["id"], OTHER_HEADERS, priority="low")
 
-    response = client.get("/api/v1/repair-dashboard", headers=OWNER_HEADERS)
+    response = client.get("/api/v1/dashboard/repairs", headers=OWNER_HEADERS)
 
     assert response.status_code == 200, response.text
     payload = response.json()
@@ -123,10 +123,10 @@ def test_repair_dashboard_aggregates_owner_repair_queue(client: TestClient) -> N
 
 
 def test_repair_dashboard_requires_auth_and_serves_static_page(client: TestClient) -> None:
-    assert client.get("/api/v1/repair-dashboard").status_code == 401
+    assert client.get("/api/v1/dashboard/repairs").status_code == 401
 
     page = client.get("/static/repairs-dashboard.html")
 
     assert page.status_code == 200
     assert "Repair Dashboard" in page.text
-    assert "/api/v1/repair-dashboard" in page.text
+    assert "/api/v1/dashboard/repairs" in page.text
