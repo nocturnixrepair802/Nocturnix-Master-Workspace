@@ -32,10 +32,18 @@ def read_records(wb: Workbook, tables: dict[str, SourceTable]) -> dict[str, dict
         if normalize_text(record.values.get("manufacturer"))
     }
     for record in records.get("DeviceFamily", {}).values():
-        if not record.values.get("manufacturerid") and record.values.get("manufacturer"):
-            manufacturer_id = manufacturers_by_name.get(normalize_text(record.values.get("manufacturer")))
-            if manufacturer_id:
-                record.values["manufacturerid"] = manufacturer_id
+        manufacturer_id = str(record.values.get("manufacturerid") or "").strip()
+
+        if (
+            not manufacturer_id
+            or manufacturer_id.startswith("=")
+            or "_xlfn." in manufacturer_id
+        ) and record.values.get("manufacturer"):
+            resolved_manufacturer_id = manufacturers_by_name.get(
+                normalize_text(record.values.get("manufacturer"))
+            )
+            if resolved_manufacturer_id:
+                record.values["manufacturerid"] = resolved_manufacturer_id
     return records
 
 

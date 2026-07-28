@@ -55,6 +55,5 @@ pythonVersion = "3.14"
 typeCheckingMode = "basic"
 
 [tool.pytest.ini_options]
-addopts = "-p no:cacheprovider"
-pythonpath = ["Source"]
 testpaths = ["Tests", "Source/tests"]
+pythonpath = ["."]
