@@ -1,4 +1,13 @@
 # Changelog
+# 0.1.4
+Completed:
+- Integrated app launches by default
+- Repair dashboard HTML endpoint
+- Dashboard JSON endpoint
+- Session authentication verified
+- Dashboard empty-state verified
+- 54 tests passing
+- 87.85% coverage
 
 ## 0.1.3
 
