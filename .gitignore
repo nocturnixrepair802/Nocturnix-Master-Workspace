@@ -6,6 +6,7 @@ __pycache__/
 .ruff_cache/
 .venv/
 venv/
+Backups/
 
 # Excel temporary and backup files
 ~$*.xlsx
