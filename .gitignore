@@ -1,33 +1,24 @@
-# Python
+# Python runtime artifacts
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-
-# Virtual Environment
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .venv/
+venv/
 
-# VS Code
-.vscode/settings.json
+# Excel temporary and backup files
+~$*.xlsx
+~$*.xlsm
+*.backup_*.xlsx
 
-# Logs
-Logs/
-logs/
+# Device catalog generated outputs
+Nocturnix_Master_Devices_Catalog_v*_Normalized_Draft.xlsx
+Nocturnix_Master_Devices_Catalog_v*_Migration_Report.json
+Nocturnix_Master_Devices_Catalog_v*_Migration_Log.csv
+Nocturnix_Master_Devices_Catalog_v*_Exceptions.csv
 
-# Build Files
-dist/
-build/
-
-# OS Files
-.DS_Store
-Thumbs.db
-
-# Temporary Files
-*.tmp
-*.bak
-
-# Excel Lock Files
-~$*.xls*
-
-# Local project backups
-Backups/
+# Migration execution folders
+idempotency_check/
+migration_audit_*/
+migration_remediation_*/
