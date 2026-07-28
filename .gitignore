@@ -23,3 +23,10 @@ Nocturnix_Master_Devices_Catalog_v*_Exceptions.csv
 idempotency_check/
 migration_audit_*/
 migration_remediation_*/
+# Device catalog migration generated artifacts
+Archives/
+Imports/
+MigrationReports/
+MigrationReports_*/
+Nocturnix_Master_Devices_Catalog_*.xlsx
+git_review.txt
