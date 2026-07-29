@@ -11,9 +11,9 @@ from PySide6.QtWidgets import (
 )
 
 from app.device_catalog_page import DeviceCatalogPage
-from app.pages import CatalogPage, DashboardPage, PlaceholderPage, WorkbookImportPage
+from app.pages import DashboardPage, PlaceholderPage, WorkbookImportPage
+from app.service_catalog_page import ServiceCatalogPage
 from core.database import Database
-
 
 class MainWindow(QMainWindow):
     def __init__(self, database: Database) -> None:
@@ -35,7 +35,7 @@ class MainWindow(QMainWindow):
 
         dashboard = DashboardPage(database)
         devices = DeviceCatalogPage(database)
-        services = CatalogPage(database, "services")
+        services = ServiceCatalogPage(database)
 
         importer = WorkbookImportPage(
             database,

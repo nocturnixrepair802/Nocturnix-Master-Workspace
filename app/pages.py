@@ -4,8 +4,17 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QFileDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QMessageBox,
-    QPushButton, QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
+    QFileDialog,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QTableWidget,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
 from app.widgets.widgets import MetricCard
@@ -81,29 +90,6 @@ class WorkbookImportPage(QWidget):
         self.dashboard.refresh()
         for callback in self.refresh_callbacks: callback()
         QMessageBox.information(self,"Import complete",f"Imported {counts['devices']:,} devices, {counts['services']:,} services, and {counts['pricing']:,} pricing records.")
-
-
-class CatalogPage(QWidget):
-    def __init__(self, database: Database, kind: str) -> None:
-        super().__init__(); self.database=database; self.kind=kind
-        layout=QVBoxLayout(self); heading=QLabel("Device Catalog" if kind=="devices" else "Service Catalog"); heading.setObjectName("pageHeading"); layout.addWidget(heading)
-        self.search=QLineEdit(); self.search.setPlaceholderText("Search..."); self.search.textChanged.connect(self.refresh); layout.addWidget(self.search)
-        self.table=QTableWidget(); self.table.setAlternatingRowColors(True); layout.addWidget(self.table,1); self.refresh()
-    def refresh(self):
-        term=f"%{self.search.text().strip()}%" if hasattr(self,'search') else "%"
-        if self.kind=="devices":
-            headers=["Device ID","Manufacturer","Model","Family ID","Type ID","Active"]
-            rows=self.database.rows("SELECT device_id,manufacturer,model,device_family_id,device_type_id,active FROM devices WHERE manufacturer LIKE ? OR model LIKE ? ORDER BY manufacturer,model LIMIT 500",(term,term))
-        else:
-            headers=["Service ID","Service Name","Service Type","Device ID","Part Cost","Retail","Status"]
-            rows=self.database.rows("""SELECT s.service_id,s.internal_name,s.service_type_name,p.device_id,p.part_cost_cents,p.retail_price_cents,p.approval_status FROM services s JOIN pricing_records p ON p.service_id=s.service_id WHERE s.internal_name LIKE ? OR s.service_type_name LIKE ? ORDER BY s.internal_name LIMIT 500""",(term,term))
-        self.table.setColumnCount(len(headers)); self.table.setHorizontalHeaderLabels(headers); self.table.setRowCount(len(rows))
-        for r,row in enumerate(rows):
-            for c,value in enumerate(row):
-                if self.kind!="devices" and c in (4,5): value="" if value is None else f"${value/100:,.2f}"
-                if self.kind=="devices" and c==5: value="Yes" if value else "No"
-                self.table.setItem(r,c,QTableWidgetItem(str(value or "")))
-        self.table.resizeColumnsToContents()
 
 
 class PlaceholderPage(QWidget):
