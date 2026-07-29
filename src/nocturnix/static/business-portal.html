@@ -1,0 +1,264 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>Nocturnix Business Portal</title>
+
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+      background: #080b12;
+      color: #f3f4f6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, #18223a 0, transparent 35%),
+        #080b12;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 100vh;
+    }
+
+    aside {
+      padding: 28px 20px;
+      border-right: 1px solid #252b38;
+      background: rgba(10, 14, 24, 0.92);
+    }
+
+    .brand {
+      margin: 0 0 32px;
+      font-size: 1.25rem;
+      letter-spacing: 0.04em;
+    }
+
+    nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    nav a,
+    nav span {
+      display: block;
+      padding: 12px 14px;
+      border-radius: 8px;
+      color: #d9deea;
+      text-decoration: none;
+    }
+
+    nav a:hover {
+      background: #20283a;
+      color: #ffffff;
+    }
+
+    nav .active {
+      background: #28334b;
+      color: #ffffff;
+    }
+
+    nav .disabled {
+      color: #747d91;
+      cursor: not-allowed;
+    }
+
+    main {
+      padding: 40px;
+    }
+
+    header {
+      margin-bottom: 32px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: #9aa4b8;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      padding: 24px;
+      border: 1px solid #293044;
+      border-radius: 14px;
+      background: rgba(20, 26, 40, 0.88);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+    }
+
+    .card p {
+      color: #aeb6c7;
+      line-height: 1.5;
+    }
+
+    .button {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #dde5ff;
+      color: #111827;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .status {
+      margin-top: 32px;
+      padding: 16px 18px;
+      border: 1px solid #293044;
+      border-radius: 10px;
+      color: #aeb6c7;
+      background: rgba(20, 26, 40, 0.7);
+    }
+
+    @media (max-width: 760px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        border-right: 0;
+        border-bottom: 1px solid #252b38;
+      }
+
+      nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      main {
+        padding: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="layout">
+    <aside>
+      <h2 class="brand">NOCTURNIX</h2>
+
+      <nav aria-label="Business portal navigation">
+        <a class="active" href="/dashboard">Overview</a>
+        <a href="/dashboard/repairs">Repairs</a>
+        <span class="disabled">Customers — Coming soon</span>
+        <span class="disabled">Inventory — Coming soon</span>
+        <span class="disabled">Reports — Coming soon</span>
+        <span class="disabled">Settings — Coming soon</span>
+      </nav>
+    </aside>
+
+    <main>
+      <header>
+        <h1>Nocturnix Business Portal</h1>
+        <p class="subtitle">
+          Central access to repair operations and future business modules.
+        </p>
+      </header>
+
+      <section class="cards" aria-label="Portal modules">
+        <article class="card">
+          <h2>Repair Operations</h2>
+          <p>
+            Review repair volume, ticket priorities, workflow status,
+            and the current service queue.
+          </p>
+          <a class="button" href="/dashboard/repairs">
+            Open Repair Dashboard
+          </a>
+        </article>
+
+        <article class="card">
+          <h2>Customers</h2>
+          <p>
+            Customer profiles, communication history, and device ownership
+            will appear here.
+          </p>
+        </article>
+
+        <article class="card">
+          <h2>Inventory</h2>
+          <p>
+            Parts, stock levels, purchasing, and inventory alerts will
+            appear here.
+          </p>
+        </article>
+
+        <article class="card">
+          <h2>Reports</h2>
+          <p>
+            Business performance and operational reporting will appear here.
+          </p>
+        </article>
+      </section>
+
+      <div class="status" id="session-status">
+        Verifying authenticated session...
+      </div>
+    </main>
+  </div>
+
+  <script>
+    async function verifySession() {
+      const status = document.getElementById("session-status");
+
+      try {
+        const response = await fetch("/api/v1/auth/me", {
+          credentials: "same-origin"
+        });
+
+        if (!response.ok) {
+          status.textContent =
+            "The current session could not be verified.";
+          return;
+        }
+
+        const user = await response.json();
+        const identity =
+          user.email ||
+          user.username ||
+          user.user_id ||
+          "authenticated user";
+
+        status.textContent = `Signed in as ${identity}`;
+      } catch {
+        status.textContent =
+          "The session service is currently unavailable.";
+      }
+    }
+
+    verifySession();
+  </script>
+</body>
+</html>
