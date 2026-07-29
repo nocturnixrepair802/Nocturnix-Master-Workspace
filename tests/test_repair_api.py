@@ -346,3 +346,50 @@ def test_repair_tax_policy_create_request_trims_name() -> None:
     )
 
     assert request.name == "Standard Sales Tax"
+
+
+def test_calculate_repair_pricing(
+    repair_client: TestClient,
+) -> None:
+    response = repair_client.post(
+        "/api/v1/repair-pricing/calculate",
+        headers=OWNER_HEADERS,
+        json={
+            "parts_cost_cents": 10_000,
+            "labor_cost_cents": 5_000,
+            "processing_fee_cents": 300,
+            "overhead_cents": 1_000,
+            "markup_basis_points": 2_500,
+            "tax_rate_basis_points": 725,
+        },
+    )
+
+    assert response.status_code == 200, response.text
+
+    payload = response.json()
+
+    assert payload["parts_cost_cents"] == 10_000
+    assert payload["labor_cost_cents"] == 5_000
+    assert payload["processing_fee_cents"] == 300
+    assert payload["overhead_cents"] == 1_000
+    assert payload["internal_cost_cents"] == 16_000
+    assert payload["markup_amount_cents"] == 4_000
+    assert payload["subtotal_before_tax_cents"] == 20_300
+    assert payload["taxable_subtotal_cents"] == 20_300
+    assert payload["tax_amount_cents"] == 1_472
+    assert payload["total_price_cents"] == 21_772
+    assert payload["gross_profit_cents"] == 4_300
+
+
+def test_calculate_repair_pricing_rejects_negative_cost(
+    repair_client: TestClient,
+) -> None:
+    response = repair_client.post(
+        "/api/v1/repair-pricing/calculate",
+        headers=OWNER_HEADERS,
+        json={
+            "parts_cost_cents": -1,
+        },
+    )
+
+    assert response.status_code == 422, response.text

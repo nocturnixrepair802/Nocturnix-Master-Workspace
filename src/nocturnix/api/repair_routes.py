@@ -29,6 +29,10 @@ from nocturnix.repair_models import (
     RepairTicketStatusHistoryResponse,
     RepairTicketUpdateRequest,
 )
+from nocturnix.repair_pricing_models import (
+    RepairPricingRequest,
+    RepairPricingResponse,
+)
 
 
 def create_repair_router(
@@ -326,5 +330,18 @@ def create_repair_router(
             user.user_id,
             ticket_id,
         )
+
+    @router.post(
+        "/repair-pricing/calculate",
+        response_model=RepairPricingResponse,
+    )
+    def calculate_repair_pricing(
+        req: RepairPricingRequest,
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> RepairPricingResponse:
+        """Calculate a deterministic repair price."""
+
+        return services.repair_domain.calculate_pricing(req)
 
     return router
