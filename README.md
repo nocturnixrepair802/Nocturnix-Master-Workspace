@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Nocturnix Core Desktop v0.2
 
 This build turns the v0.1 shell into a working local catalog importer.
@@ -31,3 +32,7 @@ The original workbooks remain unchanged. The imported development database is st
 - Website JSON export
 - Square catalog staging export
 - Import validation report and duplicate checks
+=======
+# Nocturnix_Integration_Foundation
+Integrations to Website and Other services
+>>>>>>> ca61efe3d4365eeb699386383879e558fd77ffbb
