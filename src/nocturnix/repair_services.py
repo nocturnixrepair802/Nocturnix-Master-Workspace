@@ -15,6 +15,7 @@ from nocturnix.repair_models import (
     RepairDashboardSummary,
     RepairPriority,
     RepairTicketCreateRequest,
+    RepairTicketFinancialSummaryResponse,
     RepairTicketLineItemCreateRequest,
     RepairTicketLineItemUpdateRequest,
     RepairTicketNoteCreateRequest,
@@ -57,8 +58,7 @@ class RepairConflict(RepairDomainError):
 class InvalidRepairStatusTransition(RepairConflict):
     def __init__(self, current: RepairTicketStatus, requested: RepairTicketStatus) -> None:
         super().__init__(
-            f"cannot transition repair ticket from "
-            f"{current.value} to {requested.value}"
+            f"cannot transition repair ticket from {current.value} to {requested.value}"
         )
         self.current = current
         self.requested = requested
@@ -387,9 +387,7 @@ class RepairService:
     def repair_dashboard(self, owner_user_id: str) -> RepairDashboardResponse:
         status_counts = self.tickets.count_by_status(owner_user_id)
         priority_counts = self.tickets.count_by_priority(owner_user_id)
-        by_status = {
-            status: status_counts.get(status.value, 0) for status in RepairTicketStatus
-        }
+        by_status = {status: status_counts.get(status.value, 0) for status in RepairTicketStatus}
         by_priority = {
             priority: priority_counts.get(priority.value, 0) for priority in RepairPriority
         }
@@ -462,7 +460,6 @@ class RepairService:
             self.session.rollback()
             raise
 
-
     def create_ticket_line_item(
         self,
         owner_user_id: str,
@@ -483,7 +480,6 @@ class RepairService:
             self.session.rollback()
             raise
 
-
     def get_ticket_line_item(
         self,
         owner_user_id: str,
@@ -494,7 +490,6 @@ class RepairService:
             raise RepairResourceNotFound("repair ticket line item not found")
         return row
 
-
     def list_ticket_line_items(
         self,
         owner_user_id: str,
@@ -503,6 +498,32 @@ class RepairService:
         self.get_ticket(owner_user_id, ticket_id)
         return self.line_items.list_for_ticket(owner_user_id, ticket_id)
 
+    def get_ticket_financial_summary(
+        self,
+        owner_user_id: str,
+        ticket_id: str,
+    ) -> RepairTicketFinancialSummaryResponse:
+        ticket = self.get_ticket(owner_user_id, ticket_id)
+        line_items = self.line_items.list_for_ticket(owner_user_id, ticket_id)
+
+        gross_subtotal_cents = sum(item.quantity * item.unit_price_cents for item in line_items)
+        discount_total_cents = sum(item.discount_cents for item in line_items)
+        net_subtotal_cents = sum(item.line_total_cents for item in line_items)
+        taxable_subtotal_cents = sum(item.line_total_cents for item in line_items if item.taxable)
+        non_taxable_subtotal_cents = sum(
+            item.line_total_cents for item in line_items if not item.taxable
+        )
+
+        return RepairTicketFinancialSummaryResponse(
+            repair_ticket_id=ticket.id,
+            currency=ticket.currency,
+            line_item_count=len(line_items),
+            gross_subtotal_cents=gross_subtotal_cents,
+            discount_total_cents=discount_total_cents,
+            net_subtotal_cents=net_subtotal_cents,
+            taxable_subtotal_cents=taxable_subtotal_cents,
+            non_taxable_subtotal_cents=non_taxable_subtotal_cents,
+        )
 
     def update_ticket_line_item(
         self,
@@ -513,26 +534,16 @@ class RepairService:
         current = self.get_ticket_line_item(owner_user_id, line_item_id)
         ticket = self.get_ticket(owner_user_id, current.repair_ticket_id)
 
-        quantity = (
-            request.quantity
-            if request.quantity is not None
-            else current.quantity
-        )
+        quantity = request.quantity if request.quantity is not None else current.quantity
         unit_price_cents = (
             request.unit_price_cents
             if request.unit_price_cents is not None
             else current.unit_price_cents
         )
         discount_cents = (
-            request.discount_cents
-            if request.discount_cents is not None
-            else current.discount_cents
+            request.discount_cents if request.discount_cents is not None else current.discount_cents
         )
-        currency = (
-            request.currency
-            if request.currency is not None
-            else current.currency
-        )
+        currency = request.currency if request.currency is not None else current.currency
 
         gross_total = quantity * unit_price_cents
 
@@ -557,7 +568,6 @@ class RepairService:
         except Exception:
             self.session.rollback()
             raise
-
 
     def delete_ticket_line_item(
         self,

@@ -114,8 +114,7 @@ class CustomerCreateRequest(StrictModel):
         if self.preferred_contact_method == ContactMethod.email and not self.email:
             raise ValueError("email is required when preferred_contact_method is email")
         if (
-            self.preferred_contact_method
-            in {ContactMethod.phone, ContactMethod.text}
+            self.preferred_contact_method in {ContactMethod.phone, ContactMethod.text}
             and not self.phone
         ):
             raise ValueError("phone is required for phone or text contact")
@@ -511,6 +510,17 @@ class RepairTicketLineItemResponse(RepairResponseModel):
     currency: str
     created_at: datetime
     updated_at: datetime
+
+
+class RepairTicketFinancialSummaryResponse(StrictModel):
+    repair_ticket_id: str
+    currency: str
+    line_item_count: int = Field(ge=0)
+    gross_subtotal_cents: int = Field(ge=0)
+    discount_total_cents: int = Field(ge=0)
+    net_subtotal_cents: int = Field(ge=0)
+    taxable_subtotal_cents: int = Field(ge=0)
+    non_taxable_subtotal_cents: int = Field(ge=0)
 
 
 class RepairTicketLineItemListResponse(StrictModel):

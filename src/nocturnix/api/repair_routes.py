@@ -16,6 +16,7 @@ from nocturnix.repair_models import (
     CustomerResponse,
     CustomerUpdateRequest,
     RepairTicketCreateRequest,
+    RepairTicketFinancialSummaryResponse,
     RepairTicketLineItemCreateRequest,
     RepairTicketLineItemResponse,
     RepairTicketLineItemUpdateRequest,
@@ -310,6 +311,20 @@ def create_repair_router(
         services.repair_domain.delete_ticket_line_item(
             user.user_id,
             line_item_id,
+        )
+
+    @router.get(
+        "/repair-tickets/{ticket_id}/financial-summary",
+        response_model=RepairTicketFinancialSummaryResponse,
+    )
+    def get_ticket_financial_summary(
+        ticket_id: str,
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(auth_identity),
+    ):
+        return services.repair_domain.get_ticket_financial_summary(
+            user.user_id,
+            ticket_id,
         )
 
     return router
