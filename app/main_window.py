@@ -12,8 +12,10 @@ from PySide6.QtWidgets import (
 
 from app.device_catalog_page import DeviceCatalogPage
 from app.pages import DashboardPage, PlaceholderPage, WorkbookImportPage
+from app.pricing_review_page import PricingReviewPage
 from app.service_catalog_page import ServiceCatalogPage
 from core.database import Database
+
 
 class MainWindow(QMainWindow):
     def __init__(self, database: Database) -> None:
@@ -32,32 +34,30 @@ class MainWindow(QMainWindow):
         self.navigation.setFixedWidth(230)
 
         self.stack = QStackedWidget()
-
         dashboard = DashboardPage(database)
         devices = DeviceCatalogPage(database)
         services = ServiceCatalogPage(database)
+        pricing = PricingReviewPage(database)
 
-        importer = WorkbookImportPage(
+        refresh_callbacks = [
+            dashboard.refresh,
+            devices.refresh,
+            services.refresh,
+            pricing.refresh,
+        ]
+
+        workbook_import = WorkbookImportPage(
             database,
             dashboard,
-            [
-                devices.reload,
-                services.refresh,
-            ],
+            refresh_callbacks,
         )
 
         pages = [
             ("Dashboard", dashboard),
-            ("Workbook Import", importer),
+            ("Workbook Import", workbook_import),
             ("Device Catalog", devices),
             ("Service Catalog", services),
-            (
-                "Pricing Review",
-                PlaceholderPage(
-                    "Pricing Review",
-                    "Next: approval controls, margin review, and publish eligibility.",
-                ),
-            ),
+            ("Pricing Review", pricing),
             (
                 "Integrations",
                 PlaceholderPage(
@@ -73,7 +73,6 @@ class MainWindow(QMainWindow):
                 ),
             ),
         ]
-
         for label, page in pages:
             self.navigation.addItem(QListWidgetItem(label))
             self.stack.addWidget(page)

@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QTableWidget,
+    QTableWidgetItem,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -74,7 +75,9 @@ class WorkbookImportPage(QWidget):
         path=self.device_path or self.pricing_path
         if not path: QMessageBox.warning(self,"Nothing selected","Select a workbook first."); return
         try: previews,row_count=self.import_service.inspect_xlsx(path)
-        except Exception as exc: QMessageBox.critical(self,"Inspection failed",str(exc)); return
+
+        except (OSError, ValueError, RuntimeError) as exc:
+            QMessageBox.critical(self,"Inspection failed",str(exc)); return
         self.tabs.clear()
         for preview in previews:
             table=QTableWidget(); table.setRowCount(len(preview.rows)); table.setColumnCount(max((len(r) for r in preview.rows),default=0))
@@ -86,7 +89,9 @@ class WorkbookImportPage(QWidget):
         if not self.pricing_path or not self.device_path:
             QMessageBox.warning(self,"Files required","Select both workbooks before importing."); return
         try: counts=self.import_service.import_master_data(self.pricing_path,self.device_path)
-        except Exception as exc: QMessageBox.critical(self,"Import failed",str(exc)); return
+
+        except (OSError, ValueError, RuntimeError) as exc:
+            QMessageBox.critical(self,"Import failed",str(exc)); return
         self.dashboard.refresh()
         for callback in self.refresh_callbacks: callback()
         QMessageBox.information(self,"Import complete",f"Imported {counts['devices']:,} devices, {counts['services']:,} services, and {counts['pricing']:,} pricing records.")
