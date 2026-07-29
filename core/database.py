@@ -30,3 +30,11 @@ class Database:
     def rows(self, query: str, params: tuple = ()) -> list[sqlite3.Row]:
         with self.connect() as connection:
             return list(connection.execute(query, params))
+
+    def execute(self, query: str, params: tuple = ()) -> int:
+        """Execute a write query and return the number of affected rows."""
+
+        with self.connect() as connection:
+            cursor = connection.execute(query, params)
+            connection.commit()
+            return cursor.rowcount

@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import sqlite3
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
+    QMessageBox,
 )
 
 from core.database import Database
@@ -142,6 +143,25 @@ class PricingReviewPage(QWidget):
             "Publish eligibility:",
             self.detail_eligibility,
         )
+
+        approval_button_layout = QHBoxLayout()
+
+        self.approve_button = QPushButton("Approve")
+        self.approve_button.clicked.connect(
+            lambda: self.set_approval_status("Approved")
+        )
+
+        self.reject_button = QPushButton("Reject")
+        self.reject_button.clicked.connect(lambda: self.set_approval_status("Rejected"))
+
+        self.approve_button.setEnabled(False)
+        self.reject_button.setEnabled(False)
+
+        approval_button_layout.addWidget(self.approve_button)
+        approval_button_layout.addWidget(self.reject_button)
+        approval_button_layout.addStretch()
+
+        details_layout.addRow("Actions:", approval_button_layout)
 
         splitter.addWidget(details_group)
         splitter.setStretchFactor(0, 3)
@@ -471,6 +491,76 @@ class PricingReviewPage(QWidget):
         self.detail_margin.setText(self.format_margin(part_cost, retail_price))
         self.detail_status.setText(self.display_value(approval_status))
         self.detail_eligibility.setText("Eligible" if eligible else "Not eligible")
+
+        self.approve_button.setEnabled(True)
+        self.reject_button.setEnabled(True)
+
+    def set_approval_status(self, approval_status: str) -> None:
+        """Update the approval status of the selected pricing record."""
+
+        selected_rows = self.table.selectionModel().selectedRows()
+
+        if not selected_rows:
+            QMessageBox.warning(
+                self,
+                "No pricing record selected",
+                "Select a pricing record before changing its status.",
+            )
+            return
+
+        row_index = selected_rows[0].row()
+
+        service_item = self.table.item(row_index, 0)
+        device_item = self.table.item(row_index, 3)
+
+        if service_item is None or device_item is None:
+            QMessageBox.warning(
+                self,
+                "Invalid selection",
+                "The selected pricing record could not be identified.",
+            )
+            return
+
+        service_id = service_item.text()
+        device_id = device_item.text()
+
+        try:
+            affected_rows = self.database.execute(
+                """
+                UPDATE pricing_records
+                SET approval_status = ?
+                WHERE service_id = ?
+                  AND device_id = ?
+                """,
+                (
+                    approval_status,
+                    service_id,
+                    device_id,
+                ),
+            )
+        except sqlite3.Error as exc:
+            QMessageBox.critical(
+                self,
+                "Approval update failed",
+                str(exc),
+            )
+            return
+
+        if affected_rows == 0:
+            QMessageBox.warning(
+                self,
+                "Pricing record not updated",
+                "No matching pricing record was found.",
+            )
+            return
+
+        self.refresh()
+
+        QMessageBox.information(
+            self,
+            "Approval status updated",
+            f"The pricing record was marked as {approval_status}.",
+        )
 
     def clear_details(self) -> None:
         """Reset the pricing details panel."""
