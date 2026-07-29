@@ -150,6 +150,47 @@ class RepairTicketLineItemRow(Base):
     repair_ticket: Mapped[RepairTicketRow] = relationship(back_populates="line_items")
 
 
+class RepairTaxPolicyRow(Base):
+    __tablename__ = "repair_tax_policies"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_user_id",
+            "name",
+            name="uq_repair_tax_policy_name",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    jurisdiction: Mapped[str | None] = mapped_column(String(120))
+    tax_rate_basis_points: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    is_default: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    effective_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+
 class RepairTicketStatusHistoryRow(Base):
     __tablename__ = "repair_ticket_status_history"
 

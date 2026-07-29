@@ -523,6 +523,76 @@ class RepairTicketFinancialSummaryResponse(StrictModel):
     non_taxable_subtotal_cents: int = Field(ge=0)
 
 
+class RepairTaxPolicyCreateRequest(StrictModel):
+    name: str = Field(min_length=1, max_length=120)
+    jurisdiction: str | None = Field(default=None, max_length=120)
+    tax_rate_basis_points: int = Field(ge=0, le=10000)
+    is_default: bool = False
+    effective_at: datetime
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("name must not be empty")
+        return cleaned
+
+    @field_validator("jurisdiction")
+    @classmethod
+    def clean_jurisdiction(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class RepairTaxPolicyUpdateRequest(StrictModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    jurisdiction: str | None = Field(default=None, max_length=120)
+    tax_rate_basis_points: int | None = Field(default=None, ge=0, le=10000)
+    is_default: bool | None = None
+    effective_at: datetime | None = None
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("name must not be empty")
+        return cleaned
+
+    @field_validator("jurisdiction")
+    @classmethod
+    def clean_jurisdiction(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class RepairTaxPolicyResponse(RepairResponseModel):
+    id: str
+    owner_user_id: str
+    name: str
+    jurisdiction: str | None
+    tax_rate_basis_points: int
+    is_default: bool
+    effective_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+
+class RepairTaxPolicyListResponse(StrictModel):
+    items: list[RepairTaxPolicyResponse]
+    total: int = Field(ge=0)
+
+
 class RepairTicketLineItemListResponse(StrictModel):
     items: list[RepairTicketLineItemResponse]
     total: int = Field(ge=0)

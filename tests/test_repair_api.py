@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -6,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from nocturnix import create_app
 from nocturnix.config import Settings
+from nocturnix.repair_models import RepairTaxPolicyCreateRequest
 
 OWNER_HEADERS = {"X-Nocturnix-Dev-User": "repair-owner-001"}
 OTHER_HEADERS = {"X-Nocturnix-Dev-User": "repair-owner-002"}
@@ -333,3 +335,14 @@ def test_repair_pagination_and_device_customer_validation(repair_client: TestCli
     )
     assert mismatch.status_code == 409
     assert mismatch.json()["error"]["code"] == "repair_conflict"
+
+
+def test_repair_tax_policy_create_request_trims_name() -> None:
+    request = RepairTaxPolicyCreateRequest(
+        name="  Standard Sales Tax  ",
+        tax_rate_basis_points=725,
+        is_default=True,
+        effective_at=datetime.now(UTC),
+    )
+
+    assert request.name == "Standard Sales Tax"

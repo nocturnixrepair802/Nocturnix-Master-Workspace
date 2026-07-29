@@ -14,6 +14,8 @@ from nocturnix.repair_models import (
     CustomerDeviceCreateRequest,
     CustomerDeviceUpdateRequest,
     CustomerUpdateRequest,
+    RepairTaxPolicyCreateRequest,
+    RepairTaxPolicyUpdateRequest,
     RepairTicketCreateRequest,
     RepairTicketLineItemCreateRequest,
     RepairTicketLineItemUpdateRequest,
@@ -25,6 +27,7 @@ from nocturnix.repair_models import (
 from nocturnix.repair_persistence_models import (
     CustomerDeviceRow,
     CustomerRow,
+    RepairTaxPolicyRow,
     RepairTicketLineItemRow,
     RepairTicketNoteRow,
     RepairTicketRow,
@@ -192,6 +195,43 @@ class RepairTicketLineItemRepository(Protocol):
         owner_user_id: str,
         line_item_id: str,
     ) -> bool: ...
+
+
+class RepairTaxPolicyRepository(Protocol):
+    def create(
+        self,
+        owner_user_id: str,
+        request: RepairTaxPolicyCreateRequest,
+    ) -> RepairTaxPolicyRow: ...
+
+    def get(
+        self,
+        owner_user_id: str,
+        policy_id: str,
+    ) -> RepairTaxPolicyRow | None: ...
+
+    def list(
+        self,
+        owner_user_id: str,
+    ) -> builtins.list[RepairTaxPolicyRow]: ...
+
+    def update(
+        self,
+        owner_user_id: str,
+        policy_id: str,
+        request: RepairTaxPolicyUpdateRequest,
+    ) -> RepairTaxPolicyRow | None: ...
+
+    def delete(
+        self,
+        owner_user_id: str,
+        policy_id: str,
+    ) -> bool: ...
+
+    def get_default(
+        self,
+        owner_user_id: str,
+    ) -> RepairTaxPolicyRow | None: ...
 
 
 class SqlCustomerRepository:
@@ -706,6 +746,126 @@ class SqlRepairTicketLineItemRepository:
         self.session.delete(row)
         self.session.flush()
         return True
+
+
+class SqlRepairTaxPolicyRepository:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def create(
+        self,
+        owner_user_id: str,
+        request: RepairTaxPolicyCreateRequest,
+    ) -> RepairTaxPolicyRow:
+        now = datetime.now(UTC)
+
+        if request.is_default:
+            self._clear_default(owner_user_id)
+
+        row = RepairTaxPolicyRow(
+            id=f"tax_{uuid4().hex[:16]}",
+            owner_user_id=owner_user_id,
+            created_at=now,
+            updated_at=now,
+            **request.model_dump(mode="json"),
+        )
+
+        self.session.add(row)
+        self.session.flush()
+        return row
+
+    def get(
+        self,
+        owner_user_id: str,
+        policy_id: str,
+    ) -> RepairTaxPolicyRow | None:
+        return self.session.scalar(
+            select(RepairTaxPolicyRow).where(
+                RepairTaxPolicyRow.id == policy_id,
+                RepairTaxPolicyRow.owner_user_id == owner_user_id,
+            )
+        )
+
+    def list(
+        self,
+        owner_user_id: str,
+    ) -> builtins.list[RepairTaxPolicyRow]:
+        return builtins.list(
+            self.session.scalars(
+                select(RepairTaxPolicyRow)
+                .where(RepairTaxPolicyRow.owner_user_id == owner_user_id)
+                .order_by(
+                    RepairTaxPolicyRow.is_default.desc(),
+                    RepairTaxPolicyRow.name,
+                )
+            ).all()
+        )
+
+    def update(
+        self,
+        owner_user_id: str,
+        policy_id: str,
+        request: RepairTaxPolicyUpdateRequest,
+    ) -> RepairTaxPolicyRow | None:
+        row = self.get(owner_user_id, policy_id)
+        if row is None:
+            return None
+
+        changes = request.model_dump(exclude_unset=True, mode="json")
+
+        if changes.get("is_default") is True:
+            self._clear_default(owner_user_id, exclude_policy_id=policy_id)
+
+        _apply_changes(row, changes)
+        row.updated_at = datetime.now(UTC)
+
+        self.session.flush()
+        return row
+
+    def delete(
+        self,
+        owner_user_id: str,
+        policy_id: str,
+    ) -> bool:
+        row = self.get(owner_user_id, policy_id)
+        if row is None:
+            return False
+
+        self.session.delete(row)
+        self.session.flush()
+        return True
+
+    def get_default(
+        self,
+        owner_user_id: str,
+    ) -> RepairTaxPolicyRow | None:
+        return self.session.scalar(
+            select(RepairTaxPolicyRow).where(
+                RepairTaxPolicyRow.owner_user_id == owner_user_id,
+                RepairTaxPolicyRow.is_default.is_(True),
+            )
+        )
+
+    def _clear_default(
+        self,
+        owner_user_id: str,
+        *,
+        exclude_policy_id: str | None = None,
+    ) -> None:
+        stmt = select(RepairTaxPolicyRow).where(
+            RepairTaxPolicyRow.owner_user_id == owner_user_id,
+            RepairTaxPolicyRow.is_default.is_(True),
+        )
+
+        if exclude_policy_id is not None:
+            stmt = stmt.where(RepairTaxPolicyRow.id != exclude_policy_id)
+
+        rows = self.session.scalars(stmt).all()
+
+        now = datetime.now(UTC)
+        for row in rows:
+            row.is_default = False
+            row.updated_at = now
 
 
 def _apply_changes(row: object, changes: Mapping[str, object]) -> None:
