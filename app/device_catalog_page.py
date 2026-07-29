@@ -3,12 +3,16 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QComboBox,
+    QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
     QLineEdit,
     QPushButton,
+    QSplitter,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -19,7 +23,7 @@ from core.database import Database
 
 
 class DeviceCatalogPage(QWidget):
-    """Searchable and filterable view of the imported device catalog."""
+    """Searchable device catalog with a selected-device details panel."""
 
     def __init__(self, database: Database) -> None:
         super().__init__()
@@ -33,7 +37,7 @@ class DeviceCatalogPage(QWidget):
         main_layout.addWidget(heading)
 
         description = QLabel(
-            "Browse imported devices by manufacturer, model, family, and status."
+            "Browse imported devices and select a row to view additional details."
         )
         description.setWordWrap(True)
         main_layout.addWidget(description)
@@ -72,6 +76,8 @@ class DeviceCatalogPage(QWidget):
         self.result_label = QLabel("0 devices")
         main_layout.addWidget(self.result_label)
 
+        splitter = QSplitter(Qt.Orientation.Vertical)
+
         self.table = QTableWidget()
         self.table.setAlternatingRowColors(True)
         self.table.setSortingEnabled(True)
@@ -79,8 +85,43 @@ class DeviceCatalogPage(QWidget):
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
+        self.table.itemSelectionChanged.connect(self.load_selected_device)
 
-        main_layout.addWidget(self.table, 1)
+        splitter.addWidget(self.table)
+
+        details_group = QGroupBox("Device Details")
+        details_layout = QFormLayout(details_group)
+
+        self.detail_device_id = QLabel("Select a device")
+        self.detail_manufacturer = QLabel("—")
+        self.detail_model = QLabel("—")
+        self.detail_family_id = QLabel("—")
+        self.detail_type_id = QLabel("—")
+        self.detail_active = QLabel("—")
+        self.detail_service_count = QLabel("—")
+        self.detail_pricing_count = QLabel("—")
+
+        details_layout.addRow("Device ID:", self.detail_device_id)
+        details_layout.addRow("Manufacturer:", self.detail_manufacturer)
+        details_layout.addRow("Model:", self.detail_model)
+        details_layout.addRow("Device Family ID:", self.detail_family_id)
+        details_layout.addRow("Device Type ID:", self.detail_type_id)
+        details_layout.addRow("Active:", self.detail_active)
+        details_layout.addRow(
+            "Associated services:",
+            self.detail_service_count,
+        )
+        details_layout.addRow(
+            "Pricing records:",
+            self.detail_pricing_count,
+        )
+
+        splitter.addWidget(details_group)
+        splitter.setStretchFactor(0, 3)
+        splitter.setStretchFactor(1, 1)
+        splitter.setSizes([500, 220])
+
+        main_layout.addWidget(splitter, 1)
 
         self.load_manufacturers()
         self.refresh()
@@ -118,11 +159,29 @@ class DeviceCatalogPage(QWidget):
     def reload(self) -> None:
         """Reload filters and table data from the database."""
 
-        self.load_manufacturers()
-        self.refresh()
+        current_manufacturer = self.manufacturer_filter.currentText()
+        current_status = self.status_filter.currentText()
+        current_search = self.search.text()
 
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+
+        try:
+            self.load_manufacturers()
+
+            manufacturer_index = self.manufacturer_filter.findText(current_manufacturer)
+
+            if manufacturer_index >= 0:
+                self.manufacturer_filter.setCurrentIndex(manufacturer_index)
+
+            self.status_filter.setCurrentText(current_status)
+            self.search.setText(current_search)
+
+            self.refresh()
+            self.result_label.setText(f"{self.table.rowCount():,} devices — refreshed")
+        finally:
+            QApplication.restoreOverrideCursor()
     def refresh(self) -> None:
-        """Apply the selected filters and reload the device table."""
+        """Apply filters and reload the device table."""
 
         search_text = self.search.text().strip()
         search_term = f"%{search_text}%"
@@ -180,6 +239,7 @@ class DeviceCatalogPage(QWidget):
             "Active",
         ]
 
+        self.table.blockSignals(True)
         self.table.setSortingEnabled(False)
         self.table.clear()
         self.table.setColumnCount(len(headers))
@@ -229,4 +289,101 @@ class DeviceCatalogPage(QWidget):
         )
 
         self.table.setSortingEnabled(True)
+        self.table.blockSignals(False)
+
         self.result_label.setText(f"{len(rows):,} devices")
+        self.clear_details()
+
+    def load_selected_device(self) -> None:
+        """Load details for the selected table row."""
+
+        selected_rows = self.table.selectionModel().selectedRows()
+
+        if not selected_rows:
+            self.clear_details()
+            return
+
+        row_index = selected_rows[0].row()
+        device_item = self.table.item(row_index, 0)
+
+        if device_item is None:
+            self.clear_details()
+            return
+
+        device_id = device_item.text()
+
+        rows = self.database.rows(
+            """
+            SELECT
+                device_id,
+                manufacturer,
+                model,
+                device_family_id,
+                device_type_id,
+                active
+            FROM devices
+            WHERE device_id = ?
+            LIMIT 1
+            """,
+            (device_id,),
+        )
+
+        if not rows:
+            self.clear_details()
+            return
+
+        device = rows[0]
+
+        pricing_count = (
+            self.database.scalar(
+                """
+            SELECT COUNT(*)
+            FROM pricing_records
+            WHERE device_id = ?
+            """,
+                (device_id,),
+            )
+            or 0
+        )
+
+        service_count = (
+            self.database.scalar(
+                """
+            SELECT COUNT(DISTINCT service_id)
+            FROM pricing_records
+            WHERE device_id = ?
+            """,
+                (device_id,),
+            )
+            or 0
+        )
+
+        self.detail_device_id.setText(self.display_value(device[0]))
+        self.detail_manufacturer.setText(self.display_value(device[1]))
+        self.detail_model.setText(self.display_value(device[2]))
+        self.detail_family_id.setText(self.display_value(device[3]))
+        self.detail_type_id.setText(self.display_value(device[4]))
+        self.detail_active.setText("Yes" if device[5] else "No")
+        self.detail_service_count.setText(f"{int(service_count):,}")
+        self.detail_pricing_count.setText(f"{int(pricing_count):,}")
+
+    def clear_details(self) -> None:
+        """Reset the details panel when nothing is selected."""
+
+        self.detail_device_id.setText("Select a device")
+        self.detail_manufacturer.setText("—")
+        self.detail_model.setText("—")
+        self.detail_family_id.setText("—")
+        self.detail_type_id.setText("—")
+        self.detail_active.setText("—")
+        self.detail_service_count.setText("—")
+        self.detail_pricing_count.setText("—")
+
+    @staticmethod
+    def display_value(value: object) -> str:
+        """Convert nullable database values into display text."""
+
+        if value is None or str(value).strip() == "":
+            return "—"
+
+        return str(value)
