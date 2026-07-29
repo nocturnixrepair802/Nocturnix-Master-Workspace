@@ -58,6 +58,14 @@ class RepairNoteType(StrEnum):
     quality_check = "quality_check"
 
 
+class RepairTicketLineItemType(StrEnum):
+    labor = "labor"
+    part = "part"
+    fee = "fee"
+    discount = "discount"
+    other = "other"
+
+
 class RepairResponseModel(StrictModel):
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
@@ -418,6 +426,96 @@ class RepairTicketNoteResponse(RepairResponseModel):
     customer_visible: bool
     created_at: datetime
     updated_at: datetime
+
+
+class RepairTicketLineItemCreateRequest(StrictModel):
+    line_type: RepairTicketLineItemType
+    description: str = Field(min_length=1, max_length=500)
+    quantity: int = Field(default=1, ge=1)
+    unit_price_cents: int = Field(ge=0)
+    unit_cost_cents: int | None = Field(default=None, ge=0)
+    discount_cents: int = Field(default=0, ge=0)
+    taxable: bool = True
+    currency: str = Field(default="USD", min_length=3, max_length=3)
+
+    @field_validator("description")
+    @classmethod
+    def clean_description(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("description must not be empty")
+        return cleaned
+
+    @field_validator("currency")
+    @classmethod
+    def normalize_currency(cls, value: str) -> str:
+        cleaned = value.strip().upper()
+        if not cleaned.isalpha() or len(cleaned) != 3:
+            raise ValueError("currency must be a three-letter code")
+        return cleaned
+
+    @model_validator(mode="after")
+    def validate_discount(self) -> RepairTicketLineItemCreateRequest:
+        gross_total = self.quantity * self.unit_price_cents
+        if self.discount_cents > gross_total:
+            raise ValueError("discount cannot exceed the gross line total")
+        return self
+
+
+class RepairTicketLineItemUpdateRequest(StrictModel):
+    line_type: RepairTicketLineItemType | None = None
+    description: str | None = Field(default=None, min_length=1, max_length=500)
+    quantity: int | None = Field(default=None, ge=1)
+    unit_price_cents: int | None = Field(default=None, ge=0)
+    unit_cost_cents: int | None = Field(default=None, ge=0)
+    discount_cents: int | None = Field(default=None, ge=0)
+    taxable: bool | None = None
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+
+    @field_validator("description")
+    @classmethod
+    def clean_description(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("description must not be empty")
+
+        return cleaned
+
+    @field_validator("currency")
+    @classmethod
+    def normalize_currency(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip().upper()
+        if not cleaned.isalpha() or len(cleaned) != 3:
+            raise ValueError("currency must be a three-letter code")
+        return cleaned
+
+
+class RepairTicketLineItemResponse(RepairResponseModel):
+    id: str
+    owner_user_id: str
+    repair_ticket_id: str
+    line_number: int
+    line_type: RepairTicketLineItemType
+    description: str
+    quantity: int
+    unit_price_cents: int
+    unit_cost_cents: int | None
+    discount_cents: int
+    line_total_cents: int
+    taxable: bool
+    currency: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class RepairTicketLineItemListResponse(StrictModel):
+    items: list[RepairTicketLineItemResponse]
+    total: int = Field(ge=0)
 
 
 class CustomerListResponse(StrictModel):

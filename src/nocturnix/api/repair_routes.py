@@ -16,6 +16,9 @@ from nocturnix.repair_models import (
     CustomerResponse,
     CustomerUpdateRequest,
     RepairTicketCreateRequest,
+    RepairTicketLineItemCreateRequest,
+    RepairTicketLineItemResponse,
+    RepairTicketLineItemUpdateRequest,
     RepairTicketListResponse,
     RepairTicketNoteCreateRequest,
     RepairTicketNoteResponse,
@@ -233,5 +236,80 @@ def create_repair_router(
         user: UserIdentity = Depends(require_csrf),
     ):
         return services.repair_domain.update_ticket_note(user.user_id, note_id, req)
+
+    @router.post(
+        "/repair-tickets/{ticket_id}/line-items",
+        response_model=RepairTicketLineItemResponse,
+        status_code=201,
+    )
+    def create_ticket_line_item(
+        ticket_id: str,
+        req: RepairTicketLineItemCreateRequest,
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ):
+        return services.repair_domain.create_ticket_line_item(
+            user.user_id,
+            ticket_id,
+            req,
+        )
+
+    @router.get(
+        "/repair-tickets/{ticket_id}/line-items",
+        response_model=list[RepairTicketLineItemResponse],
+    )
+    def list_ticket_line_items(
+        ticket_id: str,
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(auth_identity),
+    ):
+        return services.repair_domain.list_ticket_line_items(
+            user.user_id,
+            ticket_id,
+        )
+
+    @router.get(
+        "/repair-ticket-line-items/{line_item_id}",
+        response_model=RepairTicketLineItemResponse,
+    )
+    def get_ticket_line_item(
+        line_item_id: str,
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(auth_identity),
+    ):
+        return services.repair_domain.get_ticket_line_item(
+            user.user_id,
+            line_item_id,
+        )
+
+    @router.put(
+        "/repair-ticket-line-items/{line_item_id}",
+        response_model=RepairTicketLineItemResponse,
+    )
+    def update_ticket_line_item(
+        line_item_id: str,
+        req: RepairTicketLineItemUpdateRequest,
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ):
+        return services.repair_domain.update_ticket_line_item(
+            user.user_id,
+            line_item_id,
+            req,
+        )
+
+    @router.delete(
+        "/repair-ticket-line-items/{line_item_id}",
+        status_code=204,
+    )
+    def delete_ticket_line_item(
+        line_item_id: str,
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> None:
+        services.repair_domain.delete_ticket_line_item(
+            user.user_id,
+            line_item_id,
+        )
 
     return router

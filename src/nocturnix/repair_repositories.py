@@ -15,6 +15,8 @@ from nocturnix.repair_models import (
     CustomerDeviceUpdateRequest,
     CustomerUpdateRequest,
     RepairTicketCreateRequest,
+    RepairTicketLineItemCreateRequest,
+    RepairTicketLineItemUpdateRequest,
     RepairTicketNoteCreateRequest,
     RepairTicketNoteUpdateRequest,
     RepairTicketStatus,
@@ -23,6 +25,7 @@ from nocturnix.repair_models import (
 from nocturnix.repair_persistence_models import (
     CustomerDeviceRow,
     CustomerRow,
+    RepairTicketLineItemRow,
     RepairTicketNoteRow,
     RepairTicketRow,
     RepairTicketStatusHistoryRow,
@@ -155,6 +158,40 @@ class RepairTicketNoteRepository(Protocol):
         note_id: str,
         request: RepairTicketNoteUpdateRequest,
     ) -> RepairTicketNoteRow | None: ...
+
+
+class RepairTicketLineItemRepository(Protocol):
+    def create(
+        self,
+        owner_user_id: str,
+        ticket_id: str,
+        request: RepairTicketLineItemCreateRequest,
+    ) -> RepairTicketLineItemRow: ...
+
+    def get(
+        self,
+        owner_user_id: str,
+        line_item_id: str,
+    ) -> RepairTicketLineItemRow | None: ...
+
+    def list_for_ticket(
+        self,
+        owner_user_id: str,
+        ticket_id: str,
+    ) -> builtins.list[RepairTicketLineItemRow]: ...
+
+    def update(
+        self,
+        owner_user_id: str,
+        line_item_id: str,
+        request: RepairTicketLineItemUpdateRequest,
+    ) -> RepairTicketLineItemRow | None: ...
+
+    def delete(
+        self,
+        owner_user_id: str,
+        line_item_id: str,
+    ) -> bool: ...
 
 
 class SqlCustomerRepository:
@@ -567,6 +604,108 @@ class SqlRepairTicketNoteRepository:
         row.updated_at = datetime.now(UTC)
         self.session.flush()
         return row
+
+
+class SqlRepairTicketLineItemRepository:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def create(
+        self,
+        owner_user_id: str,
+        ticket_id: str,
+        request: RepairTicketLineItemCreateRequest,
+    ) -> RepairTicketLineItemRow:
+        now = datetime.now(UTC)
+
+        current_max = self.session.scalar(
+            select(func.max(RepairTicketLineItemRow.line_number)).where(
+                RepairTicketLineItemRow.owner_user_id == owner_user_id,
+                RepairTicketLineItemRow.repair_ticket_id == ticket_id,
+            )
+        )
+        line_number = int(current_max or 0) + 1
+
+        values = request.model_dump(mode="json")
+        line_total_cents = (
+            request.quantity * request.unit_price_cents
+        ) - request.discount_cents
+
+        row = RepairTicketLineItemRow(
+            id=f"line_{uuid4().hex[:16]}",
+            owner_user_id=owner_user_id,
+            repair_ticket_id=ticket_id,
+            line_number=line_number,
+            line_total_cents=line_total_cents,
+            created_at=now,
+            updated_at=now,
+            **values,
+        )
+        self.session.add(row)
+        self.session.flush()
+        return row
+
+    def get(
+        self,
+        owner_user_id: str,
+        line_item_id: str,
+    ) -> RepairTicketLineItemRow | None:
+        return self.session.scalar(
+            select(RepairTicketLineItemRow).where(
+                RepairTicketLineItemRow.id == line_item_id,
+                RepairTicketLineItemRow.owner_user_id == owner_user_id,
+            )
+        )
+
+    def list_for_ticket(
+        self,
+        owner_user_id: str,
+        ticket_id: str,
+    ) -> builtins.list[RepairTicketLineItemRow]:
+        return builtins.list(
+            self.session.scalars(
+                select(RepairTicketLineItemRow)
+                .where(
+                    RepairTicketLineItemRow.owner_user_id == owner_user_id,
+                    RepairTicketLineItemRow.repair_ticket_id == ticket_id,
+                )
+                .order_by(RepairTicketLineItemRow.line_number)
+            ).all()
+        )
+
+    def update(
+        self,
+        owner_user_id: str,
+        line_item_id: str,
+        request: RepairTicketLineItemUpdateRequest,
+    ) -> RepairTicketLineItemRow | None:
+        row = self.get(owner_user_id, line_item_id)
+        if row is None:
+            return None
+
+        changes = request.model_dump(exclude_unset=True, mode="json")
+        _apply_changes(row, changes)
+
+        row.line_total_cents = (
+            row.quantity * row.unit_price_cents
+        ) - row.discount_cents
+        row.updated_at = datetime.now(UTC)
+
+        self.session.flush()
+        return row
+
+    def delete(
+        self,
+        owner_user_id: str,
+        line_item_id: str,
+    ) -> bool:
+        row = self.get(owner_user_id, line_item_id)
+        if row is None:
+            return False
+
+        self.session.delete(row)
+        self.session.flush()
+        return True
 
 
 def _apply_changes(row: object, changes: Mapping[str, object]) -> None:

@@ -15,6 +15,8 @@ from nocturnix.repair_models import (
     RepairDashboardSummary,
     RepairPriority,
     RepairTicketCreateRequest,
+    RepairTicketLineItemCreateRequest,
+    RepairTicketLineItemUpdateRequest,
     RepairTicketNoteCreateRequest,
     RepairTicketNoteUpdateRequest,
     RepairTicketStatus,
@@ -24,6 +26,7 @@ from nocturnix.repair_models import (
 from nocturnix.repair_persistence_models import (
     CustomerDeviceRow,
     CustomerRow,
+    RepairTicketLineItemRow,
     RepairTicketNoteRow,
     RepairTicketRow,
     RepairTicketStatusHistoryRow,
@@ -31,6 +34,7 @@ from nocturnix.repair_persistence_models import (
 from nocturnix.repair_repositories import (
     SqlCustomerDeviceRepository,
     SqlCustomerRepository,
+    SqlRepairTicketLineItemRepository,
     SqlRepairTicketNoteRepository,
     SqlRepairTicketRepository,
     count_customers,
@@ -113,6 +117,7 @@ class RepairService:
         self.devices = SqlCustomerDeviceRepository(session)
         self.tickets = SqlRepairTicketRepository(session)
         self.notes = SqlRepairTicketNoteRepository(session)
+        self.line_items = SqlRepairTicketLineItemRepository(session)
 
     def create_customer(self, owner_user_id: str, request: CustomerCreateRequest) -> CustomerRow:
         try:
@@ -453,6 +458,120 @@ class RepairService:
             self.session.commit()
             self.session.refresh(row)
             return row
+        except Exception:
+            self.session.rollback()
+            raise
+
+
+    def create_ticket_line_item(
+        self,
+        owner_user_id: str,
+        ticket_id: str,
+        request: RepairTicketLineItemCreateRequest,
+    ) -> RepairTicketLineItemRow:
+        ticket = self.get_ticket(owner_user_id, ticket_id)
+
+        if request.currency != ticket.currency:
+            raise RepairConflict("line item currency must match the repair ticket currency")
+
+        try:
+            row = self.line_items.create(owner_user_id, ticket_id, request)
+            self.session.commit()
+            self.session.refresh(row)
+            return row
+        except Exception:
+            self.session.rollback()
+            raise
+
+
+    def get_ticket_line_item(
+        self,
+        owner_user_id: str,
+        line_item_id: str,
+    ) -> RepairTicketLineItemRow:
+        row = self.line_items.get(owner_user_id, line_item_id)
+        if row is None:
+            raise RepairResourceNotFound("repair ticket line item not found")
+        return row
+
+
+    def list_ticket_line_items(
+        self,
+        owner_user_id: str,
+        ticket_id: str,
+    ) -> list[RepairTicketLineItemRow]:
+        self.get_ticket(owner_user_id, ticket_id)
+        return self.line_items.list_for_ticket(owner_user_id, ticket_id)
+
+
+    def update_ticket_line_item(
+        self,
+        owner_user_id: str,
+        line_item_id: str,
+        request: RepairTicketLineItemUpdateRequest,
+    ) -> RepairTicketLineItemRow:
+        current = self.get_ticket_line_item(owner_user_id, line_item_id)
+        ticket = self.get_ticket(owner_user_id, current.repair_ticket_id)
+
+        quantity = (
+            request.quantity
+            if request.quantity is not None
+            else current.quantity
+        )
+        unit_price_cents = (
+            request.unit_price_cents
+            if request.unit_price_cents is not None
+            else current.unit_price_cents
+        )
+        discount_cents = (
+            request.discount_cents
+            if request.discount_cents is not None
+            else current.discount_cents
+        )
+        currency = (
+            request.currency
+            if request.currency is not None
+            else current.currency
+        )
+
+        gross_total = quantity * unit_price_cents
+
+        if discount_cents > gross_total:
+            raise RepairConflict("discount cannot exceed the gross line total")
+
+        if currency != ticket.currency:
+            raise RepairConflict("line item currency must match the repair ticket currency")
+
+        try:
+            row = self.line_items.update(
+                owner_user_id,
+                line_item_id,
+                request,
+            )
+            if row is None:
+                raise RepairResourceNotFound("repair ticket line item not found")
+
+            self.session.commit()
+            self.session.refresh(row)
+            return row
+        except Exception:
+            self.session.rollback()
+            raise
+
+
+    def delete_ticket_line_item(
+        self,
+        owner_user_id: str,
+        line_item_id: str,
+    ) -> None:
+        self.get_ticket_line_item(owner_user_id, line_item_id)
+
+        try:
+            deleted = self.line_items.delete(owner_user_id, line_item_id)
+            if not deleted:
+                raise RepairResourceNotFound("repair ticket line item not found")
+
+            self.session.commit()
         except Exception:
             self.session.rollback()
             raise
