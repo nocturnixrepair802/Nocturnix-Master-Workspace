@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -6,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from nocturnix import create_app
 from nocturnix.config import Settings
+from nocturnix.repair_models import RepairTaxPolicyCreateRequest
 
 OWNER_HEADERS = {"X-Nocturnix-Dev-User": "repair-owner-001"}
 OTHER_HEADERS = {"X-Nocturnix-Dev-User": "repair-owner-002"}
@@ -78,6 +80,46 @@ def create_ticket(client: TestClient, customer_id: str, device_id: str) -> dict[
         },
     )
     assert response.status_code == 201, response.text
+    return response.json()
+
+
+def create_line_item(
+    client: TestClient,
+    ticket_id: str,
+    *,
+    line_type: str = "labor",
+    description: str = "Diagnostic labor",
+    quantity: int = 1,
+    unit_price_cents: int = 10000,
+    discount_cents: int = 0,
+    taxable: bool = True,
+) -> dict[str, Any]:
+    response = client.post(
+        f"/api/v1/repair-tickets/{ticket_id}/line-items",
+        headers=OWNER_HEADERS,
+        json={
+            "line_type": line_type,
+            "description": description,
+            "quantity": quantity,
+            "unit_price_cents": unit_price_cents,
+            "discount_cents": discount_cents,
+            "taxable": taxable,
+            "currency": "USD",
+        },
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def get_financial_summary(
+    client: TestClient,
+    ticket_id: str,
+) -> dict[str, Any]:
+    response = client.get(
+        f"/api/v1/repair-tickets/{ticket_id}/financial-summary",
+        headers=OWNER_HEADERS,
+    )
+    assert response.status_code == 200, response.text
     return response.json()
 
 
@@ -167,6 +209,50 @@ def test_repair_management_end_to_end(repair_client: TestClient) -> None:
     assert updated_note.json()["body"].startswith("Diagnostics completed")
 
 
+def test_ticket_financial_summary(repair_client: TestClient) -> None:
+    customer = create_customer(repair_client)
+    device = create_device(repair_client, customer["id"])
+    ticket = create_ticket(repair_client, customer["id"], device["id"])
+
+    empty = get_financial_summary(repair_client, ticket["id"])
+
+    assert empty["line_item_count"] == 0
+    assert empty["gross_subtotal_cents"] == 0
+    assert empty["discount_total_cents"] == 0
+    assert empty["net_subtotal_cents"] == 0
+    assert empty["taxable_subtotal_cents"] == 0
+    assert empty["non_taxable_subtotal_cents"] == 0
+
+    create_line_item(
+        repair_client,
+        ticket["id"],
+        line_type="labor",
+        quantity=2,
+        unit_price_cents=10000,
+        discount_cents=2000,
+        taxable=True,
+    )
+
+    create_line_item(
+        repair_client,
+        ticket["id"],
+        line_type="part",
+        quantity=1,
+        unit_price_cents=5000,
+        taxable=False,
+    )
+
+    summary = get_financial_summary(repair_client, ticket["id"])
+
+    assert summary["currency"] == "USD"
+    assert summary["line_item_count"] == 2
+    assert summary["gross_subtotal_cents"] == 25000
+    assert summary["discount_total_cents"] == 2000
+    assert summary["net_subtotal_cents"] == 23000
+    assert summary["taxable_subtotal_cents"] == 18000
+    assert summary["non_taxable_subtotal_cents"] == 5000
+
+
 def test_repair_ownership_authentication_and_errors(repair_client: TestClient) -> None:
     assert repair_client.get("/api/v1/customers").status_code == 401
 
@@ -249,3 +335,14 @@ def test_repair_pagination_and_device_customer_validation(repair_client: TestCli
     )
     assert mismatch.status_code == 409
     assert mismatch.json()["error"]["code"] == "repair_conflict"
+
+
+def test_repair_tax_policy_create_request_trims_name() -> None:
+    request = RepairTaxPolicyCreateRequest(
+        name="  Standard Sales Tax  ",
+        tax_rate_basis_points=725,
+        is_default=True,
+        effective_at=datetime.now(UTC),
+    )
+
+    assert request.name == "Standard Sales Tax"
