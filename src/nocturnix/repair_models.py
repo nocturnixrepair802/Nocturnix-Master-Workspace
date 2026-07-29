@@ -58,6 +58,14 @@ class RepairNoteType(StrEnum):
     quality_check = "quality_check"
 
 
+class RepairTicketLineItemType(StrEnum):
+    labor = "labor"
+    part = "part"
+    fee = "fee"
+    discount = "discount"
+    other = "other"
+
+
 class RepairResponseModel(StrictModel):
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
@@ -106,8 +114,7 @@ class CustomerCreateRequest(StrictModel):
         if self.preferred_contact_method == ContactMethod.email and not self.email:
             raise ValueError("email is required when preferred_contact_method is email")
         if (
-            self.preferred_contact_method
-            in {ContactMethod.phone, ContactMethod.text}
+            self.preferred_contact_method in {ContactMethod.phone, ContactMethod.text}
             and not self.phone
         ):
             raise ValueError("phone is required for phone or text contact")
@@ -418,6 +425,177 @@ class RepairTicketNoteResponse(RepairResponseModel):
     customer_visible: bool
     created_at: datetime
     updated_at: datetime
+
+
+class RepairTicketLineItemCreateRequest(StrictModel):
+    line_type: RepairTicketLineItemType
+    description: str = Field(min_length=1, max_length=500)
+    quantity: int = Field(default=1, ge=1)
+    unit_price_cents: int = Field(ge=0)
+    unit_cost_cents: int | None = Field(default=None, ge=0)
+    discount_cents: int = Field(default=0, ge=0)
+    taxable: bool = True
+    currency: str = Field(default="USD", min_length=3, max_length=3)
+
+    @field_validator("description")
+    @classmethod
+    def clean_description(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("description must not be empty")
+        return cleaned
+
+    @field_validator("currency")
+    @classmethod
+    def normalize_currency(cls, value: str) -> str:
+        cleaned = value.strip().upper()
+        if not cleaned.isalpha() or len(cleaned) != 3:
+            raise ValueError("currency must be a three-letter code")
+        return cleaned
+
+    @model_validator(mode="after")
+    def validate_discount(self) -> RepairTicketLineItemCreateRequest:
+        gross_total = self.quantity * self.unit_price_cents
+        if self.discount_cents > gross_total:
+            raise ValueError("discount cannot exceed the gross line total")
+        return self
+
+
+class RepairTicketLineItemUpdateRequest(StrictModel):
+    line_type: RepairTicketLineItemType | None = None
+    description: str | None = Field(default=None, min_length=1, max_length=500)
+    quantity: int | None = Field(default=None, ge=1)
+    unit_price_cents: int | None = Field(default=None, ge=0)
+    unit_cost_cents: int | None = Field(default=None, ge=0)
+    discount_cents: int | None = Field(default=None, ge=0)
+    taxable: bool | None = None
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+
+    @field_validator("description")
+    @classmethod
+    def clean_description(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("description must not be empty")
+
+        return cleaned
+
+    @field_validator("currency")
+    @classmethod
+    def normalize_currency(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip().upper()
+        if not cleaned.isalpha() or len(cleaned) != 3:
+            raise ValueError("currency must be a three-letter code")
+        return cleaned
+
+
+class RepairTicketLineItemResponse(RepairResponseModel):
+    id: str
+    owner_user_id: str
+    repair_ticket_id: str
+    line_number: int
+    line_type: RepairTicketLineItemType
+    description: str
+    quantity: int
+    unit_price_cents: int
+    unit_cost_cents: int | None
+    discount_cents: int
+    line_total_cents: int
+    taxable: bool
+    currency: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class RepairTicketFinancialSummaryResponse(StrictModel):
+    repair_ticket_id: str
+    currency: str
+    line_item_count: int = Field(ge=0)
+    gross_subtotal_cents: int = Field(ge=0)
+    discount_total_cents: int = Field(ge=0)
+    net_subtotal_cents: int = Field(ge=0)
+    taxable_subtotal_cents: int = Field(ge=0)
+    non_taxable_subtotal_cents: int = Field(ge=0)
+
+
+class RepairTaxPolicyCreateRequest(StrictModel):
+    name: str = Field(min_length=1, max_length=120)
+    jurisdiction: str | None = Field(default=None, max_length=120)
+    tax_rate_basis_points: int = Field(ge=0, le=10000)
+    is_default: bool = False
+    effective_at: datetime
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("name must not be empty")
+        return cleaned
+
+    @field_validator("jurisdiction")
+    @classmethod
+    def clean_jurisdiction(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class RepairTaxPolicyUpdateRequest(StrictModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    jurisdiction: str | None = Field(default=None, max_length=120)
+    tax_rate_basis_points: int | None = Field(default=None, ge=0, le=10000)
+    is_default: bool | None = None
+    effective_at: datetime | None = None
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("name must not be empty")
+        return cleaned
+
+    @field_validator("jurisdiction")
+    @classmethod
+    def clean_jurisdiction(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class RepairTaxPolicyResponse(RepairResponseModel):
+    id: str
+    owner_user_id: str
+    name: str
+    jurisdiction: str | None
+    tax_rate_basis_points: int
+    is_default: bool
+    effective_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+
+class RepairTaxPolicyListResponse(StrictModel):
+    items: list[RepairTaxPolicyResponse]
+    total: int = Field(ge=0)
+
+
+class RepairTicketLineItemListResponse(StrictModel):
+    items: list[RepairTicketLineItemResponse]
+    total: int = Field(ge=0)
 
 
 class CustomerListResponse(StrictModel):

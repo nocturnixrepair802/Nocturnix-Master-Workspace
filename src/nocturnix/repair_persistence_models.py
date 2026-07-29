@@ -89,6 +89,106 @@ class RepairTicketRow(Base):
     notes: Mapped[list[RepairTicketNoteRow]] = relationship(
         back_populates="repair_ticket", cascade="all, delete-orphan"
     )
+    line_items: Mapped[list[RepairTicketLineItemRow]] = relationship(
+        back_populates="repair_ticket",
+        cascade="all, delete-orphan",
+        order_by="RepairTicketLineItemRow.line_number",
+    )
+
+
+class RepairTicketLineItemRow(Base):
+    __tablename__ = "repair_ticket_line_items"
+    __table_args__ = (
+        UniqueConstraint(
+            "repair_ticket_id",
+            "line_number",
+            name="uq_repair_ticket_line_items_ticket_line",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(
+        String(120),
+        index=True,
+        nullable=False,
+    )
+    repair_ticket_id: Mapped[str] = mapped_column(
+        ForeignKey("repair_tickets.id"),
+        index=True,
+        nullable=False,
+    )
+    line_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    line_type: Mapped[str] = mapped_column(
+        String(30),
+        index=True,
+        nullable=False,
+    )
+    description: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    unit_price_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    unit_cost_cents: Mapped[int | None] = mapped_column(Integer)
+    discount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    line_total_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    taxable: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    repair_ticket: Mapped[RepairTicketRow] = relationship(back_populates="line_items")
+
+
+class RepairTaxPolicyRow(Base):
+    __tablename__ = "repair_tax_policies"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_user_id",
+            "name",
+            name="uq_repair_tax_policy_name",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
+
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    jurisdiction: Mapped[str | None] = mapped_column(String(120))
+    tax_rate_basis_points: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    is_default: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    effective_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
 
 
 class RepairTicketStatusHistoryRow(Base):

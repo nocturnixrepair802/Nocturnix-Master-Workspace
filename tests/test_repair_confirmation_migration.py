@@ -10,8 +10,8 @@ def test_repair_confirmation_migration_is_current_head(tmp_path: Path) -> None:
 
     run_migrations(database_url)
 
-    assert current_revision(database_url) == "20260724_004"
-    assert head_revision() == "20260724_004"
+    assert current_revision(database_url) == "d289ba2520d6"
+    assert head_revision() == "d289ba2520d6"
 
     engine = create_database_engine(database_url)
     try:
