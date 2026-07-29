@@ -36,6 +36,11 @@ from nocturnix.repair_persistence_models import (
     RepairTicketRow,
     RepairTicketStatusHistoryRow,
 )
+from nocturnix.repair_pricing_engine import calculate_repair_pricing
+from nocturnix.repair_pricing_models import (
+    RepairPricingRequest,
+    RepairPricingResponse,
+)
 from nocturnix.repair_repositories import (
     SqlCustomerDeviceRepository,
     SqlCustomerRepository,
@@ -704,3 +709,11 @@ class RepairService:
         except Exception:
             self.session.rollback()
             raise
+
+    def calculate_pricing(
+        self,
+        request: RepairPricingRequest,
+    ) -> RepairPricingResponse:
+        """Calculate a repair price using the deterministic pricing engine."""
+
+        return calculate_repair_pricing(request)
