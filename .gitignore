@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.db
+*.sqlite*
+logs/*.log
+data/imports/*
+!data/imports/.gitkeep
+data/exports/*
+!data/exports/.gitkeep
+.vscode/
+.idea/
+build/
+dist/
+*.spec
