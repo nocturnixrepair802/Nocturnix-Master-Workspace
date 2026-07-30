@@ -697,6 +697,96 @@ class RepairTaxPolicyListResponse(StrictModel):
     total: int = Field(ge=0)
 
 
+class RepairServiceCreateRequest(StrictModel):
+    name: str = Field(min_length=1, max_length=160)
+    category: str = Field(min_length=1, max_length=80)
+    description: str | None = Field(default=None, max_length=2000)
+    default_labor_minutes: int = Field(default=0, ge=0, le=10080)
+    estimated_duration_minutes: int | None = Field(
+        default=None,
+        ge=0,
+        le=10080,
+    )
+    taxable: bool = True
+    is_active: bool = True
+
+    @field_validator("name", "category")
+    @classmethod
+    def clean_required_text(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("value must not be empty")
+        return cleaned
+
+    @field_validator("description")
+    @classmethod
+    def clean_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class RepairServiceUpdateRequest(StrictModel):
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    category: str | None = Field(default=None, min_length=1, max_length=80)
+    description: str | None = Field(default=None, max_length=2000)
+    default_labor_minutes: int | None = Field(
+        default=None,
+        ge=0,
+        le=10080,
+    )
+    estimated_duration_minutes: int | None = Field(
+        default=None,
+        ge=0,
+        le=10080,
+    )
+    taxable: bool | None = None
+    is_active: bool | None = None
+
+    @field_validator("name", "category")
+    @classmethod
+    def clean_required_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("value must not be empty")
+        return cleaned
+
+    @field_validator("description")
+    @classmethod
+    def clean_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class RepairServiceResponse(RepairResponseModel):
+    id: str
+    owner_user_id: str
+    name: str
+    category: str
+    description: str | None
+    default_labor_minutes: int
+    estimated_duration_minutes: int | None
+    taxable: bool
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class RepairServiceListResponse(StrictModel):
+    items: list[RepairServiceResponse]
+    total: int = Field(ge=0)
+    offset: int = Field(ge=0)
+    limit: int = Field(ge=1, le=100)
+
+
 class RepairTicketLineItemListResponse(StrictModel):
     items: list[RepairTicketLineItemResponse]
     total: int = Field(ge=0)

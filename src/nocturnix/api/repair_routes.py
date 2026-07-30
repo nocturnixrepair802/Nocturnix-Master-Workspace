@@ -19,6 +19,10 @@ from nocturnix.repair_models import (
     RepairPricingPolicyListResponse,
     RepairPricingPolicyResponse,
     RepairPricingPolicyUpdateRequest,
+    RepairServiceCreateRequest,
+    RepairServiceListResponse,
+    RepairServiceResponse,
+    RepairServiceUpdateRequest,
     RepairTaxPolicyCreateRequest,
     RepairTaxPolicyListResponse,
     RepairTaxPolicyResponse,
@@ -365,6 +369,92 @@ def create_repair_router(
         return services.repair_domain.calculate_pricing(
             user.user_id,
             req,
+        )
+
+
+    @router.post(
+        "/repair/services",
+        response_model=RepairServiceResponse,
+        status_code=201,
+    )
+    def create_repair_service(
+        req: RepairServiceCreateRequest,
+        service: Any = Depends(get_service),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> RepairServiceResponse:
+        return service.repair_domain.create_service(
+            user.user_id,
+            req,
+        )
+
+
+    @router.get(
+        "/repair/services",
+        response_model=RepairServiceListResponse,
+    )
+    def list_repair_services(
+        search: str | None = None,
+        category: str | None = None,
+        is_active: bool | None = None,
+        offset: int = Query(default=0, ge=0),
+        limit: int = Query(default=50, ge=1, le=100),
+        service: Any = Depends(get_service),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> RepairServiceListResponse:
+        return service.repair_domain.list_services(
+            user.user_id,
+            search=search,
+            category=category,
+            is_active=is_active,
+            offset=offset,
+            limit=limit,
+        )
+
+
+    @router.get(
+        "/repair/services/{service_id}",
+        response_model=RepairServiceResponse,
+    )
+    def get_repair_service(
+        service_id: str,
+        service: Any = Depends(get_service),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> RepairServiceResponse:
+        return service.repair_domain.get_service(
+            user.user_id,
+            service_id,
+        )
+
+
+    @router.patch(
+        "/repair/services/{service_id}",
+        response_model=RepairServiceResponse,
+    )
+    def update_repair_service(
+        service_id: str,
+        req: RepairServiceUpdateRequest,
+        service: Any = Depends(get_service),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> RepairServiceResponse:
+        return service.repair_domain.update_service(
+            user.user_id,
+            service_id,
+            req,
+        )
+
+
+    @router.delete(
+        "/repair/services/{service_id}",
+        status_code=204,
+    )
+    def delete_repair_service(
+        service_id: str,
+        service: Any = Depends(get_service),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> None:
+        service.repair_domain.delete_service(
+            user.user_id,
+            service_id,
         )
 
     @router.post(

@@ -16,6 +16,8 @@ from nocturnix.repair_models import (
     CustomerUpdateRequest,
     RepairPricingPolicyCreateRequest,
     RepairPricingPolicyUpdateRequest,
+    RepairServiceCreateRequest,
+    RepairServiceUpdateRequest,
     RepairTaxPolicyCreateRequest,
     RepairTaxPolicyUpdateRequest,
     RepairTicketCreateRequest,
@@ -30,6 +32,7 @@ from nocturnix.repair_persistence_models import (
     CustomerDeviceRow,
     CustomerRow,
     RepairPricingPolicyRow,
+    RepairServiceRow,
     RepairTaxPolicyRow,
     RepairTicketLineItemRow,
     RepairTicketNoteRow,
@@ -235,6 +238,42 @@ class RepairPricingPolicyRepository(Protocol):
         self,
         owner_user_id: str,
     ) -> RepairPricingPolicyRow | None: ...
+
+
+class RepairServiceRepository(Protocol):
+    def create(
+        self,
+        owner_user_id: str,
+        request: RepairServiceCreateRequest,
+    ) -> RepairServiceRow: ...
+
+    def get(
+        self,
+        owner_user_id: str,
+        service_id: str,
+    ) -> RepairServiceRow | None: ...
+
+    def list(
+        self,
+        owner_user_id: str,
+        *,
+        search: str | None = None,
+        category: str | None = None,
+        is_active: bool | None = None,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> tuple[list[RepairServiceRow], int]: ...
+
+    def update(
+        self,
+        row: RepairServiceRow,
+        request: RepairServiceUpdateRequest,
+    ) -> RepairServiceRow: ...
+
+    def delete(
+        self,
+        row: RepairServiceRow,
+    ) -> None: ...
 
 
 class RepairTaxPolicyRepository(Protocol):
@@ -911,6 +950,145 @@ class SqlRepairPricingPolicyRepository:
             row.updated_at = now
 
 
+class SqlRepairServiceRepository:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def create(
+        self,
+        owner_user_id: str,
+        request: RepairServiceCreateRequest,
+    ) -> RepairServiceRow:
+        now = datetime.now(UTC)
+
+        row = RepairServiceRow(
+            id=str(uuid4()),
+            owner_user_id=owner_user_id,
+            name=request.name,
+            category=request.category,
+            description=request.description,
+            default_labor_minutes=request.default_labor_minutes,
+            estimated_duration_minutes=request.estimated_duration_minutes,
+            taxable=request.taxable,
+            is_active=request.is_active,
+            created_at=now,
+            updated_at=now,
+        )
+
+        self.session.add(row)
+        self.session.flush()
+        return row
+
+    def get(
+        self,
+        owner_user_id: str,
+        service_id: str,
+    ) -> RepairServiceRow | None:
+        statement = select(RepairServiceRow).where(
+            RepairServiceRow.owner_user_id == owner_user_id,
+            RepairServiceRow.id == service_id,
+        )
+
+        return self.session.scalar(statement)
+
+    def list(
+        self,
+        owner_user_id: str,
+        *,
+        search: str | None = None,
+        category: str | None = None,
+        is_active: bool | None = None,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> tuple[list[RepairServiceRow], int]:
+        filters = [RepairServiceRow.owner_user_id == owner_user_id]
+
+        if search:
+            cleaned_search = search.strip()
+            if cleaned_search:
+                pattern = f"%{cleaned_search}%"
+                filters.append(
+                    or_(
+                        RepairServiceRow.name.ilike(pattern),
+                        RepairServiceRow.category.ilike(pattern),
+                        RepairServiceRow.description.ilike(pattern),
+                    )
+                )
+
+        if category:
+            cleaned_category = category.strip()
+            if cleaned_category:
+                filters.append(
+                    func.lower(RepairServiceRow.category) == cleaned_category.lower()
+                )
+
+        if is_active is not None:
+            filters.append(RepairServiceRow.is_active == is_active)
+
+        total_statement = (
+            select(func.count()).select_from(RepairServiceRow).where(*filters)
+        )
+        total = int(self.session.scalar(total_statement) or 0)
+
+        statement = (
+            select(RepairServiceRow)
+            .where(*filters)
+            .order_by(
+                RepairServiceRow.category.asc(),
+                RepairServiceRow.name.asc(),
+                RepairServiceRow.id.asc(),
+            )
+            .offset(offset)
+            .limit(limit)
+        )
+
+        rows = list(self.session.scalars(statement).all())
+        return rows, total
+
+    def update(
+        self,
+        row: RepairServiceRow,
+        request: RepairServiceUpdateRequest,
+    ) -> RepairServiceRow:
+        fields = request.model_fields_set
+
+        if "name" in fields and request.name is not None:
+            row.name = request.name
+
+        if "category" in fields and request.category is not None:
+            row.category = request.category
+
+        if "description" in fields:
+            row.description = request.description
+
+        if (
+            "default_labor_minutes" in fields
+            and request.default_labor_minutes is not None
+        ):
+            row.default_labor_minutes = request.default_labor_minutes
+
+        if "estimated_duration_minutes" in fields:
+            row.estimated_duration_minutes = request.estimated_duration_minutes
+
+        if "taxable" in fields and request.taxable is not None:
+            row.taxable = request.taxable
+
+        if "is_active" in fields and request.is_active is not None:
+            row.is_active = request.is_active
+
+        row.updated_at = datetime.now(UTC)
+
+        self.session.flush()
+        return row
+
+    def delete(
+        self,
+        row: RepairServiceRow,
+    ) -> None:
+        self.session.delete(row)
+        self.session.flush()
+
+
 class SqlRepairTaxPolicyRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
@@ -1034,4 +1212,3 @@ class SqlRepairTaxPolicyRepository:
 def _apply_changes(row: object, changes: Mapping[str, object]) -> None:
     for field_name, value in changes.items():
         setattr(row, field_name, value)
-
