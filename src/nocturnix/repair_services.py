@@ -5,6 +5,14 @@ from secrets import randbelow
 
 from sqlalchemy.orm import Session
 
+from nocturnix.persistence.repair_models import (
+    CustomerDeviceRow,
+    CustomerRow,
+    RepairTicketLineItemRow,
+    RepairTicketNoteRow,
+    RepairTicketRow,
+    RepairTicketStatusHistoryRow,
+)
 from nocturnix.repair_models import (
     CustomerCreateRequest,
     CustomerDeviceCreateRequest,
@@ -35,14 +43,6 @@ from nocturnix.repair_models import (
     RepairTicketStatus,
     RepairTicketStatusChangeRequest,
     RepairTicketUpdateRequest,
-)
-from nocturnix.persistence.repair_models import (
-    CustomerDeviceRow,
-    CustomerRow,
-    RepairTicketLineItemRow,
-    RepairTicketNoteRow,
-    RepairTicketRow,
-    RepairTicketStatusHistoryRow,
 )
 from nocturnix.repair_pricing_engine import calculate_repair_pricing
 from nocturnix.repair_pricing_models import (

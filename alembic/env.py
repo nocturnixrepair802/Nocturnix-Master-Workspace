@@ -6,8 +6,8 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-import nocturnix.persistence_models  # noqa: F401
-import nocturnix.repair_persistence_models  # noqa: F401
+import nocturnix.persistence.models  # noqa: F401
+import nocturnix.persistence.repair_models  # noqa: F401
 from nocturnix.db import Base, ensure_sqlite_parent
 
 config = context.config

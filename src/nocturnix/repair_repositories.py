@@ -9,6 +9,17 @@ from uuid import uuid4
 from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
+from nocturnix.persistence.repair_models import (
+    CustomerDeviceRow,
+    CustomerRow,
+    RepairPricingPolicyRow,
+    RepairServiceRow,
+    RepairTaxPolicyRow,
+    RepairTicketLineItemRow,
+    RepairTicketNoteRow,
+    RepairTicketRow,
+    RepairTicketStatusHistoryRow,
+)
 from nocturnix.repair_models import (
     CustomerCreateRequest,
     CustomerDeviceCreateRequest,
@@ -27,17 +38,6 @@ from nocturnix.repair_models import (
     RepairTicketNoteUpdateRequest,
     RepairTicketStatus,
     RepairTicketUpdateRequest,
-)
-from nocturnix.persistence.repair_models import (
-    CustomerDeviceRow,
-    CustomerRow,
-    RepairPricingPolicyRow,
-    RepairServiceRow,
-    RepairTaxPolicyRow,
-    RepairTicketLineItemRow,
-    RepairTicketNoteRow,
-    RepairTicketRow,
-    RepairTicketStatusHistoryRow,
 )
 
 
