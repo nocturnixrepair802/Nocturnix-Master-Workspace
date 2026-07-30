@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from nocturnix.assistant.exceptions import AssistantTaskStateError
 from nocturnix.assistant.registry import AssistantToolRegistry
-from nocturnix.assistant.repositories import AssistantTaskRepository
+from nocturnix.assistant.repositories import AssistantTaskRepository, Identifier
 from nocturnix.persistence.models import AssistantResultRow, AssistantTaskRow
 
 
@@ -10,7 +10,7 @@ class AssistantTaskService:
     def __init__(
         self,
         repository: AssistantTaskRepository,
-        registry: AssistantToolRegistry,
+        registry: AssistantToolRegistry | None = None,
     ) -> None:
         self._repository = repository
         self._registry = registry
@@ -18,11 +18,11 @@ class AssistantTaskService:
     def create_task(
         self,
         *,
-        owner_user_id: str,
+        owner_user_id: Identifier,
         task_type: str,
         title: str,
         instructions: str,
-        conversation_id: str | None = None,
+        conversation_id: Identifier | None = None,
         input_data: dict[str, object] | None = None,
     ) -> AssistantTaskRow:
         return self._repository.create_task(
@@ -34,15 +34,20 @@ class AssistantTaskService:
             input_data=input_data,
         )
 
-    def get_task(self, task_id: str) -> AssistantTaskRow:
-        return self._repository.get_task(task_id)
+    def get_task(
+        self,
+        task_id: Identifier,
+        owner_user_id: Identifier | None = None,
+    ) -> AssistantTaskRow:
+        return self._repository.get_task(task_id, owner_user_id)
 
     def list_tasks(
         self,
         *,
-        owner_user_id: str | None = None,
-        conversation_id: str | None = None,
+        owner_user_id: Identifier,
+        conversation_id: Identifier | None = None,
         status: str | None = None,
+        task_type: str | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[AssistantTaskRow]:
@@ -50,12 +55,18 @@ class AssistantTaskService:
             owner_user_id=owner_user_id,
             conversation_id=conversation_id,
             status=status,
+            task_type=task_type,
             limit=limit,
             offset=offset,
         )
 
-    def start_task(self, task_id: str) -> AssistantTaskRow:
-        task = self._repository.get_task(task_id)
+    def start_task(
+        self,
+        task_id: Identifier,
+        *,
+        owner_user_id: Identifier | None = None,
+    ) -> AssistantTaskRow:
+        task = self._repository.get_task(task_id, owner_user_id)
 
         self._require_status(
             task,
@@ -63,17 +74,19 @@ class AssistantTaskService:
             operation="start",
         )
 
-        return self._repository.set_status(task_id, "running")
+        return self._repository.set_status(task_id, "running", owner_user_id=owner_user_id)
 
     def update_progress(
         self,
-        task_id: str,
+        task_id: Identifier,
         progress_percent: int,
+        *,
+        owner_user_id: Identifier | None = None,
     ) -> AssistantTaskRow:
         if not 0 <= progress_percent <= 100:
             raise ValueError("progress_percent must be between 0 and 100.")
 
-        task = self._repository.get_task(task_id)
+        task = self._repository.get_task(task_id, owner_user_id)
 
         self._require_status(
             task,
@@ -84,15 +97,17 @@ class AssistantTaskService:
         return self._repository.set_progress(
             task_id,
             progress_percent,
+            owner_user_id=owner_user_id,
         )
 
     def complete_task(
         self,
-        task_id: str,
+        task_id: Identifier,
         *,
         result_summary: str | None = None,
+        owner_user_id: Identifier | None = None,
     ) -> AssistantTaskRow:
-        task = self._repository.get_task(task_id)
+        task = self._repository.get_task(task_id, owner_user_id)
 
         self._require_status(
             task,
@@ -103,15 +118,17 @@ class AssistantTaskService:
         return self._repository.complete_task(
             task_id,
             result_summary=result_summary,
+            owner_user_id=owner_user_id,
         )
 
     def fail_task(
         self,
-        task_id: str,
+        task_id: Identifier,
         *,
         error_message: str,
+        owner_user_id: Identifier | None = None,
     ) -> AssistantTaskRow:
-        task = self._repository.get_task(task_id)
+        task = self._repository.get_task(task_id, owner_user_id)
 
         self._require_status(
             task,
@@ -122,15 +139,17 @@ class AssistantTaskService:
         return self._repository.fail_task(
             task_id,
             error_message=error_message,
+            owner_user_id=owner_user_id,
         )
 
     def cancel_task(
         self,
-        task_id: str,
+        task_id: Identifier,
         *,
         reason: str | None = None,
+        owner_user_id: Identifier | None = None,
     ) -> AssistantTaskRow:
-        task = self._repository.get_task(task_id)
+        task = self._repository.get_task(task_id, owner_user_id)
 
         self._require_status(
             task,
@@ -141,12 +160,13 @@ class AssistantTaskService:
         return self._repository.cancel_task(
             task_id,
             reason=reason,
+            owner_user_id=owner_user_id,
         )
 
     def add_result(
         self,
         *,
-        task_id: str,
+        task_id: Identifier,
         result_type: str,
         title: str,
         summary: str = "",
@@ -175,9 +195,18 @@ class AssistantTaskService:
 
     def list_results(
         self,
-        task_id: str,
+        task_id: Identifier,
+        *,
+        owner_user_id: Identifier | None = None,
     ) -> list[AssistantResultRow]:
-        return self._repository.list_results(task_id)
+        return self._repository.list_results(task_id, owner_user_id=owner_user_id)
+
+    def get_result(
+        self,
+        result_id: Identifier,
+        owner_user_id: Identifier | None = None,
+    ) -> AssistantResultRow:
+        return self._repository.get_result(result_id, owner_user_id)
 
     @staticmethod
     def _require_status(

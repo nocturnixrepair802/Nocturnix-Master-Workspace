@@ -1,13 +1,22 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
-from nocturnix.assistant.exceptions import AssistantTaskNotFoundError
+from nocturnix.assistant.exceptions import (
+    AssistantResultNotFoundError,
+    AssistantTaskNotFoundError,
+)
 from nocturnix.persistence.models import AssistantResultRow, AssistantTaskRow
+
+Identifier = UUID | str
+
+
+def normalize_id(value: Identifier) -> str:
+    return str(value)
 
 
 def _utc_now() -> datetime:
@@ -21,24 +30,25 @@ class AssistantTaskRepository:
     def create_task(
         self,
         *,
-        owner_user_id: str,
+        owner_user_id: Identifier,
         task_type: str,
         title: str,
         instructions: str,
-        conversation_id: str | None = None,
+        conversation_id: Identifier | None = None,
         input_data: dict[str, object] | None = None,
         status: str = "pending",
     ) -> AssistantTaskRow:
         now = _utc_now()
-
+        owner_id = normalize_id(owner_user_id)
+        conversation_key = normalize_id(conversation_id) if conversation_id is not None else None
         task = AssistantTaskRow(
             id=str(uuid4()),
-            owner_user_id=owner_user_id,
-            conversation_id=conversation_id,
-            task_type=task_type,
+            owner_user_id=owner_id,
+            conversation_id=conversation_key,
+            task_type=str(task_type),
             title=title,
             instructions=instructions,
-            status=status,
+            status=str(status),
             progress_percent=0,
             input_data=input_data or {},
             result_summary=None,
@@ -48,151 +58,152 @@ class AssistantTaskRepository:
             completed_at=None,
             updated_at=now,
         )
-
         self._session.add(task)
         self._session.commit()
         self._session.refresh(task)
-
         return task
 
-    def get_task(self, task_id: str) -> AssistantTaskRow:
-        task = self._session.get(AssistantTaskRow, task_id)
-
+    def get_task(
+        self,
+        task_id: Identifier,
+        owner_user_id: Identifier | None = None,
+    ) -> AssistantTaskRow:
+        task_key = normalize_id(task_id)
+        statement = select(AssistantTaskRow).where(AssistantTaskRow.id == task_key)
+        if owner_user_id is not None:
+            statement = statement.where(
+                AssistantTaskRow.owner_user_id == normalize_id(owner_user_id)
+            )
+        task = self._session.scalar(statement)
         if task is None:
             raise AssistantTaskNotFoundError(f"Assistant task {task_id!r} was not found.")
-
         return task
 
     def list_tasks(
         self,
         *,
-        owner_user_id: str | None = None,
-        conversation_id: str | None = None,
+        owner_user_id: Identifier,
+        conversation_id: Identifier | None = None,
         status: str | None = None,
+        task_type: str | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[AssistantTaskRow]:
-        statement: Select[tuple[AssistantTaskRow]] = select(AssistantTaskRow)
-
-        if owner_user_id is not None:
-            statement = statement.where(AssistantTaskRow.owner_user_id == owner_user_id)
-
-        if conversation_id is not None:
-            statement = statement.where(AssistantTaskRow.conversation_id == conversation_id)
-
-        if status is not None:
-            statement = statement.where(AssistantTaskRow.status == status)
-
-        statement = (
-            statement.order_by(AssistantTaskRow.created_at.desc()).offset(offset).limit(limit)
+        owner_id = normalize_id(owner_user_id)
+        statement: Select[tuple[AssistantTaskRow]] = select(AssistantTaskRow).where(
+            AssistantTaskRow.owner_user_id == owner_id
         )
-
+        if conversation_id is not None:
+            statement = statement.where(
+                AssistantTaskRow.conversation_id == normalize_id(conversation_id)
+            )
+        if status is not None:
+            normalized_status = status.strip().lower()
+            statement = statement.where(AssistantTaskRow.status == normalized_status)
+        if task_type is not None:
+            normalized_task_type = task_type.strip()
+            statement = statement.where(AssistantTaskRow.task_type == normalized_task_type)
+        statement = (
+            statement.order_by(AssistantTaskRow.created_at.desc(), AssistantTaskRow.id.desc())
+            .offset(offset)
+            .limit(limit)
+        )
         return list(self._session.scalars(statement).all())
 
     def set_status(
         self,
-        task_id: str,
+        task_id: Identifier,
         status: str,
+        *,
+        owner_user_id: Identifier | None = None,
     ) -> AssistantTaskRow:
-        task = self.get_task(task_id)
+        task = self.get_task(task_id, owner_user_id)
         now = _utc_now()
-
-        task.status = status
+        normalized_status = status.strip().lower()
+        task.status = normalized_status
         task.updated_at = now
-
-        if status == "running" and task.started_at is None:
+        if normalized_status == "running" and task.started_at is None:
             task.started_at = now
-
-        if status in {"completed", "failed", "cancelled"}:
+        if normalized_status in {"completed", "failed", "cancelled"}:
             task.completed_at = now
-
         self._session.commit()
         self._session.refresh(task)
-
         return task
 
     def set_progress(
         self,
-        task_id: str,
+        task_id: Identifier,
         progress_percent: int,
+        *,
+        owner_user_id: Identifier | None = None,
     ) -> AssistantTaskRow:
         if not 0 <= progress_percent <= 100:
             raise ValueError("progress_percent must be between 0 and 100.")
-
-        task = self.get_task(task_id)
-
+        task = self.get_task(task_id, owner_user_id)
         task.progress_percent = progress_percent
         task.updated_at = _utc_now()
-
         self._session.commit()
         self._session.refresh(task)
-
         return task
 
     def complete_task(
         self,
-        task_id: str,
+        task_id: Identifier,
         *,
         result_summary: str | None = None,
+        owner_user_id: Identifier | None = None,
     ) -> AssistantTaskRow:
-        task = self.get_task(task_id)
+        task = self.get_task(task_id, owner_user_id)
         now = _utc_now()
-
         task.status = "completed"
         task.progress_percent = 100
         task.result_summary = result_summary
         task.error_message = None
         task.completed_at = now
         task.updated_at = now
-
         self._session.commit()
         self._session.refresh(task)
-
         return task
 
     def fail_task(
         self,
-        task_id: str,
+        task_id: Identifier,
         *,
         error_message: str,
+        owner_user_id: Identifier | None = None,
     ) -> AssistantTaskRow:
-        task = self.get_task(task_id)
+        task = self.get_task(task_id, owner_user_id)
         now = _utc_now()
-
         task.status = "failed"
         task.error_message = error_message
         task.completed_at = now
         task.updated_at = now
-
         self._session.commit()
         self._session.refresh(task)
-
         return task
 
     def cancel_task(
         self,
-        task_id: str,
+        task_id: Identifier,
         *,
         reason: str | None = None,
+        owner_user_id: Identifier | None = None,
     ) -> AssistantTaskRow:
-        task = self.get_task(task_id)
+        task = self.get_task(task_id, owner_user_id)
         now = _utc_now()
-
         task.status = "cancelled"
         task.error_message = reason
         task.completed_at = now
         task.updated_at = now
-
         self._session.commit()
         self._session.refresh(task)
-
         return task
 
     def add_result(
         self,
         *,
-        owner_user_id: str,
-        task_id: str,
+        owner_user_id: Identifier,
+        task_id: Identifier,
         result_type: str,
         title: str,
         summary: str = "",
@@ -200,12 +211,13 @@ class AssistantTaskRepository:
         file_path: str | None = None,
         media_type: str | None = None,
     ) -> AssistantResultRow:
-        self.get_task(task_id)
-
+        owner_id = normalize_id(owner_user_id)
+        task_key = normalize_id(task_id)
+        self.get_task(task_key, owner_id)
         result = AssistantResultRow(
             id=str(uuid4()),
-            owner_user_id=owner_user_id,
-            task_id=task_id,
+            owner_user_id=owner_id,
+            task_id=task_key,
             result_type=result_type,
             title=title,
             summary=summary,
@@ -214,26 +226,39 @@ class AssistantTaskRepository:
             media_type=media_type,
             created_at=_utc_now(),
         )
-
         self._session.add(result)
         self._session.commit()
         self._session.refresh(result)
-
         return result
 
-    def get_result(self, result_id: str) -> AssistantResultRow | None:
-        return self._session.get(AssistantResultRow, result_id)
+    def get_result(
+        self,
+        result_id: Identifier,
+        owner_user_id: Identifier | None = None,
+    ) -> AssistantResultRow:
+        result_key = normalize_id(result_id)
+        statement = select(AssistantResultRow).where(AssistantResultRow.id == result_key)
+        if owner_user_id is not None:
+            statement = statement.where(
+                AssistantResultRow.owner_user_id == normalize_id(owner_user_id)
+            )
+        result = self._session.scalar(statement)
+        if result is None:
+            raise AssistantResultNotFoundError(f"Assistant result {result_id!r} was not found.")
+        return result
 
     def list_results(
         self,
-        task_id: str,
+        task_id: Identifier,
+        *,
+        owner_user_id: Identifier | None = None,
     ) -> list[AssistantResultRow]:
-        self.get_task(task_id)
-
-        statement = (
-            select(AssistantResultRow)
-            .where(AssistantResultRow.task_id == task_id)
-            .order_by(AssistantResultRow.created_at.asc())
-        )
-
+        task_key = normalize_id(task_id)
+        self.get_task(task_key, owner_user_id)
+        statement = select(AssistantResultRow).where(AssistantResultRow.task_id == task_key)
+        if owner_user_id is not None:
+            statement = statement.where(
+                AssistantResultRow.owner_user_id == normalize_id(owner_user_id)
+            )
+        statement = statement.order_by(AssistantResultRow.created_at.asc())
         return list(self._session.scalars(statement).all())
