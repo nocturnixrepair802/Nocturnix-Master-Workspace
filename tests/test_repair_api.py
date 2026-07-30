@@ -417,3 +417,48 @@ def test_calculate_repair_pricing_rejects_negative_cost(
     )
 
     assert response.status_code == 422, response.text
+
+
+def test_calculate_repair_pricing_requires_default_policies(
+    repair_client: TestClient,
+) -> None:
+    response = repair_client.post(
+        "/api/v1/repair-pricing/calculate",
+        headers=OWNER_HEADERS,
+        json={
+            "parts_cost_cents": 10000,
+            "labor_minutes": 60,
+        },
+    )
+    assert response.status_code == 404, response.text
+
+
+def test_calculate_repair_pricing_requires_default_tax_policy(
+    repair_client: TestClient,
+) -> None:
+    pricing_policy_response = repair_client.post(
+        "/api/v1/repair/pricing-policies",
+        headers=OWNER_HEADERS,
+        json={
+            "name": "Standard Repair Pricing",
+            "labor_rate_cents_per_hour": 12500,
+            "processing_fee_cents": 350,
+            "overhead_basis_points": 1200,
+            "markup_basis_points": 2500,
+            "currency": "usd",
+            "is_default": True,
+            "effective_at": "2026-07-29T12:00:00Z",
+        },
+    )
+    assert pricing_policy_response.status_code == 201
+
+    calculation_response = repair_client.post(
+        "/api/v1/repair-pricing/calculate",
+        headers=OWNER_HEADERS,
+        json={
+            "parts_cost_cents": 10000,
+            "labor_minutes": 60,
+        },
+)
+
+    assert calculation_response.status_code == 404, calculation_response.text
