@@ -15,6 +15,10 @@ from nocturnix.repair_models import (
     CustomerListResponse,
     CustomerResponse,
     CustomerUpdateRequest,
+    RepairPricingPolicyCreateRequest,
+    RepairPricingPolicyListResponse,
+    RepairPricingPolicyResponse,
+    RepairPricingPolicyUpdateRequest,
     RepairTicketCreateRequest,
     RepairTicketFinancialSummaryResponse,
     RepairTicketLineItemCreateRequest,
@@ -343,5 +347,84 @@ def create_repair_router(
         """Calculate a deterministic repair price."""
 
         return services.repair_domain.calculate_pricing(req)
+
+    @router.post(
+        "/repair/pricing-policies",
+        response_model=RepairPricingPolicyResponse,
+        status_code=201,
+    )
+    def create_pricing_policy(
+        req: RepairPricingPolicyCreateRequest,
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> RepairPricingPolicyResponse:
+        return services.repair_domain.create_pricing_policy(
+            user.user_id,
+            req,
+        )
+
+    @router.get(
+        "/repair/pricing-policies",
+        response_model=RepairPricingPolicyListResponse,
+    )
+    def list_pricing_policies(
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> RepairPricingPolicyListResponse:
+        return services.repair_domain.list_pricing_policies(user.user_id)
+
+    @router.get(
+        "/repair/pricing-policies/default",
+        response_model=RepairPricingPolicyResponse,
+    )
+    def get_default_pricing_policy(
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> RepairPricingPolicyResponse:
+        return services.repair_domain.get_default_pricing_policy(user.user_id)
+
+    @router.get(
+        "/repair/pricing-policies/{policy_id}",
+        response_model=RepairPricingPolicyResponse,
+    )
+    def get_pricing_policy(
+        policy_id: str,
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> RepairPricingPolicyResponse:
+        return services.repair_domain.get_pricing_policy(
+            user.user_id,
+            policy_id,
+        )
+
+    @router.patch(
+        "/repair/pricing-policies/{policy_id}",
+        response_model=RepairPricingPolicyResponse,
+    )
+    def update_pricing_policy(
+        policy_id: str,
+        req: RepairPricingPolicyUpdateRequest,
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> RepairPricingPolicyResponse:
+        return services.repair_domain.update_pricing_policy(
+            user.user_id,
+            policy_id,
+            req,
+        )
+
+    @router.delete(
+        "/repair/pricing-policies/{policy_id}",
+        status_code=204,
+    )
+    def delete_pricing_policy(
+        policy_id: str,
+        services: Any = Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> None:
+        services.repair_domain.delete_pricing_policy(
+            user.user_id,
+            policy_id,
+        )
 
     return router

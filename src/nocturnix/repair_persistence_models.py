@@ -2,7 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -148,6 +157,94 @@ class RepairTicketLineItemRow(Base):
     )
 
     repair_ticket: Mapped[RepairTicketRow] = relationship(back_populates="line_items")
+
+
+class RepairPricingPolicyRow(Base):
+    __tablename__ = "repair_pricing_policies"
+
+    __table_args__ = (
+        CheckConstraint(
+            "labor_rate_cents_per_hour >= 0",
+            name="ck_repair_pricing_policy_labor_rate_nonnegative",
+        ),
+        CheckConstraint(
+            "processing_fee_cents >= 0",
+            name="ck_repair_pricing_policy_processing_fee_nonnegative",
+        ),
+        CheckConstraint(
+            "overhead_basis_points >= 0",
+            name="ck_repair_pricing_policy_overhead_nonnegative",
+        ),
+        CheckConstraint(
+            "markup_basis_points >= 0",
+            name="ck_repair_pricing_policy_markup_nonnegative",
+        ),
+        UniqueConstraint(
+            "owner_user_id",
+            "name",
+            name="uq_repair_pricing_policy_name",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(
+        String(120),
+        index=True,
+        nullable=False,
+    )
+
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+
+    labor_rate_cents_per_hour: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    processing_fee_cents: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    overhead_basis_points: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    markup_basis_points: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    currency: Mapped[str] = mapped_column(
+        String(3),
+        nullable=False,
+        default="USD",
+    )
+
+    is_default: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    effective_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
 
 
 class RepairTaxPolicyRow(Base):
