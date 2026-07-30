@@ -42,6 +42,7 @@ from nocturnix.repair_persistence_models import (
 )
 from nocturnix.repair_pricing_engine import calculate_repair_pricing
 from nocturnix.repair_pricing_models import (
+    RepairPolicyPricingRequest,
     RepairPricingRequest,
     RepairPricingResponse,
 )
@@ -770,10 +771,43 @@ class RepairService:
             self.session.rollback()
             raise
 
+    def get_default_tax_policy(
+        self,
+        owner_user_id: str,
+    ) -> RepairTaxPolicyResponse:
+        row = self.tax_policies.get_default(owner_user_id)
+        if row is None:
+            raise RepairResourceNotFound("default repair tax policy not found")
+
+        return RepairTaxPolicyResponse.model_validate(row)
+
     def calculate_pricing(
         self,
-        request: RepairPricingRequest,
+        owner_user_id: str,
+        request: RepairPolicyPricingRequest,
     ) -> RepairPricingResponse:
-        """Calculate a repair price using the deterministic pricing engine."""
+        """Calculate pricing using the owner's default pricing and tax policies."""
 
-        return calculate_repair_pricing(request)
+        pricing_policy = self.get_default_pricing_policy(owner_user_id)
+        tax_policy = self.get_default_tax_policy(owner_user_id)
+
+        labor_cost_cents = (
+            request.labor_minutes * pricing_policy.labor_rate_cents_per_hour + 30
+        ) // 60
+
+        direct_cost_cents = request.parts_cost_cents + labor_cost_cents
+
+        overhead_cents = (
+            direct_cost_cents * pricing_policy.overhead_basis_points + 5_000
+        ) // 10_000
+
+        calculation_request = RepairPricingRequest(
+            parts_cost_cents=request.parts_cost_cents,
+            labor_cost_cents=labor_cost_cents,
+            processing_fee_cents=pricing_policy.processing_fee_cents,
+            overhead_cents=overhead_cents,
+            markup_basis_points=pricing_policy.markup_basis_points,
+            tax_rate_basis_points=tax_policy.tax_rate_basis_points,
+        )
+
+        return calculate_repair_pricing(calculation_request)

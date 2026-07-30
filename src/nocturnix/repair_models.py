@@ -603,6 +603,30 @@ class RepairPricingPolicyListResponse(StrictModel):
     total: int = Field(ge=0)
 
 
+class RepairPricingCalculationRequest(StrictModel):
+    labor_minutes: int = Field(default=0, ge=0)
+    parts_subtotal_cents: int = Field(default=0, ge=0)
+
+
+class RepairPricingCalculationResponse(StrictModel):
+    pricing_policy_id: str
+    pricing_policy_name: str
+    currency: str
+
+    labor_minutes: int
+    labor_rate_cents_per_hour: int
+    labor_subtotal_cents: int
+
+    parts_subtotal_cents: int
+    processing_fee_cents: int
+
+    overhead_cents: int
+    markup_cents: int
+
+    subtotal_cents: int
+    total_cents: int
+
+
 class RepairTaxPolicyCreateRequest(StrictModel):
     name: str = Field(min_length=1, max_length=120)
     jurisdiction: str | None = Field(default=None, max_length=120)

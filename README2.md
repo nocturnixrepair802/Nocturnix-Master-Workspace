@@ -4,3 +4,5 @@
   "display_name": "Ryan Brown",
   "role": "owner"
 }
+
+PS: .\.venv\Scripts\Activate.ps1
