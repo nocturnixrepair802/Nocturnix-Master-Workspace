@@ -10,7 +10,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.engine import CursorResult
 from sqlalchemy.orm import Session
 
-from nocturnix.repair_persistence_models import RepairConfirmationRow
+from nocturnix.persistence.repair_models import RepairConfirmationRow
 
 
 class RepairConfirmationError(Exception):

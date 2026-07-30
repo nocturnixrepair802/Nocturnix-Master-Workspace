@@ -28,7 +28,7 @@ from nocturnix.repair_models import (
     RepairTicketStatus,
     RepairTicketUpdateRequest,
 )
-from nocturnix.repair_persistence_models import (
+from nocturnix.persistence.repair_models import (
     CustomerDeviceRow,
     CustomerRow,
     RepairPricingPolicyRow,

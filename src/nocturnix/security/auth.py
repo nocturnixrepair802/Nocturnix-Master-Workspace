@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from nocturnix.config import Settings
 from nocturnix.models import UserIdentity
-from nocturnix.persistence_models import (
+from nocturnix.persistence.models import (
     EncryptedSecretRecordRow,
     OAuthAuthorizationStateRow,
     PasswordResetChallengeRow,
@@ -148,7 +148,7 @@ class AuditWriter:
         result: str = "success",
         metadata: dict[str, object] | None = None,
     ) -> None:
-        from nocturnix.persistence_models import AuditEventRow
+        from nocturnix.persistence.models import AuditEventRow
 
         banned = {
             "password",

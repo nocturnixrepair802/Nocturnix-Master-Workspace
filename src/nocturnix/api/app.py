@@ -41,7 +41,7 @@ from nocturnix.models import (
     RiskLevel,
     UserIdentity,
 )
-from nocturnix.persistence_models import (
+from nocturnix.persistence.models import (
     CodexTaskRecordRow,
     ConversationRow,
     ProviderAccountRow,
@@ -1255,7 +1255,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_csrf),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import MemoryRow
+        from nocturnix.persistence.models import MemoryRow
 
         now = datetime.now(UTC)
         tags = list_value(req.get("tags"))
@@ -1300,7 +1300,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_perm("memories.read")),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import MemoryRow
+        from nocturnix.persistence.models import MemoryRow
 
         stmt = select(MemoryRow).where(
             MemoryRow.owner_user_id == user.user_id, MemoryRow.deleted.is_(False)
@@ -1324,7 +1324,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_perm("memories.read")),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import MemoryRow
+        from nocturnix.persistence.models import MemoryRow
 
         tags = sorted(
             {
@@ -1346,7 +1346,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_csrf),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import MemoryRow
+        from nocturnix.persistence.models import MemoryRow
 
         row = services.session.get(MemoryRow, memory_id)
         if not row or row.owner_user_id != user.user_id or row.deleted:
@@ -1382,7 +1382,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_csrf),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import MemoryRow
+        from nocturnix.persistence.models import MemoryRow
 
         row = services.session.get(MemoryRow, memory_id)
         if not row or row.owner_user_id != user.user_id:
@@ -1398,7 +1398,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_csrf),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import PlanningTaskRow
+        from nocturnix.persistence.models import PlanningTaskRow
 
         now = datetime.now(UTC)
         effort = int_value(req.get("effort_score"), 3)
@@ -1433,7 +1433,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_perm("planning.read")),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import PlanningTaskRow
+        from nocturnix.persistence.models import PlanningTaskRow
 
         stmt = select(PlanningTaskRow).where(PlanningTaskRow.owner_user_id == user.user_id)
         if status:
@@ -1454,7 +1454,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_csrf),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import BusinessReminderRow
+        from nocturnix.persistence.models import BusinessReminderRow
 
         now = datetime.now(UTC)
         scheduled = req.get("scheduled_at")
@@ -1485,7 +1485,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_perm("planning.read")),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import BusinessReminderRow
+        from nocturnix.persistence.models import BusinessReminderRow
 
         rows = services.session.scalars(
             select(BusinessReminderRow).where(
@@ -1502,7 +1502,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_csrf),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import BusinessReminderRow
+        from nocturnix.persistence.models import BusinessReminderRow
 
         row = services.session.get(BusinessReminderRow, reminder_id)
         if not row or row.owner_user_id != user.user_id:
@@ -1528,7 +1528,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_perm("planning.read")),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import PlanningTaskRow
+        from nocturnix.persistence.models import PlanningTaskRow
 
         tasks = list(
             services.session.scalars(
@@ -1560,7 +1560,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_perm("dashboard.read")),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import BusinessReminderRow, MemoryRow, PlanningTaskRow
+        from nocturnix.persistence.models import BusinessReminderRow, MemoryRow, PlanningTaskRow
 
         priorities = services.session.scalars(
             select(PlanningTaskRow).where(
@@ -1601,7 +1601,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         user: UserIdentity = Depends(require_perm("search.read")),
         services: RequestServices = Depends(get_services),
     ):
-        from nocturnix.persistence_models import BusinessReminderRow, MemoryRow, PlanningTaskRow
+        from nocturnix.persistence.models import BusinessReminderRow, MemoryRow, PlanningTaskRow
 
         query = q.lower()
         results = []

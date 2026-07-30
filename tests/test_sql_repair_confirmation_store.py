@@ -14,7 +14,7 @@ from nocturnix.repair_confirmation_store import (
     RepairConfirmationNotFound,
     SqlRepairConfirmationStore,
 )
-from nocturnix.repair_persistence_models import RepairConfirmationRow
+from nocturnix.persistence.repair_models import RepairConfirmationRow
 
 
 @pytest.fixture
