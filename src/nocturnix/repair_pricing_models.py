@@ -46,6 +46,23 @@ class RepairPricingRequest(BaseModel):
     )
 
 
+class RepairPolicyPricingRequest(BaseModel):
+    """Business inputs priced using the owner's default policies."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    parts_cost_cents: int = Field(
+        default=0,
+        ge=0,
+        description="Total internal parts cost in cents.",
+    )
+    labor_minutes: int = Field(
+        default=0,
+        ge=0,
+        description="Estimated labor time in whole minutes.",
+    )
+
+
 class RepairPricingResponse(BaseModel):
     """Complete calculated pricing breakdown."""
 

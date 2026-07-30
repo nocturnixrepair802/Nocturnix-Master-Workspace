@@ -13,6 +13,10 @@ from nocturnix.repair_models import (
     RepairDashboardQueueItem,
     RepairDashboardResponse,
     RepairDashboardSummary,
+    RepairPricingPolicyCreateRequest,
+    RepairPricingPolicyListResponse,
+    RepairPricingPolicyResponse,
+    RepairPricingPolicyUpdateRequest,
     RepairPriority,
     RepairTaxPolicyCreateRequest,
     RepairTaxPolicyListResponse,
@@ -38,12 +42,14 @@ from nocturnix.repair_persistence_models import (
 )
 from nocturnix.repair_pricing_engine import calculate_repair_pricing
 from nocturnix.repair_pricing_models import (
+    RepairPolicyPricingRequest,
     RepairPricingRequest,
     RepairPricingResponse,
 )
 from nocturnix.repair_repositories import (
     SqlCustomerDeviceRepository,
     SqlCustomerRepository,
+    SqlRepairPricingPolicyRepository,
     SqlRepairTaxPolicyRepository,
     SqlRepairTicketLineItemRepository,
     SqlRepairTicketNoteRepository,
@@ -66,9 +72,7 @@ class RepairConflict(RepairDomainError):
 
 
 class InvalidRepairStatusTransition(RepairConflict):
-    def __init__(
-        self, current: RepairTicketStatus, requested: RepairTicketStatus
-    ) -> None:
+    def __init__(self, current: RepairTicketStatus, requested: RepairTicketStatus) -> None:
         super().__init__(
             f"cannot transition repair ticket from {current.value} to {requested.value}"
         )
@@ -130,11 +134,10 @@ class RepairService:
         self.tickets = SqlRepairTicketRepository(session)
         self.notes = SqlRepairTicketNoteRepository(session)
         self.line_items = SqlRepairTicketLineItemRepository(session)
+        self.pricing_policies = SqlRepairPricingPolicyRepository(session)
         self.tax_policies = SqlRepairTaxPolicyRepository(session)
 
-    def create_customer(
-        self, owner_user_id: str, request: CustomerCreateRequest
-    ) -> CustomerRow:
+    def create_customer(self, owner_user_id: str, request: CustomerCreateRequest) -> CustomerRow:
         try:
             row = self.customers.create(owner_user_id, request)
             self.session.commit()
@@ -175,9 +178,7 @@ class RepairService:
     ) -> CustomerRow:
         existing = self.get_customer(owner_user_id, customer_id)
         changes = request.model_dump(exclude_unset=True)
-        preferred = changes.get(
-            "preferred_contact_method", existing.preferred_contact_method
-        )
+        preferred = changes.get("preferred_contact_method", existing.preferred_contact_method)
         email = changes.get("email", existing.email)
         phone = changes.get("phone", existing.phone)
         preferred_value = getattr(preferred, "value", preferred)
@@ -341,10 +342,7 @@ class RepairService:
             raise RepairConflict("repair ticket is already in the requested status")
         if requested not in ALLOWED_STATUS_TRANSITIONS[current]:
             raise InvalidRepairStatusTransition(current, requested)
-        if (
-            requested == RepairTicketStatus.approved
-            and current_row.approved_cost_cents is None
-        ):
+        if requested == RepairTicketStatus.approved and current_row.approved_cost_cents is None:
             raise RepairConflict("approved cost is required before approval")
         try:
             row = self.tickets.change_status(
@@ -407,23 +405,16 @@ class RepairService:
     def repair_dashboard(self, owner_user_id: str) -> RepairDashboardResponse:
         status_counts = self.tickets.count_by_status(owner_user_id)
         priority_counts = self.tickets.count_by_priority(owner_user_id)
-        by_status = {
-            status: status_counts.get(status.value, 0) for status in RepairTicketStatus
-        }
+        by_status = {status: status_counts.get(status.value, 0) for status in RepairTicketStatus}
         by_priority = {
-            priority: priority_counts.get(priority.value, 0)
-            for priority in RepairPriority
+            priority: priority_counts.get(priority.value, 0) for priority in RepairPriority
         }
         terminal_statuses = {RepairTicketStatus.completed, RepairTicketStatus.cancelled}
         recent_queue = []
-        for ticket, customer, device in self.tickets.recent_dashboard_queue(
-            owner_user_id
-        ):
+        for ticket, customer, device in self.tickets.recent_dashboard_queue(owner_user_id):
             manufacturer = device.manufacturer or ""
             model = device.model or device.device_type
-            device_label = " ".join(
-                part for part in [manufacturer, model] if part
-            ).strip()
+            device_label = " ".join(part for part in [manufacturer, model] if part).strip()
             recent_queue.append(
                 RepairDashboardQueueItem(
                     id=ticket.id,
@@ -447,9 +438,7 @@ class RepairService:
                 total_devices=count_devices(self.session, owner_user_id),
                 total_tickets=total_tickets,
                 open_tickets=sum(
-                    count
-                    for status, count in by_status.items()
-                    if status not in terminal_statuses
+                    count for status, count in by_status.items() if status not in terminal_statuses
                 ),
                 urgent_tickets=by_priority[RepairPriority.urgent],
                 awaiting_approval=by_status[RepairTicketStatus.awaiting_approval],
@@ -498,9 +487,7 @@ class RepairService:
         ticket = self.get_ticket(owner_user_id, ticket_id)
 
         if request.currency != ticket.currency:
-            raise RepairConflict(
-                "line item currency must match the repair ticket currency"
-            )
+            raise RepairConflict("line item currency must match the repair ticket currency")
 
         try:
             row = self.line_items.create(owner_user_id, ticket_id, request)
@@ -537,14 +524,10 @@ class RepairService:
         ticket = self.get_ticket(owner_user_id, ticket_id)
         line_items = self.line_items.list_for_ticket(owner_user_id, ticket_id)
 
-        gross_subtotal_cents = sum(
-            item.quantity * item.unit_price_cents for item in line_items
-        )
+        gross_subtotal_cents = sum(item.quantity * item.unit_price_cents for item in line_items)
         discount_total_cents = sum(item.discount_cents for item in line_items)
         net_subtotal_cents = sum(item.line_total_cents for item in line_items)
-        taxable_subtotal_cents = sum(
-            item.line_total_cents for item in line_items if item.taxable
-        )
+        taxable_subtotal_cents = sum(item.line_total_cents for item in line_items if item.taxable)
         non_taxable_subtotal_cents = sum(
             item.line_total_cents for item in line_items if not item.taxable
         )
@@ -569,22 +552,16 @@ class RepairService:
         current = self.get_ticket_line_item(owner_user_id, line_item_id)
         ticket = self.get_ticket(owner_user_id, current.repair_ticket_id)
 
-        quantity = (
-            request.quantity if request.quantity is not None else current.quantity
-        )
+        quantity = request.quantity if request.quantity is not None else current.quantity
         unit_price_cents = (
             request.unit_price_cents
             if request.unit_price_cents is not None
             else current.unit_price_cents
         )
         discount_cents = (
-            request.discount_cents
-            if request.discount_cents is not None
-            else current.discount_cents
+            request.discount_cents if request.discount_cents is not None else current.discount_cents
         )
-        currency = (
-            request.currency if request.currency is not None else current.currency
-        )
+        currency = request.currency if request.currency is not None else current.currency
 
         gross_total = quantity * unit_price_cents
 
@@ -592,9 +569,7 @@ class RepairService:
             raise RepairConflict("discount cannot exceed the gross line total")
 
         if currency != ticket.currency:
-            raise RepairConflict(
-                "line item currency must match the repair ticket currency"
-            )
+            raise RepairConflict("line item currency must match the repair ticket currency")
 
         try:
             row = self.line_items.update(
@@ -636,6 +611,92 @@ class RepairService:
             if self.tickets.get_by_number(owner_user_id, candidate) is None:
                 return candidate
         raise RepairConflict("unable to generate a unique ticket number")
+
+    def create_pricing_policy(
+        self,
+        owner_user_id: str,
+        request: RepairPricingPolicyCreateRequest,
+    ) -> RepairPricingPolicyResponse:
+        try:
+            row = self.pricing_policies.create(owner_user_id, request)
+            self.session.commit()
+            self.session.refresh(row)
+            return RepairPricingPolicyResponse.model_validate(row)
+        except Exception:
+            self.session.rollback()
+            raise
+
+    def get_pricing_policy(
+        self,
+        owner_user_id: str,
+        policy_id: str,
+    ) -> RepairPricingPolicyResponse:
+        row = self.pricing_policies.get(owner_user_id, policy_id)
+        if row is None:
+            raise RepairResourceNotFound("repair pricing policy not found")
+
+        return RepairPricingPolicyResponse.model_validate(row)
+
+    def list_pricing_policies(
+        self,
+        owner_user_id: str,
+    ) -> RepairPricingPolicyListResponse:
+        rows = self.pricing_policies.list(owner_user_id)
+
+        return RepairPricingPolicyListResponse(
+            items=[RepairPricingPolicyResponse.model_validate(row) for row in rows],
+            total=len(rows),
+        )
+
+    def update_pricing_policy(
+        self,
+        owner_user_id: str,
+        policy_id: str,
+        request: RepairPricingPolicyUpdateRequest,
+    ) -> RepairPricingPolicyResponse:
+        try:
+            row = self.pricing_policies.update(
+                owner_user_id,
+                policy_id,
+                request,
+            )
+            if row is None:
+                raise RepairResourceNotFound("repair pricing policy not found")
+
+            self.session.commit()
+            self.session.refresh(row)
+            return RepairPricingPolicyResponse.model_validate(row)
+        except Exception:
+            self.session.rollback()
+            raise
+
+    def delete_pricing_policy(
+        self,
+        owner_user_id: str,
+        policy_id: str,
+    ) -> None:
+        try:
+            deleted = self.pricing_policies.delete(
+                owner_user_id,
+                policy_id,
+            )
+            if not deleted:
+                raise RepairResourceNotFound("repair pricing policy not found")
+
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            raise
+
+    def get_default_pricing_policy(
+        self,
+        owner_user_id: str,
+    ) -> RepairPricingPolicyResponse:
+        row = self.pricing_policies.get_default(owner_user_id)
+        if row is None:
+            raise RepairResourceNotFound("default repair pricing policy not found")
+
+        return RepairPricingPolicyResponse.model_validate(row)
 
     def create_tax_policy(
         self,
@@ -710,10 +771,43 @@ class RepairService:
             self.session.rollback()
             raise
 
+    def get_default_tax_policy(
+        self,
+        owner_user_id: str,
+    ) -> RepairTaxPolicyResponse:
+        row = self.tax_policies.get_default(owner_user_id)
+        if row is None:
+            raise RepairResourceNotFound("default repair tax policy not found")
+
+        return RepairTaxPolicyResponse.model_validate(row)
+
     def calculate_pricing(
         self,
-        request: RepairPricingRequest,
+        owner_user_id: str,
+        request: RepairPolicyPricingRequest,
     ) -> RepairPricingResponse:
-        """Calculate a repair price using the deterministic pricing engine."""
+        """Calculate pricing using the owner's default pricing and tax policies."""
 
-        return calculate_repair_pricing(request)
+        pricing_policy = self.get_default_pricing_policy(owner_user_id)
+        tax_policy = self.get_default_tax_policy(owner_user_id)
+
+        labor_cost_cents = (
+            request.labor_minutes * pricing_policy.labor_rate_cents_per_hour + 30
+        ) // 60
+
+        direct_cost_cents = request.parts_cost_cents + labor_cost_cents
+
+        overhead_cents = (
+            direct_cost_cents * pricing_policy.overhead_basis_points + 5_000
+        ) // 10_000
+
+        calculation_request = RepairPricingRequest(
+            parts_cost_cents=request.parts_cost_cents,
+            labor_cost_cents=labor_cost_cents,
+            processing_fee_cents=pricing_policy.processing_fee_cents,
+            overhead_cents=overhead_cents,
+            markup_basis_points=pricing_policy.markup_basis_points,
+            tax_rate_basis_points=tax_policy.tax_rate_basis_points,
+        )
+
+        return calculate_repair_pricing(calculation_request)

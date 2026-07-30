@@ -523,6 +523,110 @@ class RepairTicketFinancialSummaryResponse(StrictModel):
     non_taxable_subtotal_cents: int = Field(ge=0)
 
 
+class RepairPricingPolicyCreateRequest(StrictModel):
+    name: str = Field(min_length=1, max_length=120)
+    labor_rate_cents_per_hour: int = Field(ge=0)
+    processing_fee_cents: int = Field(default=0, ge=0)
+    overhead_basis_points: int = Field(default=0, ge=0)
+    markup_basis_points: int = Field(default=0, ge=0)
+    currency: str = Field(default="USD", min_length=3, max_length=3)
+    is_default: bool = False
+    effective_at: datetime
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("name must not be empty")
+        return cleaned
+
+    @field_validator("currency")
+    @classmethod
+    def normalize_currency(cls, value: str) -> str:
+        cleaned = value.strip().upper()
+        if len(cleaned) != 3 or not cleaned.isalpha():
+            raise ValueError("currency must be a three-letter alphabetic code")
+        return cleaned
+
+
+class RepairPricingPolicyUpdateRequest(StrictModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    labor_rate_cents_per_hour: int | None = Field(default=None, ge=0)
+    processing_fee_cents: int | None = Field(default=None, ge=0)
+    overhead_basis_points: int | None = Field(default=None, ge=0)
+    markup_basis_points: int | None = Field(default=None, ge=0)
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+    is_default: bool | None = None
+    effective_at: datetime | None = None
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("name must not be empty")
+        return cleaned
+
+    @field_validator("currency")
+    @classmethod
+    def normalize_currency(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip().upper()
+        if len(cleaned) != 3 or not cleaned.isalpha():
+            raise ValueError("currency must be a three-letter alphabetic code")
+        return cleaned
+
+
+class RepairPricingPolicyResponse(RepairResponseModel):
+    id: str
+    owner_user_id: str
+    name: str
+    labor_rate_cents_per_hour: int
+    processing_fee_cents: int
+    overhead_basis_points: int
+    markup_basis_points: int
+    currency: str
+    is_default: bool
+    effective_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+
+class RepairPricingPolicyListResponse(StrictModel):
+    items: list[RepairPricingPolicyResponse]
+    total: int = Field(ge=0)
+
+
+class RepairPricingCalculationRequest(StrictModel):
+    labor_minutes: int = Field(default=0, ge=0)
+    parts_subtotal_cents: int = Field(default=0, ge=0)
+
+
+class RepairPricingCalculationResponse(StrictModel):
+    pricing_policy_id: str
+    pricing_policy_name: str
+    currency: str
+
+    labor_minutes: int
+    labor_rate_cents_per_hour: int
+    labor_subtotal_cents: int
+
+    parts_subtotal_cents: int
+    processing_fee_cents: int
+
+    overhead_cents: int
+    markup_cents: int
+
+    subtotal_cents: int
+    total_cents: int
+
+
 class RepairTaxPolicyCreateRequest(StrictModel):
     name: str = Field(min_length=1, max_length=120)
     jurisdiction: str | None = Field(default=None, max_length=120)
