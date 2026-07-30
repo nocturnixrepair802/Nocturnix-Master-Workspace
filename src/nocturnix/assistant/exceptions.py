@@ -9,6 +9,10 @@ class AssistantTaskNotFoundError(AssistantError):
     """Raised when an assistant task cannot be found."""
 
 
+class AssistantResultNotFoundError(AssistantError):
+    """Raised when an assistant result cannot be found."""
+
+
 class AssistantTaskStateError(AssistantError):
     """Raised when an assistant task transition is invalid."""
 
