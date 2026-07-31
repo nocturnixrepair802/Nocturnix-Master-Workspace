@@ -1,5 +1,17 @@
 # Roadmap
 
+## Initial browser coding assistant
+
+- [x] Mount a plain HTML/CSS/JavaScript assistant in the integrated FastAPI application.
+- [x] Add Responses API provider abstraction and persistent assistant task/result orchestration.
+- [x] Add owner-scoped retrieval, safe failures, configuration-only health, and focused fakes.
+- [ ] Harden browser sign-in/CSRF onboarding and conversation history presentation.
+- [ ] Complete deployment, monitoring, managed secrets, and formal security review before any
+  production claim.
+
+Repository mutation, terminal execution, autonomous Git, and external web research are deliberately
+deferred beyond this read-only initial phase.
+
 ## Implemented in v0.1.2
 
 - Clean FastAPI foundation, mock providers, in-memory approvals and audit events, repair intake, local knowledge search, local UI, and PWA foundation.

@@ -1,4 +1,17 @@
 # Changelog
+
+## Unreleased
+
+### Added
+
+- Integrated `/assistant` browser interface and owner-scoped assistant task/result APIs.
+- OpenAI Responses API coding provider with safe error translation and persisted task lifecycle.
+- Focused provider and web API tests that replace the provider with deterministic fakes.
+
+### Security
+
+- The coding assistant remains read-only and cannot edit files or execute commands.
+- Live OpenAI access requires explicit development configuration and existing authentication/CSRF.
 # Changelog
 
 ## [0.3.0] - 2026-07-30

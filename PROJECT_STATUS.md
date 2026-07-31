@@ -1,4 +1,15 @@
 # Project Status
+
+## Initial operational coding assistant
+
+The integrated application includes a development-only browser assistant at `/assistant`, local
+readiness at `/api/assistant/health`, and authenticated chat/task/result endpoints. Coding requests
+and responses use the existing SQL assistant task/result records. The provider uses the OpenAI
+Responses API only when both external-provider flags and the key are configured.
+
+This is not a production release. The assistant cannot inspect or modify repository files, execute
+commands, push Git changes, or invoke external research tools. The next milestone is usability and
+security hardening after owner review; autonomous actions remain out of scope.
 # Nocturnix AI Platform
 
 ## Project Status

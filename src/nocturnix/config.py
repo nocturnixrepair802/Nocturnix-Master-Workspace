@@ -1,11 +1,13 @@
 from pathlib import Path
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="NOCTURNIX_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="NOCTURNIX_", env_file=".env", extra="ignore", populate_by_name=True
+    )
 
     environment: str = "development"
     host: str = "127.0.0.1"
@@ -14,8 +16,15 @@ class Settings(BaseSettings):
     mock_providers_enabled: bool = True
     external_providers_enabled: bool = False
     openai_enabled: bool = False
-    openai_api_key: str = Field(default="", repr=False)
-    openai_model: str = "gpt-5-mini"
+    openai_api_key: str = Field(
+        default="",
+        repr=False,
+        validation_alias=AliasChoices("NOCTURNIX_OPENAI_API_KEY", "OPENAI_API_KEY"),
+    )
+    openai_model: str = Field(
+        default="gpt-5-mini",
+        validation_alias=AliasChoices("NOCTURNIX_OPENAI_MODEL", "OPENAI_MODEL"),
+    )
     openai_timeout_seconds: float = Field(default=30.0, ge=1.0, le=300.0)
     openai_max_tool_rounds: int = Field(default=6, ge=1, le=20)
     cors_origins: list[str] = Field(
