@@ -1,4 +1,23 @@
 ﻿...entire README contents...
+
+## Initial browser coding assistant
+
+The integrated FastAPI application now serves a development-only coding assistant at
+`http://127.0.0.1:8000/assistant`. Configure `OPENAI_API_KEY` and `OPENAI_MODEL`, then explicitly
+enable the provider with `NOCTURNIX_OPENAI_ENABLED=true` and
+`NOCTURNIX_EXTERNAL_PROVIDERS_ENABLED=true`. Apply migrations and start the existing app:
+
+```powershell
+uv run alembic upgrade head
+uv run uvicorn nocturnix:create_app --factory --host 127.0.0.1 --port 8000
+```
+
+The browser uses the existing session/CSRF authentication or the explicitly enabled
+development-header mode. It sends questions to the server; credentials never enter browser code.
+This phase generates advice only: it cannot read selected files, edit the repository, execute shell
+commands, use web research, or perform autonomous Git operations. Validate with `uv run ruff check
+src tests`, `uv run python -m mypy src tests`, `uv run python -m pyright src tests`, and `uv run
+pytest`.
 # Development Update – July 30, 2026
 
 ## Current Project Status
