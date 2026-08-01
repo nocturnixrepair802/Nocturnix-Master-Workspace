@@ -1,8 +1,9 @@
 from pathlib import Path
+from typing import cast
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import Table, select
 
 from nocturnix import create_app
 from nocturnix.assistant.openai_provider import CodingProviderError
@@ -28,6 +29,7 @@ class FailingProvider:
 @pytest.fixture
 def assistant_client(tmp_path: Path):
     database_url = f"sqlite:///{tmp_path / 'assistant.db'}"
+
     app = create_app(
         Settings(
             database_url=database_url,
@@ -36,7 +38,30 @@ def assistant_client(tmp_path: Path):
             allow_development_header_auth=True,
         )
     )
+
+    schema_engine = create_database_engine(database_url)
+
+    assistant_task_table = cast(
+        Table,
+        AssistantTaskRow.__table__,
+    )
+    assistant_result_table = cast(
+        Table,
+        AssistantResultRow.__table__,
+    )
+
+    assistant_task_table.create(
+        bind=schema_engine,
+        checkfirst=True,
+    )
+    assistant_result_table.create(
+        bind=schema_engine,
+        checkfirst=True,
+    )
+    schema_engine.dispose()
+
     app.state.coding_provider = FakeProvider()
+
     with TestClient(app) as client:
         yield client, database_url
 

@@ -1,5 +1,7 @@
 """Tests for the pure repair pricing engine."""
 
+from typing import Any
+
 import pytest
 from pydantic import ValidationError
 
@@ -133,7 +135,15 @@ def test_pricing_request_rejects_invalid_values(
 
 
 def test_pricing_request_rejects_unknown_fields() -> None:
+    request_data: dict[str, Any] = {
+        "parts_cost_cents": 1000,
+        "labor_cost_cents": 2000,
+        "processing_fee_cents": 0,
+        "overhead_cents": 0,
+        "markup_basis_points": 0,
+        "tax_rate_basis_points": 0,
+        "unexpected_value": "invalid",
+    }
+
     with pytest.raises(ValidationError):
-        RepairPricingRequest(unexpected_value=100)
-
-
+        RepairPricingRequest.model_validate(request_data)
