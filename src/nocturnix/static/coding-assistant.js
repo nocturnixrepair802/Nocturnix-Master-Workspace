@@ -44,7 +44,10 @@ async function submit() {
   try {
     const response = await fetch("/api/assistant/chat", {
       method: "POST",
-      headers: requestHeaders(),
+      headers: {
+          "Content-Type": "application/json",
+          "X-Nocturnix-Dev-User": "local-developer",
+      },
       body: JSON.stringify({ message: text, conversation_id: conversationId }),
     });
     const body = await response.json();
