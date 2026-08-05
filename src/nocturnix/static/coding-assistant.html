@@ -10,6 +10,17 @@
   <main class="shell">
     <header><div class="mark">N</div><div><h1>Nocturnix</h1><p>Development Assistant · read-only</p><span id="provider-badge" class="provider-badge">Development provider: checking…</span></div></header>
     <p id="mock-notice" class="mock-notice" hidden></p>
+    <aside class="repository-panel">
+      <h2>Repository context</h2>
+      <label for="repo-search">Search approved files</label>
+      <input id="repo-search" type="search" placeholder="Search filenames or content">
+      <button id="repo-search-button" type="button">Search repository</button>
+      <div id="repo-results" class="repo-list" aria-live="polite"></div>
+      <h3>Selected files</h3>
+      <div id="repo-selected" class="repo-list"></div>
+      <h3>Preview</h3>
+      <pre id="repo-preview" class="repo-preview">No file selected.</pre>
+    </aside>
     <section id="conversation" class="conversation" aria-live="polite">
       <div class="welcome"><h2>What are you building?</h2><p>Ask for coding guidance, explanations, tests, or review help.</p></div>
     </section>

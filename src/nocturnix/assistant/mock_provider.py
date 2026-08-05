@@ -10,10 +10,22 @@ class MockCodingProvider:
     def answer(self, message: str, context: str | None = None) -> str:
         context_note = ""
         if context:
-            context_note = (
-                "\n\nProject context was supplied as untrusted local reference text, "
-                "but mock mode does not analyze repository files."
-            )
+            attached = [
+                line[4:-4].strip()
+                for line in context.splitlines()
+                if line.startswith("--- ") and line.endswith(" ---")
+            ]
+            if attached:
+                context_note = (
+                    "\n\nRepository files attached "
+                    "(mock mode names them without semantic analysis):\n"
+                    + "\n".join(f"- {name}" for name in attached)
+                )
+            else:
+                context_note = (
+                    "\n\nProject context was supplied as untrusted local reference text, "
+                    "but mock mode does not analyze repository files."
+                )
         return (
             "Mock development response\n\n"
             f"Your request was:\n{message}\n\n"

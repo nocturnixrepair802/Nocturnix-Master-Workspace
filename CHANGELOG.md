@@ -132,3 +132,9 @@ Version 0.1.6 remains development-only and mock-only. It adds durable owner-scop
 - Added `NOCTURNIX_CODING_PROVIDER=mock|openai` for the browser coding assistant.
 - Added a deterministic `nocturnix-mock` provider that exercises task, result, authentication, API, persistence, and browser flows without network calls or API credit usage.
 - Cleaned the assistant task/result Alembic migration so it only creates and drops assistant tables and indexes.
+
+## v0.1.5 - Repository awareness foundation
+
+- Added authenticated, read-only repository status, file listing, filename/content search, and safe file read endpoints for the browser assistant.
+- Added selected-file chat context loading with root confinement, ignore rules, extension allowlisting, size limits, and mock-mode attached-file reporting.
+- Added a plain JavaScript repository panel to `/assistant` for search, preview, selection, and removal.

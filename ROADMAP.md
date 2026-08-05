@@ -305,3 +305,9 @@ All future development should preserve the current green build and maintain comp
 - Mock coding provider is available for development and UI testing with no external requests or API credit usage.
 - OpenAI coding provider remains the real-provider path and requires explicit external-provider opt-in plus an API key.
 - Future production work must still address real deployment hardening, production secrets, and live-provider operational controls.
+
+## Repository awareness roadmap
+
+- Current: development-only read-only repository status, file listing, filename/content search, safe file preview, and selected-file attachment.
+- Next owner decisions before production: stronger deployment isolation, production TLS, managed key storage, monitoring, formal security review, and any future semantic-search design.
+- Out of scope for this milestone: repository writes, code edits, shell execution, Git mutation, automatic commits, automatic pushes, external web access, arbitrary filesystem browsing, and embedding-based semantic search.

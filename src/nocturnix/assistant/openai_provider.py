@@ -32,6 +32,7 @@ class CodingAssistantProvider(Protocol):
 
 
 class OpenAICodingProvider:
+    provider = "openai"
     def __init__(self, api_key: str, model: str, timeout: float = 30.0) -> None:
         self.model = model
         self._client = OpenAI(api_key=api_key, timeout=timeout)
