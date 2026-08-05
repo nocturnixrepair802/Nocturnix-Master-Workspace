@@ -377,3 +377,45 @@ class ReminderRequest(StrictModel):
 
 class NaturalCommandRequest(StrictModel):
     command: str = Field(min_length=1, max_length=1000)
+
+
+class AssistantTaskStatus(StrEnum):
+    queued = "queued"
+    running = "running"
+    waiting_for_approval = "waiting_for_approval"
+    completed = "completed"
+    failed = "failed"
+    cancelled = "cancelled"
+
+
+class AssistantTaskType(StrEnum):
+    research = "research"
+    spreadsheet = "spreadsheet"
+    repair_action = "repair_action"
+    general = "general"
+
+
+class AssistantTaskCreateRequest(StrictModel):
+    task_type: AssistantTaskType
+    title: str = Field(min_length=1, max_length=200)
+    instructions: str = Field(min_length=1, max_length=5000)
+    conversation_id: str | None = Field(default=None, max_length=64)
+    input_data: dict[str, object] = Field(default_factory=dict)
+
+
+class AssistantTaskResponse(StrictModel):
+    id: str
+    owner_user_id: str
+    conversation_id: str | None = None
+    task_type: AssistantTaskType
+    title: str
+    instructions: str
+    status: AssistantTaskStatus
+    progress_percent: int
+    input_data: dict[str, object]
+    result_summary: str | None = None
+    error_message: str | None = None
+    created_at: datetime
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    updated_at: datetime

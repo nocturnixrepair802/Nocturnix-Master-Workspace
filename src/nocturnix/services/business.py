@@ -7,7 +7,7 @@ from uuid import uuid4
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from nocturnix.persistence_models import (
+from nocturnix.persistence.models import (
     BusinessTaskRow,
     NotificationEventRow,
     ReminderRow,

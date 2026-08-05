@@ -7,6 +7,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -159,6 +160,83 @@ class RepairTicketLineItemRow(Base):
     repair_ticket: Mapped[RepairTicketRow] = relationship(back_populates="line_items")
 
 
+class RepairServiceRow(Base):
+    __tablename__ = "repair_services"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_user_id: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        index=True,
+    )
+
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    category: Mapped[str] = mapped_column(
+        String(80),
+        nullable=False,
+        index=True,
+    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    default_labor_minutes: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+    estimated_duration_minutes: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    taxable: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_repair_services_owner_name",
+            "owner_user_id",
+            "name",
+        ),
+        Index(
+            "ix_repair_services_owner_active",
+            "owner_user_id",
+            "is_active",
+        ),
+        Index(
+            "ix_repair_services_owner_category",
+            "owner_user_id",
+            "category",
+        ),
+        CheckConstraint(
+            "default_labor_minutes >= 0",
+            name="ck_repair_services_default_labor_minutes_nonnegative",
+        ),
+        CheckConstraint(
+            (
+                "estimated_duration_minutes IS NULL "
+                "OR estimated_duration_minutes >= 0"
+            ),
+            name="ck_repair_services_estimated_duration_minutes_nonnegative",
+        ),
+    )
 class RepairPricingPolicyRow(Base):
     __tablename__ = "repair_pricing_policies"
 
@@ -260,7 +338,6 @@ class RepairTaxPolicyRow(Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     owner_user_id: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
-
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     jurisdiction: Mapped[str | None] = mapped_column(String(120))
     tax_rate_basis_points: Mapped[int] = mapped_column(Integer, nullable=False)

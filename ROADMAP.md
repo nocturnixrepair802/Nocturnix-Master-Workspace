@@ -1,5 +1,17 @@
 # Roadmap
 
+## Initial browser coding assistant
+
+- [x] Mount a plain HTML/CSS/JavaScript assistant in the integrated FastAPI application.
+- [x] Add Responses API provider abstraction and persistent assistant task/result orchestration.
+- [x] Add owner-scoped retrieval, safe failures, configuration-only health, and focused fakes.
+- [ ] Harden browser sign-in/CSRF onboarding and conversation history presentation.
+- [ ] Complete deployment, monitoring, managed secrets, and formal security review before any
+  production claim.
+
+Repository mutation, terminal execution, autonomous Git, and external web research are deliberately
+deferred beyond this read-only initial phase.
+
 ## Implemented in v0.1.2
 
 - Clean FastAPI foundation, mock providers, in-memory approvals and audit events, repair intake, local knowledge search, local UI, and PWA foundation.
@@ -126,3 +138,164 @@ Threats considered include credential theft, password database compromise, sessi
 # Nocturnix AI Assistant v0.1.6 Memory, Planning & Autonomous Task Engine
 
 Version 0.1.6 remains development-only and mock-only. It adds durable owner-scoped memories, conversation-summary storage, planning tasks, reminder readiness records, focus mode, dashboard/search APIs, and a natural-language command router for capture and retrieval. No repair-ticket platform, production AI provider, notification provider, deployment, or live integration is added.
+
+# ROADMAP Update — July 30, 2026
+
+## Milestone Completed
+
+### Development Environment Stabilization
+
+**Status:** ✅ Complete
+
+This milestone establishes a stable, production-quality development environment and completes the backend stabilization phase of the Nocturnix AI Platform.
+
+### Objectives Achieved
+
+* Standardized assistant subsystem interfaces.
+* Unified identifier handling throughout the assistant architecture.
+* Repaired repository and service inconsistencies.
+* Updated registry implementations and type definitions.
+* Corrected repository query behavior.
+* Updated the automated test suite.
+* Eliminated remaining static analysis issues.
+* Configured OpenAI API integration.
+* Migrated the development workflow to `uv`.
+* Established a synchronized Python virtual environment.
+
+### Verification
+
+All validation completed successfully.
+
+| Validation  | Status   |
+| ----------- | -------- |
+| Unit Tests  | ✅ Passed |
+| Ruff Format | ✅ Passed |
+| Ruff Lint   | ✅ Passed |
+| Mypy        | ✅ Passed |
+| Pylance     | ✅ Clean  |
+
+Current automated test results:
+
+```
+142 passed
+```
+
+---
+
+# Project Phase Transition
+
+The project is now moving from **Platform Stabilization** into **Application Assembly**.
+
+This represents a significant shift in development priorities.
+
+Previous focus:
+
+* Repair
+* Refactoring
+* Static analysis
+* Interface consistency
+* Testing
+* Reliability
+
+New focus:
+
+* User experience
+* AI interaction
+* Browser interface
+* Deployment
+* Product features
+
+---
+
+# Next Major Milestone
+
+## Web Platform Foundation
+
+### Goal
+
+Expose the existing Nocturnix backend through a FastAPI-powered web application while preserving the current architecture.
+
+### Planned Deliverables
+
+* FastAPI application
+* REST API
+* Browser interface
+* Health endpoint
+* Chat endpoint
+* Assistant integration
+* API documentation
+* Initial authentication framework
+
+No existing backend services should be duplicated. The web application will reuse the existing assistant, pricing, persistence, and repository layers.
+
+---
+
+# AI Development Assistant (Phase 1)
+
+The first user-facing capability will be an AI-powered development assistant capable of:
+
+* Explaining source code
+* Assisting with feature development
+* Debugging runtime errors
+* Diagnosing test failures
+* Generating implementation suggestions
+* Tracking conversations
+* Supporting future project orchestration
+
+Initially, repository modifications will remain user-controlled.
+
+---
+
+# Future Milestones
+
+## Phase 2
+
+* Project dashboard
+* Conversation history
+* User authentication
+* Project management
+
+## Phase 3
+
+* Repair workflow integration
+* Pricing engine interface
+* Inventory integration
+* Reporting
+
+## Phase 4
+
+* Customer portal
+* Business dashboard
+* Analytics
+* Notifications
+
+## Phase 5
+
+* Private cloud deployment
+* Production deployment
+* Continuous integration
+* Operational monitoring
+
+---
+
+# Current Overall Progress
+
+| Area                    | Status        |
+| ----------------------- | ------------- |
+| Backend Architecture    | ✅ Complete    |
+| Assistant Core          | ✅ Complete    |
+| Persistence Layer       | ✅ Complete    |
+| Testing Infrastructure  | ✅ Complete    |
+| Development Environment | ✅ Complete    |
+| OpenAI Integration      | ✅ Configured  |
+| Web Platform            | 🚧 Not Started |
+| Browser Interface       | 🚧 Not Started |
+| Deployment              | 🚧 Not Started |
+
+---
+
+# Current Development Goal
+
+The immediate objective is to evolve Nocturnix from a fully tested backend platform into a browser-accessible AI application by introducing a FastAPI web layer that reuses the existing backend architecture.
+
+All future development should preserve the current green build and maintain complete automated test success.

@@ -5,6 +5,14 @@ from secrets import randbelow
 
 from sqlalchemy.orm import Session
 
+from nocturnix.persistence.repair_models import (
+    CustomerDeviceRow,
+    CustomerRow,
+    RepairTicketLineItemRow,
+    RepairTicketNoteRow,
+    RepairTicketRow,
+    RepairTicketStatusHistoryRow,
+)
 from nocturnix.repair_models import (
     CustomerCreateRequest,
     CustomerDeviceCreateRequest,
@@ -18,6 +26,10 @@ from nocturnix.repair_models import (
     RepairPricingPolicyResponse,
     RepairPricingPolicyUpdateRequest,
     RepairPriority,
+    RepairServiceCreateRequest,
+    RepairServiceListResponse,
+    RepairServiceResponse,
+    RepairServiceUpdateRequest,
     RepairTaxPolicyCreateRequest,
     RepairTaxPolicyListResponse,
     RepairTaxPolicyResponse,
@@ -32,14 +44,6 @@ from nocturnix.repair_models import (
     RepairTicketStatusChangeRequest,
     RepairTicketUpdateRequest,
 )
-from nocturnix.repair_persistence_models import (
-    CustomerDeviceRow,
-    CustomerRow,
-    RepairTicketLineItemRow,
-    RepairTicketNoteRow,
-    RepairTicketRow,
-    RepairTicketStatusHistoryRow,
-)
 from nocturnix.repair_pricing_engine import calculate_repair_pricing
 from nocturnix.repair_pricing_models import (
     RepairPolicyPricingRequest,
@@ -50,6 +54,7 @@ from nocturnix.repair_repositories import (
     SqlCustomerDeviceRepository,
     SqlCustomerRepository,
     SqlRepairPricingPolicyRepository,
+    SqlRepairServiceRepository,
     SqlRepairTaxPolicyRepository,
     SqlRepairTicketLineItemRepository,
     SqlRepairTicketNoteRepository,
@@ -134,6 +139,7 @@ class RepairService:
         self.tickets = SqlRepairTicketRepository(session)
         self.notes = SqlRepairTicketNoteRepository(session)
         self.line_items = SqlRepairTicketLineItemRepository(session)
+        self.service_catalog = SqlRepairServiceRepository(session)
         self.pricing_policies = SqlRepairPricingPolicyRepository(session)
         self.tax_policies = SqlRepairTaxPolicyRepository(session)
 
@@ -611,6 +617,110 @@ class RepairService:
             if self.tickets.get_by_number(owner_user_id, candidate) is None:
                 return candidate
         raise RepairConflict("unable to generate a unique ticket number")
+
+    def create_service(
+        self,
+        owner_user_id: str,
+        request: RepairServiceCreateRequest,
+    ) -> RepairServiceResponse:
+        try:
+            row = self.service_catalog.create(
+                owner_user_id,
+                request,
+            )
+            self.session.commit()
+            self.session.refresh(row)
+            return RepairServiceResponse.model_validate(row)
+        except Exception:
+            self.session.rollback()
+            raise
+
+    def get_service(
+        self,
+        owner_user_id: str,
+        service_id: str,
+    ) -> RepairServiceResponse:
+        row = self.service_catalog.get(
+            owner_user_id,
+            service_id,
+        )
+
+        if row is None:
+            raise RepairResourceNotFound("repair service not found")
+
+        return RepairServiceResponse.model_validate(row)
+
+    def list_services(
+        self,
+        owner_user_id: str,
+        *,
+        search: str | None = None,
+        category: str | None = None,
+        is_active: bool | None = None,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> RepairServiceListResponse:
+        rows, total = self.service_catalog.list(
+            owner_user_id,
+            search=search,
+            category=category,
+            is_active=is_active,
+            offset=offset,
+            limit=limit,
+        )
+
+        return RepairServiceListResponse(
+            items=[RepairServiceResponse.model_validate(row) for row in rows],
+            total=total,
+            offset=offset,
+            limit=limit,
+        )
+
+    def update_service(
+        self,
+        owner_user_id: str,
+        service_id: str,
+        request: RepairServiceUpdateRequest,
+    ) -> RepairServiceResponse:
+        row = self.service_catalog.get(
+            owner_user_id,
+            service_id,
+        )
+
+        if row is None:
+            raise RepairResourceNotFound("repair service not found")
+
+        try:
+            updated_row = self.service_catalog.update(
+                row,
+                request,
+            )
+            self.session.commit()
+            self.session.refresh(updated_row)
+            return RepairServiceResponse.model_validate(updated_row)
+        except Exception:
+            self.session.rollback()
+            raise
+
+    def delete_service(
+        self,
+        owner_user_id: str,
+        service_id: str,
+    ) -> None:
+        row = self.service_catalog.get(
+            owner_user_id,
+            service_id,
+        )
+
+        if row is None:
+            raise RepairResourceNotFound("repair service not found")
+
+        try:
+            self.service_catalog.delete(row)
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            raise
 
     def create_pricing_policy(
         self,

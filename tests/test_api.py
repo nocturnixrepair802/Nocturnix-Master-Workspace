@@ -152,7 +152,7 @@ def test_approval_lifecycle_ownership_expiry_duplicate_and_audit_redaction() -> 
         json={"action_type": "mock", "title": "Expire", "proposed_content": {}},
     ).json()
     container = cast(Any, c.app).state.container
-    from nocturnix.persistence_models import ApprovalRow
+    from nocturnix.persistence.models import ApprovalRow
 
     with container.session_factory() as session:
         row = session.get(ApprovalRow, expired["id"])

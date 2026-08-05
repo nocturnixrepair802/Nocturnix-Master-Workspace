@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nocturnix Development Assistant</title>
+  <link rel="stylesheet" href="/static/coding-assistant.css">
+</head>
+<body>
+  <main class="shell">
+    <header><div class="mark">N</div><div><h1>Nocturnix</h1><p>Development Assistant · read-only</p></div></header>
+    <section id="conversation" class="conversation" aria-live="polite">
+      <div class="welcome"><h2>What are you building?</h2><p>Ask for coding guidance, explanations, tests, or review help.</p></div>
+    </section>
+    <p id="error" class="error" role="alert" hidden></p>
+    <footer>
+      <label for="message">Coding question</label>
+      <textarea id="message" maxlength="20000" placeholder="Ask Nocturnix…" rows="4"></textarea>
+      <div class="actions"><span id="status">Ready · Ctrl+Enter to send</span><button id="send" type="button">Send</button></div>
+    </footer>
+  </main>
+  <script src="/static/coding-assistant.js" defer></script>
+</body>
+</html>

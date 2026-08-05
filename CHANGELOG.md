@@ -1,4 +1,75 @@
 # Changelog
+
+## Unreleased
+
+### Added
+
+- Integrated `/assistant` browser interface and owner-scoped assistant task/result APIs.
+- OpenAI Responses API coding provider with safe error translation and persisted task lifecycle.
+- Focused provider and web API tests that replace the provider with deterministic fakes.
+
+### Security
+
+- The coding assistant remains read-only and cannot edit files or execute commands.
+- Live OpenAI access requires explicit development configuration and existing authentication/CSRF.
+# Changelog
+
+## [0.3.0] - 2026-07-30
+
+### Added
+
+- OpenAI API configuration support
+- uv development environment
+- Modern dependency synchronization
+- Stable development environment
+
+### Changed
+
+- Standardized assistant identifiers
+- Updated assistant repository interfaces
+- Updated assistant service interfaces
+- Updated assistant registry integration
+- Standardized error handling
+- Improved repository query filtering
+- Updated assistant lifecycle management
+
+### Fixed
+
+- Assistant subsystem type inconsistencies
+- Repository interface mismatches
+- Registry typing conflicts
+- Service implementation inconsistencies
+- Repository filtering defects
+- Test suite compatibility issues
+- Mypy errors
+- Pylance diagnostics
+- Environment synchronization
+
+### Testing
+
+Successfully completed:
+
+- 142 automated tests
+
+Result:
+
+```
+142 passed in 34.05s
+```
+
+No failing tests remain.
+
+### Infrastructure
+
+Development environment migrated to:
+
+- uv
+- Python virtual environment
+- OpenAI API integration
+- synchronized dependency management
+
+
+
 # 0.1.4
 Completed:
 - Integrated app launches by default

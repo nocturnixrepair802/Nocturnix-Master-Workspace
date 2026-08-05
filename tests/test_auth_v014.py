@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from nocturnix import create_app
 from nocturnix.config import Settings
-from nocturnix.persistence_models import (
+from nocturnix.persistence.models import (
     OAuthAuthorizationStateRow,
     PasswordResetChallengeRow,
     SessionRow,

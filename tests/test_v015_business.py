@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 from nocturnix.db import Base, create_database_engine, create_session_factory, session_scope
-from nocturnix.persistence_models import ReminderRow
+from nocturnix.persistence.models import ReminderRow
 from nocturnix.services.business import (
     BusinessService,
     InAppMockNotificationProvider,

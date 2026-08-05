@@ -33,11 +33,15 @@ def test_openai_requires_external_provider_opt_in(tmp_path: Path) -> None:
 
 
 def test_openai_requires_api_key(tmp_path: Path) -> None:
-    with pytest.raises(ValidationError, match="OPENAI_API_KEY"):
+    with pytest.raises(
+        ValidationError,
+        match=r"openai_api_key|OPENAI_API_KEY",
+    ):
         base_settings(
             tmp_path,
             external_providers_enabled=True,
             openai_enabled=True,
+            openai_api_key=None,
         )
 
 

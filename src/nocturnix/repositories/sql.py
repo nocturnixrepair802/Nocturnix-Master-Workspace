@@ -18,7 +18,7 @@ from nocturnix.models import (
     RiskLevel,
     UserPreferences,
 )
-from nocturnix.persistence_models import (
+from nocturnix.persistence.models import (
     ApprovalRow,
     AuditEventRow,
     ChatMessageRow,

@@ -8,13 +8,13 @@ from sqlalchemy import create_engine, update
 from sqlalchemy.orm import Session
 
 from nocturnix.db import Base
+from nocturnix.persistence.repair_models import RepairConfirmationRow
 from nocturnix.repair_confirmation_store import (
     RepairConfirmationConsumed,
     RepairConfirmationExpired,
     RepairConfirmationNotFound,
     SqlRepairConfirmationStore,
 )
-from nocturnix.repair_persistence_models import RepairConfirmationRow
 
 
 @pytest.fixture
