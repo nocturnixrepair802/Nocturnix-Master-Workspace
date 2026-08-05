@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Any
 
@@ -8,88 +10,171 @@ from pydantic import ValidationError
 from nocturnix import create_app
 from nocturnix.config import Settings
 
-OWNER_HEADERS = {"X-Nocturnix-Dev-User": "repair-owner-001"}
+OWNER_HEADERS = {
+    "X-Nocturnix-Dev-User": "repair-owner-001",
+}
 
 
-def base_settings(tmp_path: Path, **overrides):
+def base_settings(
+    tmp_path: Path,
+    **overrides: Any,
+) -> Settings:
+    """
+    Build isolated OpenAI configuration settings.
+
+    Explicit defaults prevent the developer's root .env from changing
+    automated test behavior.
+    """
     values: dict[str, Any] = {
-        "database_url": f"sqlite:///{tmp_path / 'openai_config.db'}",
+        "database_url": (f"sqlite:///{tmp_path / 'openai_config.db'}"),
         "database_migration_mode": "auto-test-only",
         "auth_mode": "development_header",
         "allow_development_header_auth": True,
         "rate_limit_per_minute": 500,
+        "coding_provider": "mock",
+        "openai_enabled": False,
+        "external_providers_enabled": False,
+        "openai_api_key": "",
     }
     values.update(overrides)
+
     return Settings(**values)
 
 
-def test_openai_requires_external_provider_opt_in(tmp_path: Path) -> None:
-    with pytest.raises(ValidationError, match="EXTERNAL_PROVIDERS_ENABLED"):
+def test_openai_requires_external_provider_opt_in(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(
+        ValidationError,
+        match="EXTERNAL_PROVIDERS_ENABLED",
+    ):
         base_settings(
             tmp_path,
+            coding_provider="mock",
             openai_enabled=True,
+            external_providers_enabled=False,
             openai_api_key="test-key",
         )
 
 
-def test_openai_requires_api_key(tmp_path: Path) -> None:
+def test_openai_requires_api_key(
+    tmp_path: Path,
+) -> None:
     with pytest.raises(
         ValidationError,
         match=r"openai_api_key|OPENAI_API_KEY",
     ):
         base_settings(
             tmp_path,
+            coding_provider="openai",
             external_providers_enabled=True,
             openai_enabled=True,
             openai_api_key=None,
         )
 
 
-def test_external_providers_require_openai_provider(tmp_path: Path) -> None:
-    with pytest.raises(ValidationError, match="OPENAI_ENABLED"):
-        base_settings(tmp_path, external_providers_enabled=True)
+def test_external_providers_require_openai_provider(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(
+        ValidationError,
+        match="OPENAI_ENABLED",
+    ):
+        base_settings(
+            tmp_path,
+            coding_provider="mock",
+            external_providers_enabled=True,
+            openai_enabled=False,
+            openai_api_key="",
+        )
 
 
-def test_repair_agent_endpoint_is_disabled_by_default(tmp_path: Path) -> None:
-    app = create_app(base_settings(tmp_path))
+def test_repair_agent_endpoint_is_disabled_by_default(
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        base_settings(
+            tmp_path,
+            coding_provider="mock",
+            openai_enabled=False,
+            external_providers_enabled=False,
+            openai_api_key="",
+        )
+    )
+
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/ai/repair-tools/chat",
             headers=OWNER_HEADERS,
-            json={"message": "Find Ada Lovelace"},
+            json={
+                "message": "Find Ada Lovelace",
+            },
         )
+
     assert response.status_code == 503
-    assert response.json()["detail"] == "OpenAI repair agent is not enabled"
+    assert response.json()["detail"] == ("OpenAI repair agent is not enabled")
 
 
-def test_openai_configuration_accepts_explicit_complete_opt_in(tmp_path: Path) -> None:
+def test_openai_configuration_accepts_explicit_complete_opt_in(
+    tmp_path: Path,
+) -> None:
     settings = base_settings(
         tmp_path,
+        coding_provider="openai",
         external_providers_enabled=True,
         openai_enabled=True,
         openai_api_key="test-key",
         openai_model="gpt-test",
     )
+
+    assert settings.coding_provider == "openai"
     assert settings.openai_enabled is True
     assert settings.external_providers_enabled is True
     assert settings.openai_api_key == "test-key"
     assert settings.openai_model == "gpt-test"
 
 
-def test_settings_accept_mock_mode_without_api_key(tmp_path: Path) -> None:
-    settings = base_settings(tmp_path, coding_provider="mock", openai_api_key="")
+def test_settings_accept_mock_mode_without_api_key(
+    tmp_path: Path,
+) -> None:
+    settings = base_settings(
+        tmp_path,
+        coding_provider="mock",
+        openai_enabled=False,
+        external_providers_enabled=False,
+        openai_api_key="",
+    )
+
     assert settings.coding_provider == "mock"
+    assert settings.openai_enabled is False
+    assert settings.external_providers_enabled is False
     assert settings.openai_api_key == ""
 
 
-def test_settings_reject_unsupported_coding_provider(tmp_path: Path) -> None:
+def test_settings_reject_unsupported_coding_provider(
+    tmp_path: Path,
+) -> None:
     with pytest.raises(ValidationError):
-        base_settings(tmp_path, coding_provider="unsupported")
+        base_settings(
+            tmp_path,
+            coding_provider="unsupported",
+        )
 
 
-def test_openai_coding_provider_requires_complete_configuration(tmp_path: Path) -> None:
-    with pytest.raises(ValidationError, match="CODING_PROVIDER=openai"):
-        base_settings(tmp_path, coding_provider="openai")
+def test_openai_coding_provider_requires_complete_configuration(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(
+        ValidationError,
+        match="CODING_PROVIDER=openai",
+    ):
+        base_settings(
+            tmp_path,
+            coding_provider="openai",
+            external_providers_enabled=False,
+            openai_enabled=False,
+            openai_api_key="",
+        )
 
     settings = base_settings(
         tmp_path,
@@ -97,5 +182,10 @@ def test_openai_coding_provider_requires_complete_configuration(tmp_path: Path) 
         external_providers_enabled=True,
         openai_enabled=True,
         openai_api_key="test-key",
+        openai_model="gpt-test",
     )
+
     assert settings.coding_provider == "openai"
+    assert settings.openai_enabled is True
+    assert settings.external_providers_enabled is True
+    assert settings.openai_api_key == "test-key"
