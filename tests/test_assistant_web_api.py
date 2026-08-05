@@ -1,18 +1,19 @@
 from pathlib import Path
-from typing import cast
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import Table, select
+from sqlalchemy import select
 
 from nocturnix import create_app
-from nocturnix.assistant.openai_provider import CodingProviderError
+from nocturnix.assistant.mock_provider import MockCodingProvider
+from nocturnix.assistant.openai_provider import CodingProviderError, OpenAICodingProvider
 from nocturnix.config import Settings
 from nocturnix.db import create_database_engine, create_session_factory
 from nocturnix.persistence.models import AssistantResultRow, AssistantTaskRow
 
 
 class FakeProvider:
+    provider = "mock"
     model = "test-coding-model"
 
     def answer(self, message: str, context: str | None = None) -> str:
@@ -39,27 +40,6 @@ def assistant_client(tmp_path: Path):
         )
     )
 
-    schema_engine = create_database_engine(database_url)
-
-    assistant_task_table = cast(
-        Table,
-        AssistantTaskRow.__table__,
-    )
-    assistant_result_table = cast(
-        Table,
-        AssistantResultRow.__table__,
-    )
-
-    assistant_task_table.create(
-        bind=schema_engine,
-        checkfirst=True,
-    )
-    assistant_result_table.create(
-        bind=schema_engine,
-        checkfirst=True,
-    )
-    schema_engine.dispose()
-
     app.state.coding_provider = FakeProvider()
 
     with TestClient(app) as client:
@@ -82,6 +62,8 @@ def test_page_health_and_static_mount(assistant_client) -> None:
     assert health.json() == {
         "status": "ok",
         "service": "nocturnix-development-assistant",
+        "provider": "mock",
+        "model": "test-coding-model",
         "openai_configured": False,
         "database_configured": True,
     }
@@ -165,4 +147,35 @@ def test_chat_requires_authentication_and_configuration(assistant_client) -> Non
     client.app.state.coding_provider = None
     response = client.post("/api/assistant/chat", headers=headers(), json={"message": "Hello"})
     assert response.status_code == 503
-    assert response.json()["detail"] == "OpenAI is not configured."
+    assert response.json()["detail"] == "Coding provider is not configured."
+
+
+def test_application_selects_mock_provider(tmp_path: Path) -> None:
+    app = create_app(
+        Settings(
+            database_url=f"sqlite:///{tmp_path / 'mock.db'}",
+            database_migration_mode="auto-test-only",
+            coding_provider="mock",
+        )
+    )
+    assert isinstance(app.state.coding_provider, MockCodingProvider)
+
+
+def test_application_selects_openai_provider(tmp_path: Path, monkeypatch) -> None:
+    import nocturnix.assistant.openai_provider as openai_provider
+
+    class Client:
+        pass
+
+    monkeypatch.setattr(openai_provider, "OpenAI", lambda **kwargs: Client())
+    app = create_app(
+        Settings(
+            database_url=f"sqlite:///{tmp_path / 'openai.db'}",
+            database_migration_mode="auto-test-only",
+            coding_provider="openai",
+            external_providers_enabled=True,
+            openai_enabled=True,
+            openai_api_key="test-key",
+        )
+    )
+    assert isinstance(app.state.coding_provider, OpenAICodingProvider)

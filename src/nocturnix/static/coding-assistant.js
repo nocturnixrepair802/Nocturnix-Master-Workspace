@@ -3,7 +3,29 @@ const message = document.querySelector("#message");
 const send = document.querySelector("#send");
 const status = document.querySelector("#status");
 const error = document.querySelector("#error");
+const providerBadge = document.querySelector("#provider-badge");
+const mockNotice = document.querySelector("#mock-notice");
 let conversationId = null;
+
+async function loadHealth() {
+  try {
+    const response = await fetch("/api/assistant/health", { headers: requestHeaders() });
+    const body = await response.json();
+    if (!response.ok) throw new Error("Health check failed");
+    const label = body.provider === "openai" ? "OpenAI" : "Mock";
+    providerBadge.textContent = `Development provider: ${label}`;
+    if (body.provider === "mock") {
+      mockNotice.textContent =
+        "Mock mode is active: responses are deterministic development responses " +
+        "and do not consume API credits.";
+      mockNotice.hidden = false;
+    } else {
+      mockNotice.hidden = true;
+    }
+  } catch {
+    providerBadge.textContent = "Development provider: unavailable";
+  }
+}
 
 function requestHeaders() {
   const headers = { "Content-Type": "application/json" };
@@ -44,10 +66,7 @@ async function submit() {
   try {
     const response = await fetch("/api/assistant/chat", {
       method: "POST",
-      headers: {
-          "Content-Type": "application/json",
-          "X-Nocturnix-Dev-User": "local-developer",
-      },
+      headers: requestHeaders(),
       body: JSON.stringify({ message: text, conversation_id: conversationId }),
     });
     const body = await response.json();
@@ -69,3 +88,5 @@ send.addEventListener("click", submit);
 message.addEventListener("keydown", (event) => {
   if (event.ctrlKey && event.key === "Enter") submit();
 });
+
+loadHealth();

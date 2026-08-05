@@ -126,3 +126,9 @@ Threats considered include credential theft, password database compromise, sessi
 # Nocturnix AI Assistant v0.1.6 Memory, Planning & Autonomous Task Engine
 
 Version 0.1.6 remains development-only and mock-only. It adds durable owner-scoped memories, conversation-summary storage, planning tasks, reminder readiness records, focus mode, dashboard/search APIs, and a natural-language command router for capture and retrieval. No repair-ticket platform, production AI provider, notification provider, deployment, or live integration is added.
+
+## Unreleased
+
+- Added `NOCTURNIX_CODING_PROVIDER=mock|openai` for the browser coding assistant.
+- Added a deterministic `nocturnix-mock` provider that exercises task, result, authentication, API, persistence, and browser flows without network calls or API credit usage.
+- Cleaned the assistant task/result Alembic migration so it only creates and drops assistant tables and indexes.

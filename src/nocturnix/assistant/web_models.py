@@ -36,6 +36,8 @@ class AssistantChatResponse(BaseModel):
 class AssistantHealthResponse(BaseModel):
     status: str
     service: str
+    provider: str
+    model: str
     openai_configured: bool
     database_configured: bool
 

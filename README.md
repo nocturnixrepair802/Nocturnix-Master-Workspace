@@ -89,3 +89,25 @@ Planned additions:
 - Private online deployment
 
 The objective is to transform Nocturnix from a backend platform into a usable browser-based AI application.
+
+## Development coding provider
+
+For zero-cost local browser-assistant testing, run the coding assistant with the deterministic mock provider:
+
+```bash
+NOCTURNIX_CODING_PROVIDER=mock
+NOCTURNIX_AUTH_MODE=development_header
+NOCTURNIX_ALLOW_DEVELOPMENT_HEADER_AUTH=true
+```
+
+Mock mode makes no external calls, consumes no API credit, and is intended only for development and UI testing. It does not provide real model intelligence, but it still exercises authentication, persistence, assistant tasks, assistant results, API routing, and browser rendering.
+
+To use the real OpenAI coding provider instead, opt in explicitly:
+
+```bash
+NOCTURNIX_CODING_PROVIDER=openai
+NOCTURNIX_OPENAI_ENABLED=true
+NOCTURNIX_EXTERNAL_PROVIDERS_ENABLED=true
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-5-mini
+```
