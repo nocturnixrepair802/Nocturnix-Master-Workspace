@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingProviderError
 from nocturnix.assistant.repositories import AssistantTaskRepository
+from nocturnix.assistant.repository_access import RepositoryAccessService
 from nocturnix.assistant.service import AssistantTaskService
 from nocturnix.assistant.web_models import AssistantChatRequest, AssistantChatResponse
 from nocturnix.persistence.models import ConversationRow
@@ -19,14 +20,26 @@ class CodingAssistantService:
         session: Session,
         provider: CodingAssistantProvider,
         conversation_retention_days: int = 30,
+        repository: RepositoryAccessService | None = None,
     ) -> None:
         self._session = session
         self._provider = provider
         self._conversation_retention_days = conversation_retention_days
+        self._repository = repository
         self.tasks = AssistantTaskService(AssistantTaskRepository(session))
 
     def chat(self, owner_user_id: str, request: AssistantChatRequest) -> AssistantChatResponse:
         conversation_id = self._conversation(owner_user_id, request.conversation_id)
+        repository_context = request.project_context
+        attached_files: list[str] = []
+        if request.selected_files:
+            if self._repository is None:
+                raise ValueError("Repository access is not configured.")
+            loaded_context, attached_files = self._repository.load_context(request.selected_files)
+            repository_context = "\n\n".join(
+                part for part in [request.project_context, loaded_context] if part
+            )
+
         task = self.tasks.create_task(
             owner_user_id=owner_user_id,
             conversation_id=conversation_id,
@@ -35,12 +48,12 @@ class CodingAssistantService:
             instructions=request.message,
             input_data={
                 "has_project_context": bool(request.project_context),
-                "selected_files": request.selected_files,
+                "selected_files": attached_files,
             },
         )
         self.tasks.start_task(task.id, owner_user_id=owner_user_id)
         try:
-            answer = self._provider.answer(request.message, request.project_context)
+            answer = self._provider.answer(request.message, repository_context)
         except CodingProviderError:
             self.tasks.fail_task(
                 task.id,
