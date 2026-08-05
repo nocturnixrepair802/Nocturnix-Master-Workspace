@@ -67,9 +67,7 @@ def test_repository_endpoints_require_authentication(tmp_path: Path) -> None:
         assert client.get("/api/assistant/repository/status").status_code == 401
         assert client.get("/api/assistant/repository/files").status_code == 401
         assert (
-            client.post(
-                "/api/assistant/repository/search", json={"query": "service"}
-            ).status_code
+            client.post("/api/assistant/repository/search", json={"query": "service"}).status_code
             == 401
         )
         assert client.get("/api/assistant/repository/file?path=README.md").status_code == 401
@@ -85,7 +83,7 @@ def test_file_listing_excludes_ignored_paths_and_filters(tmp_path: Path) -> None
     assert response.status_code == 200
     body = response.json()
     assert body["total"] == 1
-    paths = [item["relative_path"] for item in body["items"]]
+    paths = [item["path"] for item in body["items"]]
     assert paths == ["src/service.py"]
     assert ".env" not in response.text
     assert "local.db" not in response.text
@@ -157,6 +155,7 @@ def test_filename_content_extension_and_limit_search(tmp_path: Path) -> None:
     assert filename.json()["items"][0]["match_type"] == "filename"
     assert content.status_code == 200
     match = content.json()["items"][0]
+    assert match["path"] == "src/service.py"
     assert match["match_type"] == "content"
     assert match["line_number"] == 1
     assert "AssistantTaskService" in match["excerpt"]

@@ -4,6 +4,7 @@ from tempfile import gettempdir
 from typing import Any, cast
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from nocturnix import create_app
@@ -18,9 +19,19 @@ _CLIENTS: list[TestClient] = []
 def close_test_clients():
     yield
     while _CLIENTS:
-        test_client = _CLIENTS.pop()
-        test_client.app.state.container.engine.dispose()
-        test_client.close()
+        client = _CLIENTS.pop()
+        client.app = cast(FastAPI, client.app)
+        container = getattr(cast(Any, client.app).state, "container", None)
+        if callable(container):
+            container = container()
+        if container is not None:
+            shutdown_resources = getattr(container, "shutdown_resources", None)
+            if callable(shutdown_resources):
+                shutdown_resources()
+            unwire = getattr(container, "unwire", None)
+            if callable(unwire):
+                unwire()
+        client.close()
 
 
 def client(rate: int = 120, db_path: Path | None = None) -> TestClient:

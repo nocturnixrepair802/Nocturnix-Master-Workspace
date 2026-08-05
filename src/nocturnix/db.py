@@ -66,6 +66,8 @@ def run_migrations(database_url: str) -> None:
 
 
 def current_revision(database_url: str) -> str | None:
+    engine: Engine | None = None
+
     try:
         engine = create_database_engine(database_url)
         with engine.connect() as conn:
@@ -74,10 +76,9 @@ def current_revision(database_url: str) -> str | None:
             return conn.execute(
                 text("select version_num from alembic_version")
             ).scalar_one_or_none()
-    except Exception:
-        return None
     finally:
-        engine.dispose()
+        if engine is not None:
+            engine.dispose()
 
 
 def head_revision() -> str:
@@ -85,12 +86,19 @@ def head_revision() -> str:
 
 
 def database_ready(database_url: str) -> bool:
+    engine: Engine | None = None
+
     try:
         engine = create_database_engine(database_url)
+
         with engine.connect() as conn:
             conn.execute(text("select 1"))
+
         return current_revision(database_url) == head_revision()
+
     except Exception:
         return False
+
     finally:
-        engine.dispose()
+        if engine is not None:
+            engine.dispose()

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from nocturnix.assistant.local_code_summary import summarize_repository_context_text
+
 
 class MockCodingProvider:
     """Deterministic local coding provider for development and UI tests."""
@@ -10,16 +12,13 @@ class MockCodingProvider:
     def answer(self, message: str, context: str | None = None) -> str:
         context_note = ""
         if context:
-            attached = [
-                line[4:-4].strip()
-                for line in context.splitlines()
-                if line.startswith("--- ") and line.endswith(" ---")
-            ]
-            if attached:
+            repository_summary = summarize_repository_context_text(context)
+            if repository_summary:
                 context_note = (
-                    "\n\nRepository files attached "
-                    "(mock mode names them without semantic analysis):\n"
-                    + "\n".join(f"- {name}" for name in attached)
+                    "\n\nAttached repository files summary:\n"
+                    f"{repository_summary}\n\n"
+                    "This summary is deterministic and local. No external model, network request, "
+                    "command execution, or file modification was performed."
                 )
             else:
                 context_note = (

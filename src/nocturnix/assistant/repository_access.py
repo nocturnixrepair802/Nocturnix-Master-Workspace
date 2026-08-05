@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import fnmatch
 import os
-from dataclasses import dataclass
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from nocturnix.assistant.repository_models import (
@@ -70,13 +69,6 @@ class RepositoryNotFoundError(RepositoryAccessError):
     status_code = 404
 
 
-@dataclass(frozen=True)
-class LoadedRepositoryFile:
-    relative_path: str
-    content: str
-    size_bytes: int
-
-
 class RepositoryAccessService:
     def __init__(self, root: Path | str, max_file_bytes: int, search_result_limit: int) -> None:
         self.root = Path(root).expanduser().resolve(strict=True)
@@ -108,7 +100,7 @@ class RepositoryAccessService:
         items = [
             item
             for item in self._safe_files()
-            if (not normalized_prefix or item.relative_path.startswith(normalized_prefix))
+            if (not normalized_prefix or item.path.startswith(normalized_prefix))
             and (not normalized_extension or item.extension == normalized_extension)
         ]
         return RepositoryFilesResponse(
@@ -134,23 +126,23 @@ class RepositoryAccessService:
         for item in self._safe_files():
             if wanted_extensions and item.extension not in wanted_extensions:
                 continue
-            if needle in item.relative_path.casefold():
+            if needle in item.path.casefold():
                 matches.append(
                     RepositorySearchMatch(
-                        relative_path=item.relative_path,
+                        path=item.path,
                         match_type="filename",
-                        excerpt=item.relative_path,
+                        excerpt=item.path,
                         order=order,
                     )
                 )
                 order += 1
             if search_content and len(matches) < max_results:
-                content = self.read_file(item.relative_path).content
+                content = self.read_file(item.path).content
                 for line_no, line in enumerate(content.splitlines(), start=1):
                     if needle in line.casefold():
                         matches.append(
                             RepositorySearchMatch(
-                                relative_path=item.relative_path,
+                                path=item.path,
                                 match_type="content",
                                 line_number=line_no,
                                 excerpt=line.strip()[:240],
@@ -161,7 +153,11 @@ class RepositoryAccessService:
                         break
             if len(matches) >= max_results:
                 break
-        return RepositorySearchResponse(query=query, items=matches[:max_results], limit=max_results)
+        return RepositorySearchResponse(
+            query=query,
+            items=matches[:max_results],
+            limit=max_results,
+        )
 
     def read_file(self, relative_path: str) -> RepositoryFileResponse:
         path = self._resolve_file(relative_path)
@@ -177,50 +173,76 @@ class RepositoryAccessService:
             raise RepositoryAccessError("File is not valid UTF-8 text.") from exc
         rel = path.relative_to(self.root).as_posix()
         return RepositoryFileResponse(
-            relative_path=rel,
+            path=rel,
             extension=path.suffix.lower(),
             size_bytes=stat.st_size,
             content=content,
             truncated=False,
         )
 
-    def load_context(self, selected_files: list[str]) -> tuple[str | None, list[str]]:
+    def load_context(
+        self,
+        selected_files: list[str],
+    ) -> tuple[str | None, list[str]]:
         if not selected_files:
             return None, []
+
         parts: list[str] = []
         names: list[str] = []
         total = 0
+
         for selected in selected_files:
             loaded = self.read_file(selected)
             total += loaded.size_bytes
+
             if total > MAX_CONTEXT_BYTES:
                 raise RepositoryAccessError("Selected repository files exceed the context limit.")
-            names.append(loaded.relative_path)
-            parts.append(f"--- {loaded.relative_path} ---\n{loaded.content}")
+
+            names.append(loaded.path)
+            parts.append(f"File: {loaded.path}\n{loaded.content}")
+
         return "\n\n".join(parts), names
 
     def _resolve_file(self, raw_path: str) -> Path:
-        if "\x00" in raw_path:
+        if "\x00" in raw_path or "\\" in raw_path:
             raise RepositoryAccessError("Repository path is invalid.")
-        posix = PurePosixPath(raw_path)
-        windows = PureWindowsPath(raw_path)
+
+        posix_path = PurePosixPath(raw_path)
+        windows_path = PureWindowsPath(raw_path)
+
         if (
-            posix.is_absolute()
-            or windows.is_absolute()
-            or windows.drive
+            posix_path.is_absolute()
+            or windows_path.is_absolute()
+            or windows_path.drive
             or raw_path.startswith(("//", "\\\\"))
         ):
             raise RepositoryAccessError("Repository path must be relative.")
-        if any(part in {"", ".", ".."} for part in posix.parts):
+
+        if ".." in posix_path.parts:
+            raise RepositoryAccessError("Repository path is outside repository root.")
+
+        if any(part in {"", "."} for part in posix_path.parts):
             raise RepositoryAccessError("Repository path contains unsafe segments.")
-        candidate = (self.root / Path(*posix.parts)).resolve(strict=True)
+
+        try:
+            candidate = (self.root / Path(*posix_path.parts)).resolve(strict=True)
+        except OSError as exc:
+            raise RepositoryNotFoundError("Repository file was not found.") from exc
+
         if not candidate.is_relative_to(self.root):
             raise RepositoryAccessError("Repository path escapes the configured root.")
+
         if not candidate.is_file():
             raise RepositoryNotFoundError("Repository file was not found.")
-        rel = candidate.relative_to(self.root).as_posix()
-        if self._ignored(rel, candidate) or candidate.suffix.lower() not in SAFE_TEXT_EXTENSIONS:
+
+        relative_path = candidate.relative_to(self.root).as_posix()
+
+        if (
+            self._ignored(relative_path, candidate)
+            or candidate.suffix.lower() not in SAFE_TEXT_EXTENSIONS
+        ):
             raise RepositoryAccessError("Repository file is not approved for access.")
+
         return candidate
 
     def _safe_files(self) -> list[RepositoryFileItem]:
@@ -246,14 +268,14 @@ class RepositoryAccessService:
                         continue
                     items.append(
                         RepositoryFileItem(
-                            relative_path=rel,
+                            path=rel,
                             extension=path.suffix.lower(),
                             size_bytes=path.stat().st_size,
                         )
                     )
                 except OSError:
                     continue
-        return sorted(items, key=lambda item: item.relative_path)
+        return sorted(items, key=lambda item: item.path)
 
     def _scan_counts(self) -> tuple[int, int]:
         indexed = 0
@@ -304,6 +326,7 @@ class RepositoryAccessService:
     def _resolve_relative_only(self, value: str) -> None:
         if (
             "\x00" in value
+            or "\\" in value
             or PurePosixPath(value).is_absolute()
             or PureWindowsPath(value).is_absolute()
             or ".." in PurePosixPath(value).parts
