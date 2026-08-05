@@ -299,3 +299,9 @@ Initially, repository modifications will remain user-controlled.
 The immediate objective is to evolve Nocturnix from a fully tested backend platform into a browser-accessible AI application by introducing a FastAPI web layer that reuses the existing backend architecture.
 
 All future development should preserve the current green build and maintain complete automated test success.
+
+## v0.1.4 assistant provider foundation
+
+- Mock coding provider is available for development and UI testing with no external requests or API credit usage.
+- OpenAI coding provider remains the real-provider path and requires explicit external-provider opt-in plus an API key.
+- Future production work must still address real deployment hardening, production secrets, and live-provider operational controls.
