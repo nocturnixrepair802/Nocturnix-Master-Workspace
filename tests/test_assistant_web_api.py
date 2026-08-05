@@ -12,6 +12,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from nocturnix import create_app
+from nocturnix.assistant.mock_provider import MockCodingProvider
 from nocturnix.assistant.openai_provider import CodingProviderError
 from nocturnix.config import Settings
 from nocturnix.db import create_database_engine, create_session_factory
@@ -166,7 +167,7 @@ def test_chat_validates_and_persists_completed_task(
         json={
             "message": "Explain FastAPI dependency injection.",
             "selected_files": [
-                "app.py",
+                "README.md",
             ],
         },
     )
@@ -250,6 +251,116 @@ def test_chat_validates_and_persists_completed_task(
     assert other_owner_results_response.status_code == 404
 
 
+def test_selected_files_are_passed_to_mock_provider_and_persisted(
+    tmp_path: Path,
+) -> None:
+    settings = make_test_settings(
+        tmp_path,
+        database_url=(f"sqlite:///{tmp_path / 'assistant-selected-files.db'}"),
+        coding_provider="mock",
+    )
+    app = create_app(settings)
+
+    # Ensure the provider is the actual mock provider used in production.
+    app.state.coding_provider = MockCodingProvider()
+
+    selected_path = "src/nocturnix/assistant/service.py"
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/assistant/chat",
+            headers=headers(),
+            json={
+                "message": "Explain what AssistantTaskService does.",
+                "selected_files": [
+                    selected_path,
+                ],
+            },
+        )
+
+    assert response.status_code == 200
+    answer = response.json()["answer"]
+    assert "Attached repository files summary:" in answer
+    assert "File: src/nocturnix/assistant/service.py" in answer
+    assert "deterministic and local" in answer
+
+    engine, session = open_session(settings.database_url)
+    try:
+        task = session.scalar(
+            select(AssistantTaskRow).where(
+                AssistantTaskRow.id == response.json()["task_id"],
+            )
+        )
+        assert task is not None
+        assert task.input_data["selected_files"] == [
+            "src/nocturnix/assistant/service.py",
+        ]
+    finally:
+        session.close()
+        engine.dispose()
+
+
+def test_invalid_selected_file_returns_400(
+    assistant_client: tuple[TestClient, str, FastAPI],
+) -> None:
+    client, _, _ = assistant_client
+
+    response = client.post(
+        "/api/assistant/chat",
+        headers=headers(),
+        json={
+            "message": "Explain what AssistantTaskService does.",
+            "selected_files": ["../outside.txt"],
+        },
+    )
+
+    assert response.status_code == 400
+    assert "outside repository root" in response.json()["detail"]
+
+
+def test_selected_file_content_reaches_provider_context(
+    tmp_path: Path,
+) -> None:
+    class RecordingProvider:
+        provider = "mock"
+        model = "recording-model"
+
+        def __init__(self) -> None:
+            self.captured_context: str | None = None
+
+        def answer(self, message: str, context: str | None = None) -> str:
+            self.captured_context = context
+            return f"Captured context length {len(context or '')}"
+
+    settings = make_test_settings(
+        tmp_path,
+        database_url=(f"sqlite:///{tmp_path / 'assistant-recording.db'}"),
+        coding_provider="mock",
+    )
+    app = create_app(settings)
+    provider = RecordingProvider()
+    app.state.coding_provider = provider
+
+    selected_path = "src/nocturnix/assistant/service.py"
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/assistant/chat",
+            headers=headers(),
+            json={
+                "message": "Explain what AssistantTaskService does.",
+                "selected_files": [
+                    selected_path,
+                ],
+            },
+        )
+
+    assert response.status_code == 200
+    assert provider.captured_context is not None
+    assert "File: src/nocturnix/assistant/service.py" in provider.captured_context
+    assert "class AssistantTaskService" in provider.captured_context
+
+
 def test_provider_failure_is_safe_and_marks_task_failed(
     assistant_client: tuple[TestClient, str, FastAPI],
 ) -> None:
@@ -312,9 +423,7 @@ def test_chat_requires_authentication_and_configuration(
     )
 
     assert missing_provider_response.status_code == 503
-    assert missing_provider_response.json()["detail"] == (
-        "Coding provider is not configured."
-    )
+    assert missing_provider_response.json()["detail"] == ("Coding provider is not configured.")
 
 
 def test_application_selects_mock_provider(
