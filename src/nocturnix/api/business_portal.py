@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
@@ -8,11 +8,7 @@ from fastapi.responses import FileResponse
 
 from nocturnix.models import UserIdentity
 
-_PORTAL_FILE = (
-    Path(__file__).resolve().parent.parent
-    / "static"
-    / "business-portal.html"
-)
+_PORTAL_FILE = Path(__file__).resolve().parent.parent / "static" / "business-portal.html"
 
 
 def create_business_portal_router(

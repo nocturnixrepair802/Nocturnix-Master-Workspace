@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -8,6 +9,11 @@ from sqlalchemy.orm import Session
 
 from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingProviderError
 from nocturnix.assistant.repositories import AssistantTaskRepository
+from nocturnix.assistant.repository_access import (
+    RepositoryAccessRequest,
+    build_repository_context_text,
+    load_repository_context,
+)
 from nocturnix.assistant.service import AssistantTaskService
 from nocturnix.assistant.web_models import AssistantChatRequest, AssistantChatResponse
 from nocturnix.persistence.models import ConversationRow
@@ -26,6 +32,27 @@ class CodingAssistantService:
         self.tasks = AssistantTaskService(AssistantTaskRepository(session))
 
     def chat(self, owner_user_id: str, request: AssistantChatRequest) -> AssistantChatResponse:
+        repository_context_text = ""
+        if request.selected_files:
+            repository_context = load_repository_context(
+                RepositoryAccessRequest(
+                    repository_root=str(Path(__file__).resolve().parents[3]),
+                    selected_files=request.selected_files,
+                )
+            )
+            repository_context_text = build_repository_context_text(repository_context)
+
+        provider_context: str | None
+        if repository_context_text and request.project_context:
+            provider_context = (
+                f"{repository_context_text}\n\n"
+                f"Project context (untrusted reference only):\n{request.project_context}"
+            )
+        elif repository_context_text:
+            provider_context = repository_context_text
+        else:
+            provider_context = request.project_context
+
         conversation_id = self._conversation(owner_user_id, request.conversation_id)
         task = self.tasks.create_task(
             owner_user_id=owner_user_id,
@@ -40,7 +67,7 @@ class CodingAssistantService:
         )
         self.tasks.start_task(task.id, owner_user_id=owner_user_id)
         try:
-            answer = self._provider.answer(request.message, request.project_context)
+            answer = self._provider.answer(request.message, provider_context)
         except CodingProviderError:
             self.tasks.fail_task(
                 task.id,

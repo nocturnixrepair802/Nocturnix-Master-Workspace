@@ -5,6 +5,7 @@ const status = document.querySelector("#status");
 const error = document.querySelector("#error");
 const providerBadge = document.querySelector("#provider-badge");
 const mockNotice = document.querySelector("#mock-notice");
+const selectedFiles = new Set();
 let conversationId = null;
 
 async function loadHealth() {
@@ -67,10 +68,13 @@ async function submit() {
     const response = await fetch("/api/assistant/chat", {
       method: "POST",
       headers: requestHeaders(),
-      body: JSON.stringify({ message: text, conversation_id: conversationId }),
-    });
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.detail || "The assistant request failed.");
+      body: JSON.stringify({
+          message,
+          conversation_id: conversationId,
+          selected_files: Array.from(selectedFiles),
+      }),
+    const body = await response.json()
+    if (!response.ok) throw new Error(body.detail || "The assistant request failed.")
     conversationId = body.conversation_id;
     addMessage("assistant", body.answer, true);
     status.textContent = `Task ${body.status}`;
@@ -90,3 +94,13 @@ message.addEventListener("keydown", (event) => {
 });
 
 loadHealth();
+
+function selectFile(path) {
+    selectedFiles.add(path);
+    renderSelectedFiles();
+}
+
+function removeSelectedFile(path) {
+    selectedFiles.delete(path);
+    renderSelectedFiles();
+}

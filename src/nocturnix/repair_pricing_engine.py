@@ -14,9 +14,7 @@ BASIS_POINTS_PER_WHOLE = 10_000
 def _apply_basis_points(amount_cents: int, basis_points: int) -> int:
     """Apply a basis-point rate and round to the nearest cent."""
 
-    result = (
-        Decimal(amount_cents) * Decimal(basis_points) / Decimal(BASIS_POINTS_PER_WHOLE)
-    )
+    result = Decimal(amount_cents) * Decimal(basis_points) / Decimal(BASIS_POINTS_PER_WHOLE)
 
     return int(result.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
@@ -31,9 +29,7 @@ def _calculate_margin_basis_points(
         return 0
 
     result = (
-        Decimal(gross_profit_cents)
-        * Decimal(BASIS_POINTS_PER_WHOLE)
-        / Decimal(total_price_cents)
+        Decimal(gross_profit_cents) * Decimal(BASIS_POINTS_PER_WHOLE) / Decimal(total_price_cents)
     )
 
     return int(result.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
