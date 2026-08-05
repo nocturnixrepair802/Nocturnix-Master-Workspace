@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 
-from nocturnix.assistant.openai_provider import OpenAICodingProvider
+from nocturnix.assistant.provider_factory import create_coding_provider
 from nocturnix.config import Settings
 from nocturnix.db import (
     create_database_engine,
@@ -97,15 +97,7 @@ class AppContainer:
         self.session_factory = create_session_factory(self.engine)
         self.knowledge = KnowledgeService(settings.safe_knowledge_path)
         self.assistant = MockAssistantProvider()
-        self.coding_provider = (
-            OpenAICodingProvider(
-                settings.openai_api_key,
-                settings.openai_model,
-                settings.openai_timeout_seconds,
-            )
-            if settings.openai_enabled and settings.external_providers_enabled
-            else None
-        )
+        self.coding_provider = create_coding_provider(settings)
         self.rate_buckets: dict[str, list[float]] = defaultdict(list)
 
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
     mock_providers_enabled: bool = True
     external_providers_enabled: bool = False
     openai_enabled: bool = False
+    coding_provider: Literal["mock", "openai"] = "mock"
     openai_api_key: str = Field(
         default="",
         repr=False,
@@ -81,6 +83,8 @@ class Settings(BaseSettings):
             raise ValueError("SESSION_COOKIE_SAMESITE must be lax, strict, or none")
         if not self.database_url.startswith(("sqlite:///", "sqlite:///:memory:")):
             raise ValueError("only development SQLite DATABASE_URL is enabled in v0.1.4")
+        if self.coding_provider == "openai" and not self.openai_enabled:
+            raise ValueError("CODING_PROVIDER=openai requires OPENAI_ENABLED")
         if self.openai_enabled and not self.external_providers_enabled:
             raise ValueError("OPENAI_ENABLED requires EXTERNAL_PROVIDERS_ENABLED")
         if self.openai_enabled and not self.openai_api_key:

@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from nocturnix.assistant.coding_service import CodingAssistantService, ConversationAccessError
 from nocturnix.assistant.exceptions import AssistantTaskNotFoundError
 from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingProviderError
+from nocturnix.assistant.provider_factory import provider_name
 from nocturnix.assistant.repositories import AssistantTaskRepository
 from nocturnix.assistant.web_models import (
     AssistantChatRequest,
@@ -37,9 +38,12 @@ def create_assistant_web_router(
     @router.get("/api/assistant/health", response_model=AssistantHealthResponse)
     def health(request: Request) -> AssistantHealthResponse:
         settings = request.app.state.container.settings
+        provider: CodingAssistantProvider | None = request.app.state.coding_provider
         return AssistantHealthResponse(
             status="ok",
             service="nocturnix-development-assistant",
+            provider=provider_name(provider) if provider is not None else settings.coding_provider,
+            model=provider.model if provider is not None else settings.openai_model,
             openai_configured=bool(
                 settings.openai_enabled
                 and settings.external_providers_enabled
@@ -58,7 +62,7 @@ def create_assistant_web_router(
     ) -> AssistantChatResponse:
         provider: CodingAssistantProvider | None = request.app.state.coding_provider
         if provider is None:
-            raise HTTPException(status_code=503, detail="OpenAI is not configured.")
+            raise HTTPException(status_code=503, detail="Coding provider is not configured.")
         try:
             return CodingAssistantService(
                 services.session,

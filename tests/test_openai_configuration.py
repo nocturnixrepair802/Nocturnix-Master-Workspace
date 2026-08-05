@@ -74,3 +74,28 @@ def test_openai_configuration_accepts_explicit_complete_opt_in(tmp_path: Path) -
     assert settings.external_providers_enabled is True
     assert settings.openai_api_key == "test-key"
     assert settings.openai_model == "gpt-test"
+
+
+def test_settings_accept_mock_mode_without_api_key(tmp_path: Path) -> None:
+    settings = base_settings(tmp_path, coding_provider="mock", openai_api_key="")
+    assert settings.coding_provider == "mock"
+    assert settings.openai_api_key == ""
+
+
+def test_settings_reject_unsupported_coding_provider(tmp_path: Path) -> None:
+    with pytest.raises(ValidationError):
+        base_settings(tmp_path, coding_provider="unsupported")
+
+
+def test_openai_coding_provider_requires_complete_configuration(tmp_path: Path) -> None:
+    with pytest.raises(ValidationError, match="CODING_PROVIDER=openai"):
+        base_settings(tmp_path, coding_provider="openai")
+
+    settings = base_settings(
+        tmp_path,
+        coding_provider="openai",
+        external_providers_enabled=True,
+        openai_enabled=True,
+        openai_api_key="test-key",
+    )
+    assert settings.coding_provider == "openai"
