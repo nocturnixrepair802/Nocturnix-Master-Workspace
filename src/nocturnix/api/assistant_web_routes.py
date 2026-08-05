@@ -10,12 +10,16 @@ from nocturnix.assistant.coding_service import CodingAssistantService, Conversat
 from nocturnix.assistant.exceptions import AssistantTaskNotFoundError
 from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingProviderError
 from nocturnix.assistant.provider_factory import provider_name
+from nocturnix.assistant.reference_analysis import analyze_repository_references
 from nocturnix.assistant.repositories import AssistantTaskRepository
 from nocturnix.assistant.repository_access import RepositoryAccessError
 from nocturnix.assistant.web_models import (
     AssistantChatRequest,
     AssistantChatResponse,
     AssistantHealthResponse,
+    AssistantRepositoryReferenceItem,
+    AssistantRepositoryReferencesRequest,
+    AssistantRepositoryReferencesResponse,
     AssistantResultResponse,
     AssistantResultsResponse,
     AssistantTaskResponse,
@@ -76,6 +80,38 @@ def create_assistant_web_router(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except ConversationAccessError as exc:
             raise HTTPException(status_code=404, detail="Conversation not found.") from exc
+
+    @router.post(
+        "/api/assistant/repository/references",
+        response_model=AssistantRepositoryReferencesResponse,
+    )
+    def repository_references(
+        payload: AssistantRepositoryReferencesRequest,
+        request: Request,
+        services=Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> AssistantRepositoryReferencesResponse:
+        try:
+            items = analyze_repository_references(
+                Path(payload.repository_root),
+                payload.symbol,
+                payload.extensions or None,
+                payload.max_results,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        return AssistantRepositoryReferencesResponse(
+            items=[
+                AssistantRepositoryReferenceItem(
+                    path=item.path,
+                    line_number=item.line_number,
+                    reference_type=item.reference_type,
+                    excerpt=item.excerpt,
+                )
+                for item in items
+            ]
+        )
 
     @router.get("/api/assistant/tasks/{task_id}", response_model=AssistantTaskResponse)
     def task(

@@ -68,3 +68,21 @@ class AssistantResultResponse(BaseModel):
 
 class AssistantResultsResponse(BaseModel):
     items: list[AssistantResultResponse]
+
+
+class AssistantRepositoryReferenceItem(BaseModel):
+    path: str
+    line_number: int
+    reference_type: str
+    excerpt: str
+
+
+class AssistantRepositoryReferencesRequest(BaseModel):
+    repository_root: str = Field(min_length=1)
+    symbol: str = Field(min_length=1)
+    extensions: list[str] = Field(default_factory=list)
+    max_results: int = Field(default=50, ge=1, le=200)
+
+
+class AssistantRepositoryReferencesResponse(BaseModel):
+    items: list[AssistantRepositoryReferenceItem]

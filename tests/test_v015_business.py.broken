@@ -1,12 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
-from nocturnix.db import (
-    Base,
-    create_database_engine,
-    create_session_factory,
-    session_scope,
-)
+from nocturnix.db import Base, create_database_engine, create_session_factory, session_scope
 from nocturnix.persistence.models import ReminderRow
 from nocturnix.services.business import (
     BusinessService,
@@ -16,16 +11,12 @@ from nocturnix.services.business import (
 )
 
 
-def test_business_focus_briefing_waiting_and_mock_delivery(
-    tmp_path,
-) -> None:
+def test_business_focus_briefing_waiting_and_mock_delivery(tmp_path):
     engine = create_database_engine(f"sqlite:///{tmp_path / 'v015.db'}")
     Base.metadata.create_all(engine)
     factory = create_session_factory(engine)
-
     with session_scope(factory) as session:
         service = BusinessService(session)
-
         overdue = service.create_task(
             "owner",
             {
@@ -38,7 +29,6 @@ def test_business_focus_briefing_waiting_and_mock_delivery(
                 "next_action": "Call",
             },
         )
-
         quick = service.create_task(
             "owner",
             {
@@ -48,7 +38,6 @@ def test_business_focus_briefing_waiting_and_mock_delivery(
                 "next_action": "Print",
             },
         )
-
         waiting = service.create_task(
             "owner",
             {
@@ -58,8 +47,6 @@ def test_business_focus_briefing_waiting_and_mock_delivery(
                 "due_at": datetime.now(UTC),
                 "updated_at": datetime.now(UTC) - timedelta(days=4),
             },
-        )
-
         service.create_task(
             "owner",
             {
@@ -95,12 +82,15 @@ def test_business_focus_briefing_waiting_and_mock_delivery(
         assert str(first_focus_task["id"]) == str(overdue["id"])
 
         second_focus_item = focus_items[1]
-        explanations = cast(
+        second_explanations = cast(
             list[str],
             second_focus_item["explanations"],
         )
 
-        assert any("quick" in reason for reason in explanations)
+        assert any(
+            "quick" in reason
+            for reason in second_explanations
+        )
 
         waiting_payload = cast(
             dict[str, Any],
@@ -153,7 +143,7 @@ def test_business_focus_briefing_waiting_and_mock_delivery(
         quick_id = str(quick["id"])
         overdue_id = str(overdue["id"])
 
-        completed = cast(
+        completed_task = cast(
             dict[str, Any],
             service.complete(
                 "owner",
@@ -161,9 +151,9 @@ def test_business_focus_briefing_waiting_and_mock_delivery(
             ),
         )
 
-        assert completed["status"] == "completed"
+        assert completed_task["status"] == "completed"
 
-        snoozed = cast(
+        snoozed_task = cast(
             dict[str, Any],
             service.snooze(
                 "owner",
@@ -172,9 +162,9 @@ def test_business_focus_briefing_waiting_and_mock_delivery(
             ),
         )
 
-        assert snoozed["status"] == "deferred"
+        assert snoozed_task["status"] == "deferred"
 
-        rescheduled = cast(
+        rescheduled_task = cast(
             dict[str, Any],
             service.reschedule(
                 "owner",
@@ -183,8 +173,7 @@ def test_business_focus_briefing_waiting_and_mock_delivery(
             ),
         )
 
-        assert rescheduled["status"] == "planned"
-
+        assert rescheduled_task["status"] == "planned"
         reminder = ReminderRow(
             id=make_id("rem"),
             owner_user_id="owner",
@@ -196,15 +185,7 @@ def test_business_focus_briefing_waiting_and_mock_delivery(
             title="password token supplier",
             created_at=now_utc(),
         )
-
         session.add(reminder)
         session.flush()
-
-        event = InAppMockNotificationProvider().deliver(
-            session,
-            reminder,
-        )
-
+        event = InAppMockNotificationProvider().deliver(session, reminder)
         assert event.safe_summary == "[REDACTED REMINDER]"
-
-    engine.dispose()

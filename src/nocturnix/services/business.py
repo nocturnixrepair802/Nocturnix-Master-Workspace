@@ -117,23 +117,40 @@ class BusinessService:
 
     def complete(self, owner: str, task_id: str) -> dict[str, object]:
         row = self._task(owner, task_id)
+        completed_at = now_utc()
+
         row.status = "completed"
-        row.completed_at = now_utc()
-        row.updated_at = row.completed_at
+        row.completed_at = completed_at
+        row.updated_at = completed_at
+
         return safe_task(row)
 
-    def snooze(self, owner: str, task_id: str, until: datetime) -> dict[str, object]:
+    def snooze(
+        self,
+        owner: str,
+        task_id: str,
+        until: datetime,
+    ) -> dict[str, object]:
         row = self._task(owner, task_id)
+
         row.status = "deferred"
         row.snoozed_until = until
         row.updated_at = now_utc()
+
         return safe_task(row)
 
-    def reschedule(self, owner: str, task_id: str, due_at: datetime) -> dict[str, object]:
+    def reschedule(
+        self,
+        owner: str,
+        task_id: str,
+        due_at: datetime,
+    ) -> dict[str, object]:
         row = self._task(owner, task_id)
+
         row.due_at = due_at
         row.status = "planned"
         row.updated_at = now_utc()
+
         return safe_task(row)
 
     def _task(self, owner: str, task_id: str) -> BusinessTaskRow:

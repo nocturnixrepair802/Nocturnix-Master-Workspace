@@ -103,8 +103,7 @@ def summarize_python_file(path: str, content: str) -> str:
             lines.extend(_format_class_summary(class_summary))
     if responsibilities:
         lines.append(
-            "Responsibilities inferred from member names: "
-            + ", ".join(sorted(responsibilities))
+            "Responsibilities inferred from member names: " + ", ".join(sorted(responsibilities))
         )
     if not (imports or classes or functions or module_docstring):
         lines.append("No syntactic class, function, or import structure was detected.")
@@ -115,8 +114,7 @@ def summarize_markdown_file(path: str, content: str) -> str:
     line_count = len(content.splitlines())
     non_empty_lines = sum(1 for line in content.splitlines() if line.strip())
     headings = [
-        match.group(1).strip()
-        for match in re.finditer(r"^#{1,6}\s+(.*)", content, re.MULTILINE)
+        match.group(1).strip() for match in re.finditer(r"^#{1,6}\s+(.*)", content, re.MULTILINE)
     ]
 
     lines = [
@@ -159,9 +157,7 @@ def summarize_json_file(path: str, content: str) -> str:
     return "\n".join(lines)
 
 
-def summarize_generic_text_file(
-    path: str, content: str, hint: str | None = None
-) -> str:
+def summarize_generic_text_file(path: str, content: str, hint: str | None = None) -> str:
     line_count = len(content.splitlines())
     non_empty_lines = sum(1 for line in content.splitlines() if line.strip())
     lines = [
@@ -209,21 +205,15 @@ def _extract_classes(module: ast.Module) -> list[_ClassSummary]:
     classes: list[_ClassSummary] = []
     for node in module.body:
         if isinstance(node, ast.ClassDef):
-            bases = [
-                name for base in node.bases if (name := _expr_name(base)) is not None
-            ]
+            bases = [name for base in node.bases if (name := _expr_name(base)) is not None]
             docstring = ast.get_docstring(node)
             decorators = [
                 name
                 for decorator in node.decorator_list
                 if (name := _expr_name(decorator)) is not None
             ]
-            methods = [
-                child for child in node.body if isinstance(child, ast.FunctionDef)
-            ]
-            classes.append(
-                _ClassSummary(node.name, bases, docstring, decorators, methods)
-            )
+            methods = [child for child in node.body if isinstance(child, ast.FunctionDef)]
+            classes.append(_ClassSummary(node.name, bases, docstring, decorators, methods))
     return classes
 
 
@@ -253,9 +243,7 @@ def _format_class_summary(class_summary: _ClassSummary) -> list[str]:
     if class_summary.docstring:
         first_line = class_summary.docstring.strip().splitlines()[0]
         result.append(f"  doc: {first_line}")
-    public_methods = [
-        method for method in class_summary.methods if not method.name.startswith("_")
-    ]
+    public_methods = [method for method in class_summary.methods if not method.name.startswith("_")]
     if public_methods:
         result.append("  public methods:")
         for method in public_methods:
