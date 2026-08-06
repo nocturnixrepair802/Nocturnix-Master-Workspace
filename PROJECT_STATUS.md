@@ -322,3 +322,7 @@ Version 0.1.6 remains development-only and mock-only. It adds durable owner-scop
 ## Assistant mock provider status
 
 The development browser assistant now supports `NOCTURNIX_CODING_PROVIDER=mock` for zero-cost local workflow testing. Mock mode makes no external calls and provides deterministic responses while still persisting assistant tasks and results. OpenAI mode remains available with explicit `NOCTURNIX_OPENAI_ENABLED=true`, `NOCTURNIX_EXTERNAL_PROVIDERS_ENABLED=true`, and `OPENAI_API_KEY` configuration.
+
+## Repository awareness status
+
+The development browser assistant now has a read-only repository-access service with deterministic listing and filename/content search. It enforces configured-root confinement, ignore rules, safe text extensions, file-size limits, binary rejection, symlink escape prevention, and safe selected-file loading into assistant context. Current limitations: no semantic search, no embeddings, no file writes, no shell execution, no Git mutation, no automatic commits or pushes, and no live OAuth/provider filesystem expansion.

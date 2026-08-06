@@ -7,6 +7,7 @@ const providerBadge = document.querySelector("#provider-badge");
 const mockNotice = document.querySelector("#mock-notice");
 const selectedFiles = new Set();
 let conversationId = null;
+const selectedFiles = new Set();
 
 async function loadHealth() {
   try {
@@ -56,6 +57,77 @@ function addMessage(kind, text, copyable = false) {
   article.scrollIntoView({ behavior: "smooth" });
 }
 
+function renderSelected() {
+  repoSelected.replaceChildren();
+  if (selectedFiles.size === 0) {
+    const empty = document.createElement("p");
+    empty.textContent = "No repository files selected.";
+    repoSelected.append(empty);
+    return;
+  }
+  for (const path of selectedFiles) {
+    const row = document.createElement("div");
+    row.className = "repo-row";
+    const name = document.createElement("span");
+    name.textContent = path;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "Remove";
+    remove.addEventListener("click", () => {
+      selectedFiles.delete(path);
+      renderSelected();
+    });
+    row.append(name, remove);
+    repoSelected.append(row);
+  }
+}
+
+async function previewFile(path) {
+  const response = await fetch(`/api/assistant/repository/file?path=${encodeURIComponent(path)}`, {
+    headers: requestHeaders(),
+  });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail || "File preview failed.");
+  repoPreview.textContent = body.content;
+}
+
+async function searchRepository() {
+  const query = repoSearch.value.trim();
+  if (!query) return;
+  repoResults.textContent = "Searching…";
+  try {
+    const response = await fetch("/api/assistant/repository/search", {
+      method: "POST",
+      headers: requestHeaders(),
+      body: JSON.stringify({ query, search_content: true, limit: 25 }),
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.detail || "Repository search failed.");
+    repoResults.replaceChildren();
+    for (const item of body.items) {
+      const row = document.createElement("div");
+      row.className = "repo-row";
+      const label = document.createElement("button");
+      label.type = "button";
+      label.textContent = item.relative_path;
+      label.addEventListener("click", async () => previewFile(item.relative_path));
+      const add = document.createElement("button");
+      add.type = "button";
+      add.textContent = "Attach";
+      add.addEventListener("click", () => {
+        selectedFiles.add(item.relative_path);
+        renderSelected();
+      });
+      row.append(label, add);
+      repoResults.append(row);
+    }
+    if (body.items.length === 0) repoResults.textContent = "No approved file matches.";
+  } catch (caught) {
+    repoResults.textContent =
+      caught instanceof Error ? caught.message : "Repository search failed.";
+  }
+}
+
 async function submit() {
   const text = message.value.trim();
   if (!text || send.disabled) return;
@@ -92,7 +164,12 @@ send.addEventListener("click", submit);
 message.addEventListener("keydown", (event) => {
   if (event.ctrlKey && event.key === "Enter") submit();
 });
+repoSearchButton.addEventListener("click", searchRepository);
+repoSearch.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") searchRepository();
+});
 
+renderSelected();
 loadHealth();
 
 function selectFile(path) {

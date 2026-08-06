@@ -61,6 +61,9 @@ class Settings(BaseSettings):
     secret_encryption_key: str = ""
     secret_key_version: str = "development-v1"  # noqa: S105
     mock_oauth_enabled: bool = True
+    repository_root: str = "."
+    repository_max_file_bytes: int = Field(default=262_144, ge=1, le=1_048_576)
+    repository_search_result_limit: int = Field(default=25, ge=1, le=100)
 
     @field_validator("openai_api_key")
     @classmethod
@@ -96,3 +99,7 @@ class Settings(BaseSettings):
     @property
     def safe_knowledge_path(self) -> Path:
         return Path(self.knowledge_base_path)
+
+    @property
+    def safe_repository_root(self) -> Path:
+        return Path(self.repository_root)
