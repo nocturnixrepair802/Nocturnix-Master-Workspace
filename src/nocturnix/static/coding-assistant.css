@@ -370,3 +370,30 @@ p {
     flex-direction: column;
   }
 }
+:root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #080b12; color: #edf1ff; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top, #17213c, #080b12 52%); }
+.shell { width: min(900px, 100%); min-height: 100vh; margin: auto; padding: 28px 20px; display: grid; grid-template-rows: auto 1fr auto; gap: 22px; }
+header { display: flex; align-items: center; gap: 14px; }
+.mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(135deg, #806cff, #32d6c5); font-weight: 800; }
+h1, h2, p { margin: 0; } header p, .welcome p, #status { color: #9ba7c5; }
+.conversation { overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 20px 0; }
+.welcome { margin: auto; text-align: center; padding: 40px; }
+.message { max-width: 85%; padding: 16px; border: 1px solid #2a3554; border-radius: 16px; background: #111728; }
+.message.user { align-self: flex-end; background: #22204a; }.message.assistant { align-self: flex-start; }
+pre { margin: 9px 0 0; white-space: pre-wrap; font: inherit; line-height: 1.55; overflow-wrap: anywhere; }
+footer { padding: 16px; border: 1px solid #2a3554; border-radius: 18px; background: rgba(17, 23, 40, .96); }
+label { display: block; margin-bottom: 8px; font-weight: 650; }
+textarea { width: 100%; resize: vertical; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; }
+.actions { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+button { border: 0; border-radius: 10px; padding: 10px 18px; background: #7a68ff; color: white; font-weight: 700; cursor: pointer; }
+button:disabled { opacity: .55; cursor: wait; }.copy { margin-top: 12px; padding: 7px 10px; background: #29334f; }
+.error { padding: 12px; border-radius: 10px; background: #4a1821; color: #ffd9de; }
+@media (max-width: 600px) { .shell { padding: 18px 12px; }.message { max-width: 95%; }.welcome { padding: 20px; } }
+.provider-badge { display: inline-block; margin-top: 8px; padding: 5px 9px; border: 1px solid #324061; border-radius: 999px; color: #b8c5e8; background: rgba(17, 23, 40, .85); font-size: .85rem; font-weight: 700; }
+.mock-notice { padding: 10px 12px; border: 1px solid #33524f; border-radius: 12px; background: rgba(50, 214, 197, .1); color: #bff6ef; }
+.repository-panel { background: #171a26; border: 1px solid #30364d; border-radius: 16px; margin: 1rem 0; padding: 1rem; }
+.repo-list { display: grid; gap: .5rem; margin: .5rem 0 1rem; }
+.repo-row { align-items: center; display: flex; gap: .5rem; justify-content: space-between; }
+.repo-row span { overflow-wrap: anywhere; }
+.repo-preview { max-height: 18rem; overflow: auto; }

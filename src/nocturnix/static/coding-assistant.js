@@ -40,23 +40,7 @@ const copyDiffButton =
 const selectedFiles = new Set();
 
 let conversationId = null;
-let currentUnifiedDiff = "";
-
-function requestHeaders() {
-  const headers = {
-    "Content-Type": "application/json",
-    "X-Nocturnix-Dev-User": "dev-user-001",
-  };
-
-  const csrfToken =
-    sessionStorage.getItem("nocturnix_csrf_token");
-
-  if (csrfToken) {
-    headers["X-CSRF-Token"] = csrfToken;
-  }
-
-  return headers;
-}
+const selectedFiles = new Set();
 
 async function loadHealth() {
   try {
@@ -155,105 +139,81 @@ function addMessage(
   });
 }
 
-function showError(text) {
-  errorMessage.textContent = text;
-  errorMessage.hidden = false;
-}
-
-function clearError() {
-  errorMessage.textContent = "";
-  errorMessage.hidden = true;
-}
-
-function showProposalError(text) {
-  proposalError.textContent = text;
-  proposalError.hidden = false;
-}
-
-function clearProposalError() {
-  proposalError.textContent = "";
-  proposalError.hidden = true;
-}
-
-function renderSelectedFiles() {
-  selectedFilesList.replaceChildren();
-
+function renderSelected() {
+  repoSelected.replaceChildren();
   if (selectedFiles.size === 0) {
-    const emptyItem =
-      document.createElement("li");
-
-    emptyItem.className = "empty-selection";
-    emptyItem.textContent =
-      "No files selected.";
-
-    selectedFilesList.append(emptyItem);
-
+    const empty = document.createElement("p");
+    empty.textContent = "No repository files selected.";
+    repoSelected.append(empty);
     return;
   }
-
-  for (const filePath of selectedFiles) {
-    const item =
-      document.createElement("li");
-
-    const pathLabel =
-      document.createElement("span");
-
-    pathLabel.textContent = filePath;
-
-    const removeButton =
-      document.createElement("button");
-
-    removeButton.type = "button";
-    removeButton.className =
-      "remove-file-button";
-    removeButton.textContent = "Remove";
-
-    removeButton.addEventListener(
-      "click",
-      () => {
-        selectedFiles.delete(filePath);
-        renderSelectedFiles();
-      },
-    );
-
-    item.append(
-      pathLabel,
-      removeButton,
-    );
-
-    selectedFilesList.append(item);
+  for (const path of selectedFiles) {
+    const row = document.createElement("div");
+    row.className = "repo-row";
+    const name = document.createElement("span");
+    name.textContent = path;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "Remove";
+    remove.addEventListener("click", () => {
+      selectedFiles.delete(path);
+      renderSelected();
+    });
+    row.append(name, remove);
+    repoSelected.append(row);
   }
 }
 
-function addSelectedFile() {
-  const filePath =
-    proposalFileInput.value.trim();
-
-  if (!filePath) {
-    showProposalError(
-      "Enter a repository-relative file path.",
-    );
-
-    return;
-  }
-
-  clearProposalError();
-
-  selectedFiles.add(filePath);
-
-  renderSelectedFiles();
+async function previewFile(path) {
+  const response = await fetch(`/api/assistant/repository/file?path=${encodeURIComponent(path)}`, {
+    headers: requestHeaders(),
+  });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail || "File preview failed.");
+  repoPreview.textContent = body.content;
 }
 
-async function submitChat() {
-  const text =
-    messageInput.value.trim();
-
-  if (!text || sendButton.disabled) {
-    return;
+async function searchRepository() {
+  const query = repoSearch.value.trim();
+  if (!query) return;
+  repoResults.textContent = "Searching…";
+  try {
+    const response = await fetch("/api/assistant/repository/search", {
+      method: "POST",
+      headers: requestHeaders(),
+      body: JSON.stringify({ query, search_content: true, limit: 25 }),
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.detail || "Repository search failed.");
+    repoResults.replaceChildren();
+    for (const item of body.items) {
+      const row = document.createElement("div");
+      row.className = "repo-row";
+      const label = document.createElement("button");
+      label.type = "button";
+      label.textContent = item.relative_path;
+      label.addEventListener("click", async () => previewFile(item.relative_path));
+      const add = document.createElement("button");
+      add.type = "button";
+      add.textContent = "Attach";
+      add.addEventListener("click", () => {
+        selectedFiles.add(item.relative_path);
+        renderSelected();
+      });
+      row.append(label, add);
+      repoResults.append(row);
+    }
+    if (body.items.length === 0) repoResults.textContent = "No approved file matches.";
+  } catch (caught) {
+    repoResults.textContent =
+      caught instanceof Error ? caught.message : "Repository search failed.";
   }
+}
 
-  clearError();
-
+async function submit() {
+  const text = message.value.trim();
+  if (!text || send.disabled) return;
+  error.hidden = true;
   addMessage("user", text);
 
   messageInput.value = "";
@@ -440,18 +400,17 @@ async function generateProposal() {
   }
 }
 
-async function copyDiff() {
-  if (!currentUnifiedDiff) {
-    showProposalError(
-      "Generate a proposal before copying.",
-    );
+send.addEventListener("click", submit);
+message.addEventListener("keydown", (event) => {
+  if (event.ctrlKey && event.key === "Enter") submit();
+});
+repoSearchButton.addEventListener("click", searchRepository);
+repoSearch.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") searchRepository();
+});
 
-    return;
-  }
-
-  await navigator.clipboard.writeText(
-    currentUnifiedDiff,
-  );
+renderSelected();
+loadHealth();
 
   copyDiffButton.textContent = "Copied";
 
