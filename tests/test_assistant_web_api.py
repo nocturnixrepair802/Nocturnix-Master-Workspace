@@ -361,6 +361,44 @@ def test_selected_file_content_reaches_provider_context(
     assert "class AssistantTaskService" in provider.captured_context
 
 
+def test_repository_references_api_returns_matching_python_references(
+    tmp_path: Path,
+) -> None:
+    settings = make_test_settings(
+        tmp_path,
+        database_url=(f"sqlite:///{tmp_path / 'assistant-references.db'}"),
+        coding_provider="mock",
+    )
+    app = create_app(settings)
+
+    repository_root = tmp_path / "repo"
+    repository_root.mkdir()
+    file_path = repository_root / "src" / "example.py"
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    file_path.write_text(
+        "import os\n\nclass Example:\n    def run(self):\n        return os.getenv('PATH')\n",
+        encoding="utf-8",
+    )
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/assistant/repository/references",
+            headers=headers(),
+            json={
+                "repository_root": str(repository_root),
+                "symbol": "os",
+                "extensions": ["py"],
+                "max_results": 10,
+            },
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert isinstance(body["items"], list)
+    assert any(item["reference_type"] == "import" for item in body["items"])
+    assert any(item["path"] == "src/example.py" for item in body["items"])
+
+
 def test_provider_failure_is_safe_and_marks_task_failed(
     assistant_client: tuple[TestClient, str, FastAPI],
 ) -> None:
