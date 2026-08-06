@@ -122,3 +122,60 @@ class AssistantSymbolNodeResponse(BaseModel):
     node: AssistantSymbolNode
     outgoing_edges: list[AssistantSymbolEdge]
     incoming_edges: list[AssistantSymbolEdge]
+
+
+class AssistantPatchProposalRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    instruction: str = Field(
+        min_length=1,
+        max_length=10_000,
+    )
+    selected_files: list[str] = Field(
+        min_length=1,
+        max_length=10,
+    )
+    title: str | None = Field(
+        default=None,
+        max_length=200,
+    )
+    repository_root: str | None = Field(
+        default=None,
+        min_length=1,
+    )
+
+    @field_validator("instruction")
+    @classmethod
+    def instruction_not_blank(
+        cls,
+        value: str,
+    ) -> str:
+        normalized = value.strip()
+
+        if not normalized:
+            raise ValueError("instruction must not be blank")
+
+        return normalized
+
+    @field_validator("selected_files")
+    @classmethod
+    def selected_files_not_blank(
+        cls,
+        value: list[str],
+    ) -> list[str]:
+        normalized_files = [file_path.strip() for file_path in value]
+
+        if any(not file_path for file_path in normalized_files):
+            raise ValueError("selected_files must not contain blank paths")
+
+        return normalized_files
+
+
+class AssistantPatchProposalResponse(BaseModel):
+    title: str
+    summary: str
+    affected_files: list[str]
+    unified_diff: str
+    warnings: list[str]
+    generated_locally: bool
+    applied: bool

@@ -5,10 +5,12 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
+from nocturnix.assistant.patch_proposals import propose_patch
 
 from nocturnix.assistant.coding_service import CodingAssistantService, ConversationAccessError
 from nocturnix.assistant.exceptions import AssistantTaskNotFoundError
 from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingProviderError
+from nocturnix.assistant.patch_models import PatchProposalError
 from nocturnix.assistant.provider_factory import provider_name
 from nocturnix.assistant.reference_analysis import analyze_repository_references
 from nocturnix.assistant.repositories import AssistantTaskRepository
@@ -21,6 +23,8 @@ from nocturnix.assistant.web_models import (
     AssistantChatRequest,
     AssistantChatResponse,
     AssistantHealthResponse,
+    AssistantPatchProposalRequest,
+    AssistantPatchProposalResponse,
     AssistantRepositoryReferenceItem,
     AssistantRepositoryReferencesRequest,
     AssistantRepositoryReferencesResponse,
@@ -44,6 +48,49 @@ def create_assistant_web_router(
 ) -> APIRouter:
     router = APIRouter()
     static_root = Path(__file__).resolve().parents[1] / "static"
+
+    @router.post(
+        "/api/assistant/repository/propose-patch",
+        response_model=AssistantPatchProposalResponse,
+    )
+    def repository_propose_patch(
+        payload: AssistantPatchProposalRequest,
+        services=Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> AssistantPatchProposalResponse:
+        del services
+        del user
+
+        default_repository_root = Path(__file__).resolve().parents[3]
+
+        repository_root = (
+            Path(payload.repository_root)
+            if payload.repository_root is not None
+            else default_repository_root
+        )
+
+        try:
+            proposal = propose_patch(
+                repository_root=repository_root,
+                instruction=payload.instruction,
+                selected_files=payload.selected_files,
+                title=payload.title,
+            )
+        except PatchProposalError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=str(exc),
+            ) from exc
+
+        return AssistantPatchProposalResponse(
+            title=proposal.title,
+            summary=proposal.summary,
+            affected_files=proposal.affected_files,
+            unified_diff=proposal.unified_diff,
+            warnings=proposal.warnings,
+            generated_locally=proposal.generated_locally,
+            applied=proposal.applied,
+        )
 
     @router.get("/assistant", include_in_schema=False)
     def assistant_page() -> FileResponse:
