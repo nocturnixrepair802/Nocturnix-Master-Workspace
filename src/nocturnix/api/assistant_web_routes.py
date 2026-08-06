@@ -11,8 +11,13 @@ from nocturnix.assistant.exceptions import AssistantTaskNotFoundError
 from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingProviderError
 from nocturnix.assistant.provider_factory import provider_name
 from nocturnix.assistant.reference_analysis import analyze_repository_references
-from nocturnix.assistant.repositories import AssistantTaskRepository
 from nocturnix.assistant.repository_access import RepositoryAccessError
+from nocturnix.assistant.repositories import AssistantTaskRepository
+from nocturnix.assistant.symbol_graph import (
+    SymbolGraph,
+    build_project_symbol_graph,
+    symbol_graph_for_symbol,
+)
 from nocturnix.assistant.web_models import (
     AssistantChatRequest,
     AssistantChatResponse,
@@ -22,6 +27,11 @@ from nocturnix.assistant.web_models import (
     AssistantRepositoryReferencesResponse,
     AssistantResultResponse,
     AssistantResultsResponse,
+    AssistantSymbolEdge,
+    AssistantSymbolGraphRequest,
+    AssistantSymbolGraphResponse,
+    AssistantSymbolNode,
+    AssistantSymbolNodeResponse,
     AssistantTaskResponse,
 )
 from nocturnix.db import database_ready
@@ -111,6 +121,102 @@ def create_assistant_web_router(
                 )
                 for item in items
             ]
+        )
+
+    @router.get(
+        "/api/assistant/repository/symbols",
+        response_model=AssistantSymbolGraphResponse,
+    )
+    def repository_symbols(
+        repository_root: str,
+        extensions: list[str] | None = None,
+        services=Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> AssistantSymbolGraphResponse:
+        try:
+            graph = build_project_symbol_graph(
+                Path(repository_root),
+                extensions=extensions,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        return AssistantSymbolGraphResponse(
+            root=graph.root,
+            nodes=[AssistantSymbolNode(**node.__dict__) for node in graph.nodes],
+            edges=[AssistantSymbolEdge(**edge.__dict__) for edge in graph.edges],
+        )
+
+    @router.get(
+        "/api/assistant/repository/symbols/{qualified_name}",
+        response_model=AssistantSymbolNodeResponse,
+    )
+    def repository_symbol(
+        qualified_name: str,
+        repository_root: str,
+        extensions: list[str] | None = None,
+        services=Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> AssistantSymbolNodeResponse:
+        try:
+            graph = build_project_symbol_graph(
+                Path(repository_root),
+                extensions=extensions,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        node = next(
+            (node for node in graph.nodes if node.qualified_name == qualified_name),
+            None,
+        )
+        if node is None:
+            raise HTTPException(status_code=404, detail="Symbol not found.")
+
+        outgoing_edges = [
+            AssistantSymbolEdge(**edge.__dict__)
+            for edge in graph.edges
+            if edge.source == node.qualified_name
+        ]
+        incoming_edges = [
+            AssistantSymbolEdge(**edge.__dict__)
+            for edge in graph.edges
+            if edge.target == node.qualified_name
+        ]
+        return AssistantSymbolNodeResponse(
+            node=AssistantSymbolNode(**node.__dict__),
+            outgoing_edges=outgoing_edges,
+            incoming_edges=incoming_edges,
+        )
+
+    @router.post(
+        "/api/assistant/repository/symbol-graph",
+        response_model=AssistantSymbolGraphResponse,
+    )
+    def repository_symbol_graph(
+        payload: AssistantSymbolGraphRequest,
+        request: Request,
+        services=Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> AssistantSymbolGraphResponse:
+        try:
+            graph = build_project_symbol_graph(
+                Path(payload.repository_root),
+                extensions=payload.extensions or None,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        if payload.symbol:
+            try:
+                graph = symbol_graph_for_symbol(graph, payload.symbol, payload.depth, payload.limit)
+            except KeyError:
+                raise HTTPException(status_code=404, detail="Symbol not found.") from None
+
+        return AssistantSymbolGraphResponse(
+            root=graph.root,
+            nodes=[AssistantSymbolNode(**node.__dict__) for node in graph.nodes],
+            edges=[AssistantSymbolEdge(**edge.__dict__) for edge in graph.edges],
         )
 
     @router.get("/api/assistant/tasks/{task_id}", response_model=AssistantTaskResponse)

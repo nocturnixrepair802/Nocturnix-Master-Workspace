@@ -86,3 +86,39 @@ class AssistantRepositoryReferencesRequest(BaseModel):
 
 class AssistantRepositoryReferencesResponse(BaseModel):
     items: list[AssistantRepositoryReferenceItem]
+
+
+class AssistantSymbolNode(BaseModel):
+    name: str
+    qualified_name: str
+    path: str
+    line_number: int
+    node_type: str
+
+
+class AssistantSymbolEdge(BaseModel):
+    source: str
+    target: str
+    edge_type: str
+    path: str
+    line_number: int
+
+
+class AssistantSymbolGraphRequest(BaseModel):
+    repository_root: str = Field(min_length=1)
+    symbol: str | None = None
+    depth: int = Field(default=1, ge=0, le=5)
+    limit: int = Field(default=100, ge=1, le=500)
+    extensions: list[str] = Field(default_factory=list)
+
+
+class AssistantSymbolGraphResponse(BaseModel):
+    root: str | None
+    nodes: list[AssistantSymbolNode]
+    edges: list[AssistantSymbolEdge]
+
+
+class AssistantSymbolNodeResponse(BaseModel):
+    node: AssistantSymbolNode
+    outgoing_edges: list[AssistantSymbolEdge]
+    incoming_edges: list[AssistantSymbolEdge]
