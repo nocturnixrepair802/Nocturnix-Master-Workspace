@@ -8,18 +8,215 @@
 </head>
 <body>
   <main class="shell">
-    <header><div class="mark">N</div><div><h1>Nocturnix</h1><p>Development Assistant · read-only</p><span id="provider-badge" class="provider-badge">Development provider: checking…</span></div></header>
-    <p id="mock-notice" class="mock-notice" hidden></p>
-    <section id="conversation" class="conversation" aria-live="polite">
-      <div class="welcome"><h2>What are you building?</h2><p>Ask for coding guidance, explanations, tests, or review help.</p></div>
+    <header class="app-header">
+      <div class="mark">N</div>
+
+      <div>
+        <h1>Nocturnix</h1>
+        <p>Development Assistant - read-only</p>
+
+        <span
+          id="provider-badge"
+          class="provider-badge"
+        >
+          Development provider: checking...
+        </span>
+      </div>
+    </header>
+
+    <p
+      id="mock-notice"
+      class="mock-notice"
+      hidden
+    ></p>
+
+    <section class="workspace">
+      <section class="chat-panel">
+        <section
+          id="conversation"
+          class="conversation"
+          aria-live="polite"
+        >
+          <div class="welcome">
+            <h2>What are you building?</h2>
+            <p>
+              Ask for coding guidance, explanations,
+              tests, or review help.
+            </p>
+          </div>
+        </section>
+
+        <p
+          id="error"
+          class="error"
+          role="alert"
+          hidden
+        ></p>
+
+        <footer class="chat-composer">
+          <label for="message">Coding question</label>
+
+          <textarea
+            id="message"
+            maxlength="20000"
+            placeholder="Ask Nocturnix..."
+            rows="4"
+          ></textarea>
+
+          <div class="actions">
+            <span id="status">
+              Ready - Ctrl+Enter to send
+            </span>
+
+            <button
+              id="send"
+              type="button"
+            >
+              Send
+            </button>
+          </div>
+        </footer>
+      </section>
+
+      <aside class="proposal-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Patch proposal</h2>
+            <p>
+              Generate a read-only unified diff.
+            </p>
+          </div>
+
+          <span class="not-applied-badge">
+            Proposal only - not applied
+          </span>
+        </div>
+
+        <label for="proposal-file">
+          Repository file
+        </label>
+
+        <div class="inline-control">
+          <input
+            id="proposal-file"
+            type="text"
+            value="src/nocturnix/assistant/service.py"
+            placeholder="src/nocturnix/assistant/service.py"
+          >
+
+          <button
+            id="add-proposal-file"
+            type="button"
+            class="secondary-button"
+          >
+            Add file
+          </button>
+        </div>
+
+        <div>
+          <h3>Selected files</h3>
+
+          <ul
+            id="selected-files"
+            class="selected-files"
+          ></ul>
+        </div>
+
+        <label for="proposal-title">
+          Proposal title
+        </label>
+
+        <input
+          id="proposal-title"
+          type="text"
+          maxlength="200"
+          value="Document AssistantTaskService"
+        >
+
+        <label for="proposal-instruction">
+          Instruction
+        </label>
+
+        <textarea
+          id="proposal-instruction"
+          maxlength="10000"
+          rows="4"
+        >Add a class docstring to AssistantTaskService.</textarea>
+
+        <button
+          id="generate-proposal"
+          type="button"
+        >
+          Generate proposal
+        </button>
+
+        <p
+          id="proposal-error"
+          class="error"
+          role="alert"
+          hidden
+        ></p>
+
+        <section
+          id="proposal-result"
+          class="proposal-result"
+          hidden
+        >
+          <div class="proposal-meta">
+            <strong id="proposal-result-title"></strong>
+
+            <span id="proposal-state">
+              Not applied
+            </span>
+          </div>
+
+          <p id="proposal-summary"></p>
+
+          <div>
+            <h3>Affected files</h3>
+
+            <ul
+              id="proposal-affected-files"
+              class="affected-files"
+            ></ul>
+          </div>
+
+          <div>
+            <div class="diff-heading">
+              <h3>Unified diff</h3>
+
+              <button
+                id="copy-diff"
+                type="button"
+                class="secondary-button"
+              >
+                Copy diff
+              </button>
+            </div>
+
+            <pre
+              id="proposal-diff"
+              class="diff-preview"
+              tabindex="0"
+            ></pre>
+          </div>
+
+          <div>
+            <h3>Warnings</h3>
+
+            <ul
+              id="proposal-warnings"
+              class="proposal-warnings"
+            ></ul>
+          </div>
+        </section>
+      </aside>
     </section>
-    <p id="error" class="error" role="alert" hidden></p>
-    <footer>
-      <label for="message">Coding question</label>
-      <textarea id="message" maxlength="20000" placeholder="Ask Nocturnix…" rows="4"></textarea>
-      <div class="actions"><span id="status">Ready · Ctrl+Enter to send</span><button id="send" type="button">Send</button></div>
-    </footer>
   </main>
-  <script src="/static/coding-assistant.js" defer></script>
+
+  <script
+    src="/static/coding-assistant.js"
+    defer
+  ></script>
 </body>
 </html>
