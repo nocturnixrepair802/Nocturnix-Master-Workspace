@@ -10,14 +10,16 @@ from nocturnix.assistant.patch_proposals import propose_patch
 from nocturnix.assistant.coding_service import CodingAssistantService, ConversationAccessError
 from nocturnix.assistant.exceptions import AssistantTaskNotFoundError
 from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingProviderError
-from nocturnix.assistant.patch_models import PatchProposalError
 from nocturnix.assistant.provider_factory import provider_name
 from nocturnix.assistant.reference_analysis import analyze_repository_references
 from nocturnix.assistant.repositories import AssistantTaskRepository
-from nocturnix.assistant.repository_access import RepositoryAccessError
-from nocturnix.assistant.symbol_graph import (
-    build_project_symbol_graph,
-    symbol_graph_for_symbol,
+from nocturnix.assistant.repository_access import RepositoryAccessError, RepositoryAccessService
+from nocturnix.assistant.repository_models import (
+    RepositoryFileResponse,
+    RepositoryFilesResponse,
+    RepositorySearchRequest,
+    RepositorySearchResponse,
+    RepositoryStatusResponse,
 )
 from nocturnix.assistant.web_models import (
     AssistantChatRequest,
@@ -36,13 +38,6 @@ from nocturnix.assistant.web_models import (
     AssistantSymbolNode,
     AssistantSymbolNodeResponse,
     AssistantTaskResponse,
-)
-from nocturnix.assistant.repository_models import (
-    RepositoryFileResponse,
-    RepositoryFilesResponse,
-    RepositorySearchRequest,
-    RepositorySearchResponse,
-    RepositoryStatusResponse,
 )
 from nocturnix.db import database_ready
 from nocturnix.models import UserIdentity
@@ -102,7 +97,6 @@ def create_assistant_web_router(
     @router.get("/assistant", include_in_schema=False)
     def assistant_page() -> FileResponse:
         return FileResponse(static_root / "coding-assistant.html")
-
 
     def repository_service(request: Request) -> RepositoryAccessService:
         settings = request.app.state.container.settings
