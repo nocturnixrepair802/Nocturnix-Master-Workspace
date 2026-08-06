@@ -9,9 +9,16 @@ from fastapi.responses import FileResponse
 from nocturnix.assistant.coding_service import CodingAssistantService, ConversationAccessError
 from nocturnix.assistant.exceptions import AssistantTaskNotFoundError
 from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingProviderError
-from nocturnix.assistant.repository_access import RepositoryAccessError, RepositoryAccessService
 from nocturnix.assistant.provider_factory import provider_name
 from nocturnix.assistant.repositories import AssistantTaskRepository
+from nocturnix.assistant.repository_access import RepositoryAccessError, RepositoryAccessService
+from nocturnix.assistant.repository_models import (
+    RepositoryFileResponse,
+    RepositoryFilesResponse,
+    RepositorySearchRequest,
+    RepositorySearchResponse,
+    RepositoryStatusResponse,
+)
 from nocturnix.assistant.web_models import (
     AssistantChatRequest,
     AssistantChatResponse,
@@ -19,13 +26,6 @@ from nocturnix.assistant.web_models import (
     AssistantResultResponse,
     AssistantResultsResponse,
     AssistantTaskResponse,
-)
-from nocturnix.assistant.repository_models import (
-    RepositoryFileResponse,
-    RepositoryFilesResponse,
-    RepositorySearchRequest,
-    RepositorySearchResponse,
-    RepositoryStatusResponse,
 )
 from nocturnix.db import database_ready
 from nocturnix.models import UserIdentity
@@ -42,7 +42,6 @@ def create_assistant_web_router(
     @router.get("/assistant", include_in_schema=False)
     def assistant_page() -> FileResponse:
         return FileResponse(static_root / "coding-assistant.html")
-
 
     def repository_service(request: Request) -> RepositoryAccessService:
         settings = request.app.state.container.settings

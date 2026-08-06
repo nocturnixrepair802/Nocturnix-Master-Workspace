@@ -97,9 +97,7 @@ def create_repair_router(
     ):
         return service.repair_domain.update_customer(user.user_id, customer_id, req)
 
-    @router.post(
-        "/customer-devices", response_model=CustomerDeviceResponse, status_code=201
-    )
+    @router.post("/customer-devices", response_model=CustomerDeviceResponse, status_code=201)
     def create_device(
         req: CustomerDeviceCreateRequest,
         service: Any = Depends(get_service),
@@ -124,9 +122,7 @@ def create_repair_router(
     ):
         return service.repair_domain.update_device(user.user_id, device_id, req)
 
-    @router.get(
-        "/customers/{customer_id}/devices", response_model=CustomerDeviceListResponse
-    )
+    @router.get("/customers/{customer_id}/devices", response_model=CustomerDeviceListResponse)
     def list_customer_devices(
         customer_id: str,
         offset: int = Query(default=0, ge=0),
@@ -139,9 +135,7 @@ def create_repair_router(
         )
         return {"items": items, "total": total, "offset": offset, "limit": limit}
 
-    @router.post(
-        "/repair-tickets", response_model=RepairTicketResponse, status_code=201
-    )
+    @router.post("/repair-tickets", response_model=RepairTicketResponse, status_code=201)
     def create_ticket(
         req: RepairTicketCreateRequest,
         service: Any = Depends(get_service),
@@ -192,9 +186,7 @@ def create_repair_router(
     ):
         return service.repair_domain.update_ticket(user.user_id, ticket_id, req)
 
-    @router.post(
-        "/repair-tickets/{ticket_id}/status", response_model=RepairTicketResponse
-    )
+    @router.post("/repair-tickets/{ticket_id}/status", response_model=RepairTicketResponse)
     def change_ticket_status(
         ticket_id: str,
         req: RepairTicketStatusChangeRequest,
@@ -230,9 +222,7 @@ def create_repair_router(
         service: Any = Depends(get_service),
         user: UserIdentity = Depends(require_csrf),
     ):
-        return service.repair_domain.create_ticket_note(
-            user.user_id, ticket_id, user.user_id, req
-        )
+        return service.repair_domain.create_ticket_note(user.user_id, ticket_id, user.user_id, req)
 
     @router.get(
         "/repair-tickets/{ticket_id}/notes",
@@ -255,9 +245,7 @@ def create_repair_router(
         )
         return items
 
-    @router.put(
-        "/repair-ticket-notes/{note_id}", response_model=RepairTicketNoteResponse
-    )
+    @router.put("/repair-ticket-notes/{note_id}", response_model=RepairTicketNoteResponse)
     def update_ticket_note(
         note_id: str,
         req: RepairTicketNoteUpdateRequest,
@@ -371,7 +359,6 @@ def create_repair_router(
             req,
         )
 
-
     @router.post(
         "/repair/services",
         response_model=RepairServiceResponse,
@@ -386,7 +373,6 @@ def create_repair_router(
             user.user_id,
             req,
         )
-
 
     @router.get(
         "/repair/services",
@@ -410,7 +396,6 @@ def create_repair_router(
             limit=limit,
         )
 
-
     @router.get(
         "/repair/services/{service_id}",
         response_model=RepairServiceResponse,
@@ -424,7 +409,6 @@ def create_repair_router(
             user.user_id,
             service_id,
         )
-
 
     @router.patch(
         "/repair/services/{service_id}",
@@ -441,7 +425,6 @@ def create_repair_router(
             service_id,
             req,
         )
-
 
     @router.delete(
         "/repair/services/{service_id}",

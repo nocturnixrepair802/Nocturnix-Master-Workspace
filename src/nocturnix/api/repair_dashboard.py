@@ -10,11 +10,7 @@ from fastapi.responses import FileResponse
 from nocturnix.models import UserIdentity
 from nocturnix.repair_models import RepairDashboardResponse
 
-_DASHBOARD_FILE = (
-    Path(__file__).resolve().parent.parent
-    / "static"
-    / "repairs-dashboard.html"
-)
+_DASHBOARD_FILE = Path(__file__).resolve().parent.parent / "static" / "repairs-dashboard.html"
 
 
 def create_repair_dashboard_router(

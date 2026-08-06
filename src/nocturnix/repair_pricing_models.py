@@ -40,9 +40,7 @@ class RepairPricingRequest(BaseModel):
         default=0,
         ge=0,
         le=10_000,
-        description=(
-            "Tax rate in basis points. " "For example, 725 represents 7.25 percent."
-        ),
+        description=("Tax rate in basis points. For example, 725 represents 7.25 percent."),
     )
 
 

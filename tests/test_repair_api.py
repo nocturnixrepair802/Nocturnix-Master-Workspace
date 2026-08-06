@@ -459,6 +459,6 @@ def test_calculate_repair_pricing_requires_default_tax_policy(
             "parts_cost_cents": 10000,
             "labor_minutes": 60,
         },
-)
+    )
 
     assert calculation_response.status_code == 404, calculation_response.text
