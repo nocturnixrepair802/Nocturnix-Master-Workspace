@@ -36,34 +36,45 @@ def summarize_file(path: str, content: str) -> str:
     return summarize_generic_text_file(path, content)
 
 
-def _parse_repository_context_text(context_text: str) -> list[RepositoryFileReference]:
+def _parse_repository_context_text(
+    context_text: str,
+) -> list[RepositoryFileReference]:
     files: list[RepositoryFileReference] = []
     current_path: str | None = None
     current_lines: list[str] = []
 
-    for line in context_text.splitlines():
-        if line.startswith("Project context"):
-            break
-        if line.startswith("File: "):
-            if current_path is not None:
-                files.append(
-                    RepositoryFileReference(
-                        path=current_path,
-                        content="\n".join(current_lines),
-                    )
-                )
-            current_path = line[len("File: ") :].strip()
-            current_lines = []
-        elif current_path is not None:
-            current_lines.append(line)
+    def append_current_file() -> None:
+        if current_path is None:
+            return
 
-    if current_path is not None:
         files.append(
             RepositoryFileReference(
                 path=current_path,
                 content="\n".join(current_lines),
             )
         )
+
+    for line in context_text.splitlines():
+        if line.startswith("Project context"):
+            break
+
+        next_path: str | None = None
+
+        if line.startswith("File: "):
+            next_path = line[len("File: ") :].strip()
+        elif line.startswith("--- ") and line.endswith(" ---") and len(line) > 8:
+            next_path = line[4:-4].strip()
+
+        if next_path is not None:
+            append_current_file()
+            current_path = next_path
+            current_lines = []
+            continue
+
+        if current_path is not None:
+            current_lines.append(line)
+
+    append_current_file()
 
     return files
 
