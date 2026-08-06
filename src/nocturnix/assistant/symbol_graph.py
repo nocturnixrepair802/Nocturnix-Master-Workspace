@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import ast
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 from nocturnix.assistant.repository_models import RepositoryFileReference
 
@@ -568,22 +568,37 @@ def _expr_name(node: ast.AST | None) -> str | None:
 def _annotation_names(node: ast.AST) -> set[str]:
     if isinstance(node, ast.Name):
         return {node.id}
+
     if isinstance(node, ast.Attribute):
-        return {_expr_name(node)} if _expr_name(node) is not None else set()
+        expression_name = _expr_name(node)
+
+        if expression_name is None:
+            return set()
+
+        return {expression_name}
+
     if isinstance(node, ast.Subscript):
-        names = _annotation_names(node.value)
+        subscript_names = _annotation_names(node.value)
+
         if isinstance(node.slice, ast.AST):
-            names |= _annotation_names(node.slice)
-        return names
-    if isinstance(node, ast.Tuple) or isinstance(node, ast.List):
-        names: set[str] = set()
+            subscript_names |= _annotation_names(node.slice)
+
+        return subscript_names
+
+    if isinstance(node, (ast.Tuple, ast.List)):
+        element_names: set[str] = set()
+
         for element in node.elts:
-            names |= _annotation_names(element)
-        return names
+            element_names |= _annotation_names(element)
+
+        return element_names
+
     if isinstance(node, ast.Constant):
         return set()
+
     if isinstance(node, ast.Call):
         return _annotation_names(node.func)
+
     return set()
 
 
@@ -605,17 +620,24 @@ def _is_fastapi_route(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
 
 
 def _is_sqlalchemy_model(node: ast.ClassDef) -> bool:
-    if any(_expr_name(base) and _expr_name(base).endswith("Base") for base in node.bases):
-        return True
+    for base in node.bases:
+        base_name = _expr_name(base)
+
+        if base_name is not None and base_name.endswith("Base"):
+            return True
+
     for child in node.body:
         if isinstance(child, ast.Assign):
             for target in child.targets:
                 if isinstance(target, ast.Name) and target.id == "__tablename__":
                     return True
+
             if isinstance(child.value, ast.Call) and _expr_name(child.value.func) == "Column":
                 return True
+
         if isinstance(child, ast.AnnAssign) and _expr_name(child.annotation) == "Column":
             return True
+
     return False
 
 
@@ -692,17 +714,26 @@ def build_graph_summary(message: str, context_text: str) -> str:
         {edge.source for edge in focused.edges if edge.target == focused.root}
     )
     related_files = sorted({node.path for node in focused.nodes})
+
     lines = [
-        "This response is a deterministic local architecture summary. No external model or network request was used.",
+        (
+            "This response is a deterministic local architecture summary. "
+            "No external model or network request was used."
+        ),
         f"Root symbol: {focused.root}",
-        f"Related files: {', '.join(related_files) if related_files else 'none'}",
-        f"Direct dependencies: {', '.join(direct_dependencies) if direct_dependencies else 'none'}",
-        f"Direct dependents: {', '.join(direct_dependents) if direct_dependents else 'none'}",
-        "Edges:",
+        (f"Related files: {', '.join(related_files) if related_files else 'none'}"),
+        (
+            "Direct dependencies: "
+            f"{', '.join(direct_dependencies) if direct_dependencies else 'none'}"
+        ),
+        (f"Direct dependents: {', '.join(direct_dependents) if direct_dependents else 'none'}"),
     ]
+
     for edge in focused.edges:
         lines.append(
-            f"- {edge.source} --[{edge.edge_type}]--> {edge.target} "
+            f"- {edge.source} --[{edge.edge_type}]--> "
+            f"{edge.target} "
             f"({edge.path}:{edge.line_number})"
         )
+
     return "\n".join(lines)

@@ -11,10 +11,9 @@ from nocturnix.assistant.exceptions import AssistantTaskNotFoundError
 from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingProviderError
 from nocturnix.assistant.provider_factory import provider_name
 from nocturnix.assistant.reference_analysis import analyze_repository_references
-from nocturnix.assistant.repository_access import RepositoryAccessError
 from nocturnix.assistant.repositories import AssistantTaskRepository
+from nocturnix.assistant.repository_access import RepositoryAccessError
 from nocturnix.assistant.symbol_graph import (
-    SymbolGraph,
     build_project_symbol_graph,
     symbol_graph_for_symbol,
 )

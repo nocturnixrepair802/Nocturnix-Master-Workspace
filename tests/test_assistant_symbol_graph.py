@@ -1,23 +1,16 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from nocturnix import create_app
 from nocturnix.assistant.repository_models import RepositoryFileReference
 from nocturnix.assistant.symbol_graph import (
-    SymbolEdge,
-    SymbolGraph,
-    SymbolNode,
     build_project_symbol_graph,
     build_symbol_graph_from_files,
-    parse_repository_context_text,
     symbol_graph_for_symbol,
 )
-from nocturnix.assistant.web_models import AssistantSymbolGraphRequest
 from nocturnix.config import Settings
 
 
@@ -29,8 +22,11 @@ class FakeProvider:
         return "OK"
 
 
-def make_test_settings(tmp_path: Path, **overrides: dict[str, object]) -> Settings:
-    values = {
+def make_test_settings(
+    tmp_path: Path,
+    **overrides: object,
+) -> Settings:
+    values: dict[str, object] = {
         "database_url": f"sqlite:///{tmp_path / 'assistant.db'}",
         "database_migration_mode": "auto-test-only",
         "auth_mode": "development_header",
@@ -40,7 +36,8 @@ def make_test_settings(tmp_path: Path, **overrides: dict[str, object]) -> Settin
         "external_providers_enabled": False,
     }
     values.update(overrides)
-    return Settings(**values)
+
+    return Settings.model_validate(values)
 
 
 def headers(user: str = "owner-one") -> dict[str, str]:
@@ -196,7 +193,6 @@ def test_repository_symbol_graph_endpoint_returns_unknown_symbol_404(
 
 
 def test_mock_provider_architecture_response(tmp_path: Path) -> None:
-    from nocturnix.assistant.mock_provider import MockCodingProvider
     from nocturnix.assistant.local_code_summary import summarize_repository_context_text
 
     content = (
