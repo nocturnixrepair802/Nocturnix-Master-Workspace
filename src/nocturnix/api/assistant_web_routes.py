@@ -37,6 +37,13 @@ from nocturnix.assistant.web_models import (
     AssistantSymbolNodeResponse,
     AssistantTaskResponse,
 )
+from nocturnix.assistant.repository_models import (
+    RepositoryFileResponse,
+    RepositoryFilesResponse,
+    RepositorySearchRequest,
+    RepositorySearchResponse,
+    RepositoryStatusResponse,
+)
 from nocturnix.db import database_ready
 from nocturnix.models import UserIdentity
 
@@ -96,6 +103,77 @@ def create_assistant_web_router(
     def assistant_page() -> FileResponse:
         return FileResponse(static_root / "coding-assistant.html")
 
+
+    def repository_service(request: Request) -> RepositoryAccessService:
+        settings = request.app.state.container.settings
+        return RepositoryAccessService(
+            settings.safe_repository_root,
+            settings.repository_max_file_bytes,
+            settings.repository_search_result_limit,
+        )
+
+    @router.get(
+        "/api/assistant/repository/status",
+        response_model=RepositoryStatusResponse,
+    )
+    def repository_status(
+        service: RepositoryAccessService = Depends(repository_service),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> RepositoryStatusResponse:
+        return service.status()
+
+    @router.get(
+        "/api/assistant/repository/files",
+        response_model=RepositoryFilesResponse,
+    )
+    def repository_files(
+        prefix: str | None = None,
+        extension: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+        service: RepositoryAccessService = Depends(repository_service),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> RepositoryFilesResponse:
+        try:
+            return service.list_files(
+                prefix=prefix,
+                extension=extension,
+                limit=max(1, min(limit, 500)),
+                offset=max(0, offset),
+            )
+        except RepositoryAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+    @router.post(
+        "/api/assistant/repository/search",
+        response_model=RepositorySearchResponse,
+    )
+    def repository_search(
+        payload: RepositorySearchRequest,
+        service: RepositoryAccessService = Depends(repository_service),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> RepositorySearchResponse:
+        return service.search(
+            query=payload.query,
+            search_content=payload.search_content,
+            extensions=payload.extensions,
+            limit=payload.limit,
+        )
+
+    @router.get(
+        "/api/assistant/repository/file",
+        response_model=RepositoryFileResponse,
+    )
+    def repository_file(
+        path: str,
+        service: RepositoryAccessService = Depends(repository_service),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> RepositoryFileResponse:
+        try:
+            return service.read_file(path)
+        except RepositoryAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
     @router.get("/api/assistant/health", response_model=AssistantHealthResponse)
     def health(request: Request) -> AssistantHealthResponse:
         settings = request.app.state.container.settings
@@ -125,11 +203,20 @@ def create_assistant_web_router(
         if provider is None:
             raise HTTPException(status_code=503, detail="Coding provider is not configured.")
         try:
+            settings = services.container.settings
+            repository = RepositoryAccessService(
+                settings.safe_repository_root,
+                settings.repository_max_file_bytes,
+                settings.repository_search_result_limit,
+            )
             return CodingAssistantService(
                 services.session,
                 provider,
                 services.container.settings.conversation_retention_days,
+                repository,
             ).chat(user.user_id, payload)
+        except RepositoryAccessError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         except CodingProviderError as exc:
             raise HTTPException(status_code=exc.status_code, detail=exc.public_detail) from exc
         except RepositoryAccessError as exc:

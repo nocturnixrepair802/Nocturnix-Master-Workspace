@@ -20,3 +20,8 @@ button:disabled { opacity: .55; cursor: wait; }.copy { margin-top: 12px; padding
 @media (max-width: 600px) { .shell { padding: 18px 12px; }.message { max-width: 95%; }.welcome { padding: 20px; } }
 .provider-badge { display: inline-block; margin-top: 8px; padding: 5px 9px; border: 1px solid #324061; border-radius: 999px; color: #b8c5e8; background: rgba(17, 23, 40, .85); font-size: .85rem; font-weight: 700; }
 .mock-notice { padding: 10px 12px; border: 1px solid #33524f; border-radius: 12px; background: rgba(50, 214, 197, .1); color: #bff6ef; }
+.repository-panel { background: #171a26; border: 1px solid #30364d; border-radius: 16px; margin: 1rem 0; padding: 1rem; }
+.repo-list { display: grid; gap: .5rem; margin: .5rem 0 1rem; }
+.repo-row { align-items: center; display: flex; gap: .5rem; justify-content: space-between; }
+.repo-row span { overflow-wrap: anywhere; }
+.repo-preview { max-height: 18rem; overflow: auto; }

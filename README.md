@@ -111,3 +111,16 @@ NOCTURNIX_EXTERNAL_PROVIDERS_ENABLED=true
 OPENAI_API_KEY=...
 OPENAI_MODEL=gpt-5-mini
 ```
+
+## Development repository awareness
+
+The browser assistant exposes authenticated, read-only repository awareness for local development. Configure `NOCTURNIX_REPOSITORY_ROOT` to the project directory and use:
+
+- `GET /api/assistant/repository/status`
+- `GET /api/assistant/repository/files?prefix=src/nocturnix&extension=.py`
+- `POST /api/assistant/repository/search`
+- `GET /api/assistant/repository/file?path=src/nocturnix/assistant/service.py`
+
+Only safe text formats are approved: `.py`, `.pyi`, `.md`, `.txt`, `.toml`, `.yaml`, `.yml`, `.json`, `.html`, `.css`, `.js`, `.ts`, `.tsx`, `.jsx`, and `.sql`. Ignored paths include Git internals, virtual environments, caches, coverage output, `node_modules`, build output, local databases, `.env` files, private keys, and backups. Paths are confined to the configured repository root; traversal, absolute paths, Windows drive letters, UNC paths, symlink escape, null bytes, binary files, and oversized files are rejected.
+
+The `/assistant` page includes a repository panel for filename/content search, safe preview, and selected-file attachment. Selected files are loaded server-side through the same read-only validator and included as untrusted context for the assistant request. Mock mode lists attached file names without claiming semantic understanding, makes no external network request, and consumes no API credit. This is not semantic search and does not write, edit, execute shell commands, mutate Git, commit, push, or access arbitrary filesystem locations.
