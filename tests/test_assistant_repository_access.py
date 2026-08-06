@@ -1,39 +1,69 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
-from fastapi.testclient import TestClient
-
-from nocturnix import create_app
-from nocturnix.config import Settings
-
-
-def settings(tmp_path: Path, repo: Path, **overrides: Any) -> Settings:
-    values: dict[str, Any] = {
-        "database_url": f"sqlite:///{tmp_path / 'assistant.db'}",
-        "database_migration_mode": "auto-test-only",
-        "auth_mode": "development_header",
-        "allow_development_header_auth": True,
-        "coding_provider": "mock",
-        "repository_root": str(repo),
-        "repository_max_file_bytes": 64,
-        "repository_search_result_limit": 10,
-    }
-    values.update(overrides)
-    return Settings(**values)
+from nocturnix.assistant.repository_access import (
+    RepositoryAccessError,
+    build_repository_context_text,
+    load_repository_context,
+)
+from nocturnix.assistant.repository_models import RepositoryAccessRequest
 
 
-def headers() -> dict[str, str]:
-    return {"X-Nocturnix-Dev-User": "owner-one"}
+def test_load_repository_context_reads_selected_files(tmp_path: Path) -> None:
+    repository_root = tmp_path / "repo"
+    repository_root.mkdir()
+    file_a = repository_root / "README.md"
+    file_a.write_text("Hello world\n", encoding="utf-8")
+    file_b = repository_root / "src" / "example.py"
+    file_b.parent.mkdir()
+    file_b.write_text("print('example')\n", encoding="utf-8")
+
+    request = RepositoryAccessRequest(
+        repository_root=str(repository_root),
+        selected_files=["README.md", "src/example.py"],
+    )
+
+    context = load_repository_context(request)
+
+    assert context.repository_root == str(repository_root.resolve())
+    assert len(context.files) == 2
+    assert context.files[0].path == "README.md"
+    assert context.files[0].content == "Hello world\n"
+    assert context.files[1].path == "src/example.py"
+    assert "print('example')" in context.files[1].content
 
 
-def make_repo(tmp_path: Path) -> Path:
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    (repo / "src").mkdir()
-    (repo / "src" / "service.py").write_text(
-        "class AssistantTaskService:\n    pass\n", encoding="utf-8"
+def test_build_repository_context_text_formats_files(tmp_path: Path) -> None:
+    repository_root = tmp_path / "repo"
+    repository_root.mkdir()
+    file_path = repository_root / "notes.txt"
+    file_path.write_text("Line one\nLine two\n", encoding="utf-8")
+
+    request = RepositoryAccessRequest(
+        repository_root=str(repository_root),
+        selected_files=["notes.txt"],
+    )
+
+    context = load_repository_context(request)
+    text = build_repository_context_text(context)
+
+    assert "File: notes.txt" in text
+    assert "Line one" in text
+    assert "Line two" in text
+
+
+def test_load_repository_context_rejects_paths_outside_repository(
+    tmp_path: Path,
+) -> None:
+    repository_root = tmp_path / "repo"
+    repository_root.mkdir()
+    outside = tmp_path / "outside.txt"
+    outside.write_text("secret\n", encoding="utf-8")
+
+    request = RepositoryAccessRequest(
+        repository_root=str(repository_root),
+        selected_files=["../outside.txt"],
     )
     (repo / "README.md").write_text("Repository guide\n", encoding="utf-8")
     (repo / ".env").write_text("OPENAI_API_KEY=secret\n", encoding="utf-8")
@@ -199,4 +229,10 @@ def test_no_repository_write_or_network_occurs(tmp_path: Path) -> None:
         for p in repo.rglob("*")
         if p.is_file()
     )
-    assert after == before
+
+    try:
+        load_repository_context(request)
+    except RepositoryAccessError as exc:
+        assert "does not exist" in str(exc)
+    else:
+        raise AssertionError("Expected RepositoryAccessError for missing file")

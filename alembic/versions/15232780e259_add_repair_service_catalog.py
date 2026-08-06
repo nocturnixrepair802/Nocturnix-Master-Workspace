@@ -38,10 +38,7 @@ def upgrade() -> None:
             name="ck_repair_services_default_labor_minutes_nonnegative",
         ),
         sa.CheckConstraint(
-            (
-                "estimated_duration_minutes IS NULL "
-                "OR estimated_duration_minutes >= 0"
-            ),
+            ("estimated_duration_minutes IS NULL OR estimated_duration_minutes >= 0"),
             name="ck_repair_services_estimated_duration_minutes_nonnegative",
         ),
         sa.PrimaryKeyConstraint("id"),

@@ -97,17 +97,11 @@ def create_repair_ai_router(
     ):
         settings = services.container.settings
         if not settings.openai_enabled or not settings.external_providers_enabled:
-            raise HTTPException(
-                status_code=503, detail="OpenAI repair agent is not enabled"
-            )
+            raise HTTPException(status_code=503, detail="OpenAI repair agent is not enabled")
         if not settings.openai_api_key:
-            raise HTTPException(
-                status_code=503, detail="OpenAI API key is not configured"
-            )
+            raise HTTPException(status_code=503, detail="OpenAI API key is not configured")
 
-        confirmations = confirmation_store or SqlRepairConfirmationStore(
-            services.session
-        )
+        confirmations = confirmation_store or SqlRepairConfirmationStore(services.session)
         previous_response_id = req.previous_response_id
         confirmed_actions: set[str] = set()
 
@@ -151,8 +145,7 @@ def create_repair_ai_router(
             )
         except Exception as exc:
             logger.exception(
-                "OpenAI repair agent failed: "
-                "type=%s status=%s request_id=%s body=%r",
+                "OpenAI repair agent failed: type=%s status=%s request_id=%s body=%r",
                 type(exc).__name__,
                 getattr(exc, "status_code", None),
                 getattr(exc, "request_id", None),
@@ -181,11 +174,7 @@ def create_repair_ai_router(
             raise HTTPException(
                 status_code=provider_failure.status_code,
                 detail=provider_failure.public_detail,
-                headers=(
-                    {"Retry-After": "2"}
-                    if provider_failure.status_code == 429
-                    else None
-                ),
+                headers=({"Retry-After": "2"} if provider_failure.status_code == 429 else None),
             ) from exc
 
         proposed_actions: list[dict[str, Any]] = []

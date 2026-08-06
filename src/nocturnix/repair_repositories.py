@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import builtins
 from collections.abc import Mapping
@@ -648,9 +648,9 @@ def count_customers(session: Session, owner_user_id: str) -> int:
 def count_devices(session: Session, owner_user_id: str) -> int:
     return int(
         session.scalar(
-            select(func.count()).select_from(CustomerDeviceRow).where(
-                CustomerDeviceRow.owner_user_id == owner_user_id
-            )
+            select(func.count())
+            .select_from(CustomerDeviceRow)
+            .where(CustomerDeviceRow.owner_user_id == owner_user_id)
         )
         or 0
     )
@@ -746,9 +746,7 @@ class SqlRepairTicketLineItemRepository:
         line_number = int(current_max or 0) + 1
 
         values = request.model_dump(mode="json")
-        line_total_cents = (
-            request.quantity * request.unit_price_cents
-        ) - request.discount_cents
+        line_total_cents = (request.quantity * request.unit_price_cents) - request.discount_cents
 
         row = RepairTicketLineItemRow(
             id=f"line_{uuid4().hex[:16]}",
@@ -805,9 +803,7 @@ class SqlRepairTicketLineItemRepository:
         changes = request.model_dump(exclude_unset=True, mode="python")
         _apply_changes(row, changes)
 
-        row.line_total_cents = (
-            row.quantity * row.unit_price_cents
-        ) - row.discount_cents
+        row.line_total_cents = (row.quantity * row.unit_price_cents) - row.discount_cents
         row.updated_at = datetime.now(UTC)
 
         self.session.flush()
@@ -1018,16 +1014,12 @@ class SqlRepairServiceRepository:
         if category:
             cleaned_category = category.strip()
             if cleaned_category:
-                filters.append(
-                    func.lower(RepairServiceRow.category) == cleaned_category.lower()
-                )
+                filters.append(func.lower(RepairServiceRow.category) == cleaned_category.lower())
 
         if is_active is not None:
             filters.append(RepairServiceRow.is_active == is_active)
 
-        total_statement = (
-            select(func.count()).select_from(RepairServiceRow).where(*filters)
-        )
+        total_statement = select(func.count()).select_from(RepairServiceRow).where(*filters)
         total = int(self.session.scalar(total_statement) or 0)
 
         statement = (
@@ -1061,10 +1053,7 @@ class SqlRepairServiceRepository:
         if "description" in fields:
             row.description = request.description
 
-        if (
-            "default_labor_minutes" in fields
-            and request.default_labor_minutes is not None
-        ):
+        if "default_labor_minutes" in fields and request.default_labor_minutes is not None:
             row.default_labor_minutes = request.default_labor_minutes
 
         if "estimated_duration_minutes" in fields:
