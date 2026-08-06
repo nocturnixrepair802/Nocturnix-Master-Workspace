@@ -5,69 +5,14 @@ import os
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from nocturnix.assistant.repository_models import (
-    RepositoryFileItem,
-    RepositoryFileResponse,
-    RepositoryFilesResponse,
-    RepositorySearchMatch,
-    RepositorySearchResponse,
-    RepositoryStatusResponse,
+    RepositoryAccessRequest,
+    RepositoryContext,
+    RepositoryFileReference,
 )
 
-SAFE_TEXT_EXTENSIONS = frozenset(
-    {
-        ".py",
-        ".pyi",
-        ".md",
-        ".txt",
-        ".toml",
-        ".yaml",
-        ".yml",
-        ".json",
-        ".html",
-        ".css",
-        ".js",
-        ".ts",
-        ".tsx",
-        ".jsx",
-        ".sql",
-    }
-)
-IGNORED_NAMES = frozenset(
-    {
-        ".git",
-        ".venv",
-        "venv",
-        "__pycache__",
-        ".pytest_cache",
-        ".mypy_cache",
-        ".pyright",
-        "htmlcov",
-        "node_modules",
-        "dist",
-        "build",
-    }
-)
-IGNORED_PATTERNS = (
-    ".coverage",
-    "*.db",
-    "*.sqlite",
-    "*.sqlite3",
-    ".env",
-    ".env.*",
-    "*.pem",
-    "*.key",
-    "*.bak",
-)
-MAX_CONTEXT_BYTES = 64_000
 
-
-class RepositoryAccessError(ValueError):
-    status_code = 400
-
-
-class RepositoryNotFoundError(RepositoryAccessError):
-    status_code = 404
-
+class RepositoryAccessError(RuntimeError):
+    pass
 
 class RepositoryAccessService:
     def __init__(self, root: Path | str, max_file_bytes: int, search_result_limit: int) -> None:
@@ -245,14 +190,22 @@ class RepositoryAccessService:
 
         return candidate
 
-    def _safe_files(self) -> list[RepositoryFileItem]:
-        items: list[RepositoryFileItem] = []
-        for dirpath, dirnames, filenames in os.walk(self.root, followlinks=False):
-            base = Path(dirpath)
-            dirnames[:] = sorted(
-                d
-                for d in dirnames
-                if not self._ignored((base / d).relative_to(self.root).as_posix(), base / d)
+        if not resolved_path.exists():
+            raise RepositoryAccessError(
+                f"Repository file {raw_path!r} does not exist under {resolved_root!s}."
+            )
+        if not resolved_path.is_file():
+            raise RepositoryAccessError(f"Repository path {raw_path!r} is not a file.")
+
+        content = resolved_path.read_text(encoding="utf-8", errors="replace")
+        if len(content) > request.max_file_content_length:
+            content = content[: request.max_file_content_length]
+
+        relative_path = resolved_path.relative_to(resolved_root).as_posix()
+        files.append(
+            RepositoryFileReference(
+                path=relative_path,
+                content=content,
             )
             for name in sorted(filenames):
                 path = base / name
@@ -311,17 +264,15 @@ class RepositoryAccessService:
             fnmatch.fnmatchcase(path.name, pattern) for pattern in IGNORED_PATTERNS
         )
 
-    def _normalize_prefix(self, prefix: str | None) -> str | None:
-        if not prefix:
-            return None
-        self._resolve_relative_only(prefix.rstrip("/"))
-        return prefix.strip().replace("\\", "/")
+    return RepositoryContext(
+        repository_root=str(resolved_root),
+        files=files,
+    )
 
-    def _normalize_extension(self, extension: str | None) -> str | None:
-        if not extension:
-            return None
-        ext = extension.lower().strip()
-        return ext if ext.startswith(".") else f".{ext}"
+
+def build_repository_context_text(context: RepositoryContext) -> str:
+    if not context.files:
+        return ""
 
     def _resolve_relative_only(self, value: str) -> None:
         if (

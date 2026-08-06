@@ -68,3 +68,114 @@ class AssistantResultResponse(BaseModel):
 
 class AssistantResultsResponse(BaseModel):
     items: list[AssistantResultResponse]
+
+
+class AssistantRepositoryReferenceItem(BaseModel):
+    path: str
+    line_number: int
+    reference_type: str
+    excerpt: str
+
+
+class AssistantRepositoryReferencesRequest(BaseModel):
+    repository_root: str = Field(min_length=1)
+    symbol: str = Field(min_length=1)
+    extensions: list[str] = Field(default_factory=list)
+    max_results: int = Field(default=50, ge=1, le=200)
+
+
+class AssistantRepositoryReferencesResponse(BaseModel):
+    items: list[AssistantRepositoryReferenceItem]
+
+
+class AssistantSymbolNode(BaseModel):
+    name: str
+    qualified_name: str
+    path: str
+    line_number: int
+    node_type: str
+
+
+class AssistantSymbolEdge(BaseModel):
+    source: str
+    target: str
+    edge_type: str
+    path: str
+    line_number: int
+
+
+class AssistantSymbolGraphRequest(BaseModel):
+    repository_root: str = Field(min_length=1)
+    symbol: str | None = None
+    depth: int = Field(default=1, ge=0, le=5)
+    limit: int = Field(default=100, ge=1, le=500)
+    extensions: list[str] = Field(default_factory=list)
+
+
+class AssistantSymbolGraphResponse(BaseModel):
+    root: str | None
+    nodes: list[AssistantSymbolNode]
+    edges: list[AssistantSymbolEdge]
+
+
+class AssistantSymbolNodeResponse(BaseModel):
+    node: AssistantSymbolNode
+    outgoing_edges: list[AssistantSymbolEdge]
+    incoming_edges: list[AssistantSymbolEdge]
+
+
+class AssistantPatchProposalRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    instruction: str = Field(
+        min_length=1,
+        max_length=10_000,
+    )
+    selected_files: list[str] = Field(
+        min_length=1,
+        max_length=10,
+    )
+    title: str | None = Field(
+        default=None,
+        max_length=200,
+    )
+    repository_root: str | None = Field(
+        default=None,
+        min_length=1,
+    )
+
+    @field_validator("instruction")
+    @classmethod
+    def instruction_not_blank(
+        cls,
+        value: str,
+    ) -> str:
+        normalized = value.strip()
+
+        if not normalized:
+            raise ValueError("instruction must not be blank")
+
+        return normalized
+
+    @field_validator("selected_files")
+    @classmethod
+    def selected_files_not_blank(
+        cls,
+        value: list[str],
+    ) -> list[str]:
+        normalized_files = [file_path.strip() for file_path in value]
+
+        if any(not file_path for file_path in normalized_files):
+            raise ValueError("selected_files must not contain blank paths")
+
+        return normalized_files
+
+
+class AssistantPatchProposalResponse(BaseModel):
+    title: str
+    summary: str
+    affected_files: list[str]
+    unified_diff: str
+    warnings: list[str]
+    generated_locally: bool
+    applied: bool
