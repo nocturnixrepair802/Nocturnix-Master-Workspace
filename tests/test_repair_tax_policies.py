@@ -17,7 +17,6 @@ TAX_POLICIES_URL = "/api/v1/repair/tax-policies"
 def repair_client(tmp_path: Path):
     app = create_app(
         Settings(
-            
             database_url=f"sqlite:///{tmp_path / 'repair_tax_policies.db'}",
             database_migration_mode="auto-test-only",
             auth_mode="development_header",

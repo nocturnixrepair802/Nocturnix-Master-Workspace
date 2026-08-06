@@ -12,6 +12,7 @@ from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingP
 from nocturnix.assistant.repository_access import RepositoryAccessError, RepositoryAccessService
 from nocturnix.assistant.provider_factory import provider_name
 from nocturnix.assistant.repositories import AssistantTaskRepository
+from nocturnix.assistant.repository_access import RepositoryAccessError
 from nocturnix.assistant.web_models import (
     AssistantChatRequest,
     AssistantChatResponse,
@@ -159,6 +160,8 @@ def create_assistant_web_router(
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         except CodingProviderError as exc:
             raise HTTPException(status_code=exc.status_code, detail=exc.public_detail) from exc
+        except RepositoryAccessError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         except ConversationAccessError as exc:
             raise HTTPException(status_code=404, detail="Conversation not found.") from exc
 

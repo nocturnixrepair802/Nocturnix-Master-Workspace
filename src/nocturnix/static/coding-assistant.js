@@ -5,11 +5,7 @@ const status = document.querySelector("#status");
 const error = document.querySelector("#error");
 const providerBadge = document.querySelector("#provider-badge");
 const mockNotice = document.querySelector("#mock-notice");
-const repoSearch = document.querySelector("#repo-search");
-const repoSearchButton = document.querySelector("#repo-search-button");
-const repoResults = document.querySelector("#repo-results");
-const repoSelected = document.querySelector("#repo-selected");
-const repoPreview = document.querySelector("#repo-preview");
+const selectedFiles = new Set();
 let conversationId = null;
 const selectedFiles = new Set();
 
@@ -145,13 +141,12 @@ async function submit() {
       method: "POST",
       headers: requestHeaders(),
       body: JSON.stringify({
-        message: text,
-        conversation_id: conversationId,
-        selected_files: Array.from(selectedFiles),
+          message,
+          conversation_id: conversationId,
+          selected_files: Array.from(selectedFiles),
       }),
-    });
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.detail || "The assistant request failed.");
+    const body = await response.json()
+    if (!response.ok) throw new Error(body.detail || "The assistant request failed.")
     conversationId = body.conversation_id;
     addMessage("assistant", body.answer, true);
     status.textContent = `Task ${body.status}`;
@@ -176,3 +171,13 @@ repoSearch.addEventListener("keydown", (event) => {
 
 renderSelected();
 loadHealth();
+
+function selectFile(path) {
+    selectedFiles.add(path);
+    renderSelectedFiles();
+}
+
+function removeSelectedFile(path) {
+    selectedFiles.delete(path);
+    renderSelectedFiles();
+}

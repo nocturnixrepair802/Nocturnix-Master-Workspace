@@ -230,13 +230,12 @@ class RepairServiceRow(Base):
             name="ck_repair_services_default_labor_minutes_nonnegative",
         ),
         CheckConstraint(
-            (
-                "estimated_duration_minutes IS NULL "
-                "OR estimated_duration_minutes >= 0"
-            ),
+            ("estimated_duration_minutes IS NULL OR estimated_duration_minutes >= 0"),
             name="ck_repair_services_estimated_duration_minutes_nonnegative",
         ),
     )
+
+
 class RepairPricingPolicyRow(Base):
     __tablename__ = "repair_pricing_policies"
 
