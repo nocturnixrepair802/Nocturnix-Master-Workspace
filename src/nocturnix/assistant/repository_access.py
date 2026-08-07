@@ -7,12 +7,70 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 from nocturnix.assistant.repository_models import (
     RepositoryAccessRequest,
     RepositoryContext,
+    RepositoryFileItem,
     RepositoryFileReference,
+    RepositoryFileResponse,
+    RepositoryFilesResponse,
+    RepositorySearchMatch,
+    RepositorySearchResponse,
+    RepositoryStatusResponse,
 )
 
+SAFE_TEXT_EXTENSIONS = frozenset(
+    {
+        ".py",
+        ".pyi",
+        ".md",
+        ".txt",
+        ".toml",
+        ".yaml",
+        ".yml",
+        ".json",
+        ".html",
+        ".css",
+        ".js",
+        ".ts",
+        ".tsx",
+        ".jsx",
+        ".sql",
+    }
+)
+IGNORED_NAMES = frozenset(
+    {
+        ".git",
+        ".venv",
+        "venv",
+        "__pycache__",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".pyright",
+        "htmlcov",
+        "node_modules",
+        "dist",
+        "build",
+    }
+)
+IGNORED_PATTERNS = (
+    ".coverage",
+    "*.db",
+    "*.sqlite",
+    "*.sqlite3",
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+    "*.bak",
+)
+MAX_CONTEXT_BYTES = 64_000
 
-class RepositoryAccessError(RuntimeError):
-    pass
+
+class RepositoryAccessError(ValueError):
+    status_code = 400
+
+
+class RepositoryNotFoundError(RepositoryAccessError):
+    status_code = 404
+
 
 class RepositoryAccessService:
     def __init__(self, root: Path | str, max_file_bytes: int, search_result_limit: int) -> None:
@@ -190,22 +248,14 @@ class RepositoryAccessService:
 
         return candidate
 
-        if not resolved_path.exists():
-            raise RepositoryAccessError(
-                f"Repository file {raw_path!r} does not exist under {resolved_root!s}."
-            )
-        if not resolved_path.is_file():
-            raise RepositoryAccessError(f"Repository path {raw_path!r} is not a file.")
-
-        content = resolved_path.read_text(encoding="utf-8", errors="replace")
-        if len(content) > request.max_file_content_length:
-            content = content[: request.max_file_content_length]
-
-        relative_path = resolved_path.relative_to(resolved_root).as_posix()
-        files.append(
-            RepositoryFileReference(
-                path=relative_path,
-                content=content,
+    def _safe_files(self) -> list[RepositoryFileItem]:
+        items: list[RepositoryFileItem] = []
+        for dirpath, dirnames, filenames in os.walk(self.root, followlinks=False):
+            base = Path(dirpath)
+            dirnames[:] = sorted(
+                d
+                for d in dirnames
+                if not self._ignored((base / d).relative_to(self.root).as_posix(), base / d)
             )
             for name in sorted(filenames):
                 path = base / name
@@ -264,15 +314,17 @@ class RepositoryAccessService:
             fnmatch.fnmatchcase(path.name, pattern) for pattern in IGNORED_PATTERNS
         )
 
-    return RepositoryContext(
-        repository_root=str(resolved_root),
-        files=files,
-    )
+    def _normalize_prefix(self, prefix: str | None) -> str | None:
+        if not prefix:
+            return None
+        self._resolve_relative_only(prefix.rstrip("/"))
+        return prefix.strip().replace("\\", "/")
 
-
-def build_repository_context_text(context: RepositoryContext) -> str:
-    if not context.files:
-        return ""
+    def _normalize_extension(self, extension: str | None) -> str | None:
+        if not extension:
+            return None
+        ext = extension.lower().strip()
+        return ext if ext.startswith(".") else f".{ext}"
 
     def _resolve_relative_only(self, value: str) -> None:
         if (
@@ -283,3 +335,115 @@ def build_repository_context_text(context: RepositoryContext) -> str:
             or ".." in PurePosixPath(value).parts
         ):
             raise RepositoryAccessError("Repository path is invalid.")
+
+
+def _resolve_repository_context_path(
+    repository_root: Path,
+    raw_path: str,
+) -> Path:
+    if "\x00" in raw_path or "\\" in raw_path:
+        raise RepositoryAccessError("Repository path is invalid.")
+
+    posix_path = PurePosixPath(raw_path)
+    windows_path = PureWindowsPath(raw_path)
+
+    if (
+        posix_path.is_absolute()
+        or windows_path.is_absolute()
+        or bool(windows_path.drive)
+        or raw_path.startswith(("//", "\\\\"))
+    ):
+        raise RepositoryAccessError("Repository path must be relative.")
+
+    if ".." in posix_path.parts:
+        raise RepositoryAccessError("Repository path is outside repository root.")
+
+    if any(part in {"", "."} for part in posix_path.parts):
+        raise RepositoryAccessError("Repository path contains unsafe segments.")
+
+    try:
+        resolved_path = (repository_root / Path(*posix_path.parts)).resolve(strict=True)
+    except OSError as exc:
+        raise RepositoryNotFoundError("Repository file was not found.") from exc
+
+    if not resolved_path.is_relative_to(repository_root):
+        raise RepositoryAccessError("Repository path is outside repository root.")
+
+    if not resolved_path.is_file():
+        raise RepositoryNotFoundError("Repository file was not found.")
+
+    relative_path = resolved_path.relative_to(repository_root).as_posix()
+
+    if (
+        any(part in IGNORED_NAMES for part in PurePosixPath(relative_path).parts)
+        or any(
+            fnmatch.fnmatchcase(
+                resolved_path.name,
+                pattern,
+            )
+            for pattern in IGNORED_PATTERNS
+        )
+        or resolved_path.suffix.lower() not in SAFE_TEXT_EXTENSIONS
+    ):
+        raise RepositoryAccessError("Repository file is not approved for access.")
+
+    return resolved_path
+
+
+def load_repository_context(
+    request: RepositoryAccessRequest,
+) -> RepositoryContext:
+    try:
+        repository_root = Path(request.repository_root).expanduser().resolve(strict=True)
+    except OSError as exc:
+        raise RepositoryAccessError("Repository root does not exist.") from exc
+
+    if not repository_root.is_dir():
+        raise RepositoryAccessError("Repository root is not a directory.")
+
+    if len(request.selected_files) > request.max_file_count:
+        raise RepositoryAccessError("Selected repository file count exceeds the configured limit.")
+
+    files: list[RepositoryFileReference] = []
+
+    for selected_path in request.selected_files:
+        resolved_path = _resolve_repository_context_path(
+            repository_root,
+            selected_path,
+        )
+
+        raw_content = resolved_path.read_bytes()
+
+        if len(raw_content) > request.max_file_content_length:
+            raw_content = raw_content[: request.max_file_content_length]
+
+        if b"\x00" in raw_content:
+            raise RepositoryAccessError("Binary files are not available through repository access.")
+
+        try:
+            content = raw_content.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise RepositoryAccessError("File is not valid UTF-8 text.") from exc
+
+        relative_path = resolved_path.relative_to(repository_root).as_posix()
+
+        files.append(
+            RepositoryFileReference(
+                path=relative_path,
+                content=content,
+            )
+        )
+
+    return RepositoryContext(
+        repository_root=str(repository_root),
+        files=files,
+    )
+
+
+def build_repository_context_text(
+    context: RepositoryContext,
+) -> str:
+    if not context.files:
+        return ""
+
+    return "\n\n".join(f"File: {file.path}\n{file.content}" for file in context.files)
