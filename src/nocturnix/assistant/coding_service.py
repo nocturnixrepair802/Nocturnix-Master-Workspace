@@ -1,21 +1,22 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingProviderError
-from nocturnix.assistant.repositories import AssistantTaskRepository
-from nocturnix.assistant.repository_access import (
-    RepositoryAccessRequest,
-    build_repository_context_text,
-    load_repository_context,
+from nocturnix.assistant.openai_provider import (
+    CodingAssistantProvider,
+    CodingProviderError,
 )
+from nocturnix.assistant.repositories import AssistantTaskRepository
+from nocturnix.assistant.repository_access import RepositoryAccessService
 from nocturnix.assistant.service import AssistantTaskService
-from nocturnix.assistant.web_models import AssistantChatRequest, AssistantChatResponse
+from nocturnix.assistant.web_models import (
+    AssistantChatRequest,
+    AssistantChatResponse,
+)
 from nocturnix.persistence.models import ConversationRow
 
 
@@ -33,37 +34,32 @@ class CodingAssistantService:
         self._repository = repository
         self.tasks = AssistantTaskService(AssistantTaskRepository(session))
 
-    def chat(self, owner_user_id: str, request: AssistantChatRequest) -> AssistantChatResponse:
-        repository_context_text = ""
-        if request.selected_files:
-            repository_context = load_repository_context(
-                RepositoryAccessRequest(
-                    repository_root=str(Path(__file__).resolve().parents[3]),
-                    selected_files=request.selected_files,
-                )
-            )
-            repository_context_text = build_repository_context_text(repository_context)
+    def chat(
+        self,
+        owner_user_id: str,
+        request: AssistantChatRequest,
+    ) -> AssistantChatResponse:
+        conversation_id = self._conversation(
+            owner_user_id,
+            request.conversation_id,
+        )
 
-        provider_context: str | None
-        if repository_context_text and request.project_context:
-            provider_context = (
-                f"{repository_context_text}\n\n"
-                f"Project context (untrusted reference only):\n{request.project_context}"
-            )
-        elif repository_context_text:
-            provider_context = repository_context_text
-        else:
-            provider_context = request.project_context
-
-        conversation_id = self._conversation(owner_user_id, request.conversation_id)
         repository_context = request.project_context
         attached_files: list[str] = []
+
         if request.selected_files:
             if self._repository is None:
                 raise ValueError("Repository access is not configured.")
+
             loaded_context, attached_files = self._repository.load_context(request.selected_files)
+
             repository_context = "\n\n".join(
-                part for part in [request.project_context, loaded_context] if part
+                part
+                for part in [
+                    request.project_context,
+                    loaded_context,
+                ]
+                if part
             )
 
         task = self.tasks.create_task(
@@ -77,13 +73,21 @@ class CodingAssistantService:
                 "selected_files": attached_files,
             },
         )
-        self.tasks.start_task(task.id, owner_user_id=owner_user_id)
+
+        self.tasks.start_task(
+            task.id,
+            owner_user_id=owner_user_id,
+        )
+
         try:
-            answer = self._provider.answer(request.message, provider_context)
+            answer = self._provider.answer(
+                request.message,
+                repository_context,
+            )
         except CodingProviderError:
             self.tasks.fail_task(
                 task.id,
-                error_message="AI provider request failed safely.",
+                error_message=("AI provider request failed safely."),
                 owner_user_id=owner_user_id,
             )
             raise
@@ -96,13 +100,16 @@ class CodingAssistantService:
             content={"text": answer},
             media_type="text/markdown",
         )
+
         completed = self.tasks.complete_task(
             task.id,
-            result_summary="Coding assistance response generated.",
+            result_summary=("Coding assistance response generated."),
             owner_user_id=owner_user_id,
         )
+
         if completed.completed_at is None:
             raise RuntimeError("completed task has no completion timestamp")
+
         return AssistantChatResponse(
             task_id=completed.id,
             conversation_id=conversation_id,
@@ -113,15 +120,23 @@ class CodingAssistantService:
             completed_at=completed.completed_at,
         )
 
-    def _conversation(self, owner_user_id: str, requested_id: str | None) -> str:
+    def _conversation(
+        self,
+        owner_user_id: str,
+        requested_id: str | None,
+    ) -> str:
         conversation_id = requested_id or str(uuid4())
+
         existing = self._session.scalar(
             select(ConversationRow).where(ConversationRow.id == conversation_id)
         )
+
         if existing is not None and existing.owner_user_id != owner_user_id:
             raise ConversationAccessError("Conversation not found.")
+
         if existing is None:
             now = datetime.now(UTC)
+
             self._session.add(
                 ConversationRow(
                     id=conversation_id,
@@ -131,10 +146,12 @@ class CodingAssistantService:
                     escalation_state="none",
                     created_at=now,
                     updated_at=now,
-                    retention_expires_at=now + timedelta(days=self._conversation_retention_days),
+                    retention_expires_at=(now + timedelta(days=self._conversation_retention_days)),
                 )
             )
+
             self._session.commit()
+
         return conversation_id
 
 

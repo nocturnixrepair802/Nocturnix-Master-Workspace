@@ -140,7 +140,9 @@ def propose_patch(
     if not unified_diff:
         raise PatchProposalError("The requested patch would not change the selected file.")
 
-    if resolved_file.read_text(encoding="utf-8") != original_content:
+    current_content = resolved_file.read_bytes().decode("utf-8")
+
+    if current_content != original_content:
         raise PatchProposalError("The selected file changed while the proposal was generated.")
 
     proposal_title = (

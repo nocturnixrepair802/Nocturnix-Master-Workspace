@@ -5,11 +5,12 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
-from nocturnix.assistant.patch_proposals import propose_patch
 
 from nocturnix.assistant.coding_service import CodingAssistantService, ConversationAccessError
 from nocturnix.assistant.exceptions import AssistantTaskNotFoundError
 from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingProviderError
+from nocturnix.assistant.patch_models import PatchProposalError
+from nocturnix.assistant.patch_proposals import propose_patch
 from nocturnix.assistant.provider_factory import provider_name
 from nocturnix.assistant.reference_analysis import analyze_repository_references
 from nocturnix.assistant.repositories import AssistantTaskRepository
@@ -20,6 +21,10 @@ from nocturnix.assistant.repository_models import (
     RepositorySearchRequest,
     RepositorySearchResponse,
     RepositoryStatusResponse,
+)
+from nocturnix.assistant.symbol_graph import (
+    build_project_symbol_graph,
+    symbol_graph_for_symbol,
 )
 from nocturnix.assistant.web_models import (
     AssistantChatRequest,
@@ -197,26 +202,30 @@ def create_assistant_web_router(
         if provider is None:
             raise HTTPException(status_code=503, detail="Coding provider is not configured.")
         try:
-            settings = services.container.settings
-            repository = RepositoryAccessService(
-                settings.safe_repository_root,
-                settings.repository_max_file_bytes,
-                settings.repository_search_result_limit,
-            )
+            settings = request.app.state.container.settings
+            repository = repository_service(request)
+
             return CodingAssistantService(
                 services.session,
                 provider,
-                services.container.settings.conversation_retention_days,
+                settings.conversation_retention_days,
                 repository,
             ).chat(user.user_id, payload)
         except RepositoryAccessError as exc:
-            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+            raise HTTPException(
+                status_code=exc.status_code,
+                detail=str(exc),
+            ) from exc
         except CodingProviderError as exc:
-            raise HTTPException(status_code=exc.status_code, detail=exc.public_detail) from exc
-        except RepositoryAccessError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+            raise HTTPException(
+                status_code=exc.status_code,
+                detail=exc.public_detail,
+            ) from exc
         except ConversationAccessError as exc:
-            raise HTTPException(status_code=404, detail="Conversation not found.") from exc
+            raise HTTPException(
+                status_code=404,
+                detail="Conversation not found.",
+            ) from exc
 
     @router.post(
         "/api/assistant/repository/references",

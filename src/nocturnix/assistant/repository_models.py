@@ -72,14 +72,6 @@ class RepositorySearchRequest(BaseModel):
 
         return normalized
 
-    @field_validator("selected_files")
-    @classmethod
-    def validate_selected_files(cls, value: list[str]) -> list[str]:
-        if len(value) > 100:
-            raise ValueError("selected_files cannot contain more than 100 file paths")
-        if any(not file_path or not file_path.strip() for file_path in value):
-            raise ValueError("selected_files must not contain empty file paths")
-        return [file_path.strip() for file_path in value]
 
 class RepositorySearchResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -88,8 +80,6 @@ class RepositorySearchResponse(BaseModel):
     items: list[RepositorySearchMatch]
     limit: int
 
-class RepositoryContext(BaseModel):
-    model_config = ConfigDict(extra="forbid")
 
 class RepositoryStatusResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
