@@ -1,0 +1,4 @@
+
+# Local backup archives
+Backups/*.zip
+**/Backups/*.zip
