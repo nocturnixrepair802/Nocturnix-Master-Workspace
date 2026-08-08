@@ -8,11 +8,10 @@ import shutil
 import sys
 import zipfile
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from openpyxl import load_workbook
-
 
 BASE = Path(
     r"D:\Business Portal\01_Nocturnix_Business_Portal\100_Master_Data\Devices"
@@ -412,7 +411,7 @@ def main() -> int:
 
     shutil.copy2(SOURCE, OUTPUT)
     out_wb = load_workbook(OUTPUT, read_only=False, data_only=False, keep_links=True)
-    changed_at = datetime.now(timezone.utc).isoformat()
+    changed_at = datetime.now(UTC).isoformat()
     change_rows = []
     actual_count = 0
     for mapping in approved:

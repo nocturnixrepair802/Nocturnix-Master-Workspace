@@ -1,6 +1,5 @@
+api
 app
-assets
-backups
 config
 controllers
 core
@@ -12,16 +11,15 @@ exporters
 exports
 generators
 gui
-helpers
+import_engine
 importers
 inspectors
 logs
 main
 managers
-migrations
 models
-plugins
 repositories
+run_api
 run_gui
 scripts
 seeders

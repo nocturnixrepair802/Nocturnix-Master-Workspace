@@ -73,3 +73,21 @@
 .save-button:hover {
   background: var(--accent-light);
 }
+.repair-form-message {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.repair-form-success {
+  border: 1px solid #2e7d32;
+}
+
+.repair-form-error {
+  border: 1px solid #c62828;
+}
+
+.save-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}

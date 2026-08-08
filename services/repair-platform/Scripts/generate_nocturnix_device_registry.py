@@ -1,13 +1,10 @@
 import hashlib
 import json
-import os
-from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 SOURCE_MANUFACTURER = Path(
@@ -46,7 +43,7 @@ def clean(value):
     return str(value)
 
 
-def load_manufacturer_map(path: Path) -> Tuple[Dict[str, str], Dict[str, str]]:
+def load_manufacturer_map(path: Path) -> tuple[dict[str, str], dict[str, str]]:
     wb = load_workbook(path, data_only=True, read_only=True)
     ws = wb["01 - Manufacturer Registry"]
     rows = list(ws.iter_rows(values_only=True))
@@ -57,8 +54,8 @@ def load_manufacturer_map(path: Path) -> Tuple[Dict[str, str], Dict[str, str]]:
             break
     if header_index is None:
         raise RuntimeError("Manufacturer registry header not found")
-    id_map: Dict[str, str] = {}
-    name_map: Dict[str, str] = {}
+    id_map: dict[str, str] = {}
+    name_map: dict[str, str] = {}
     for row in rows[header_index + 1 :]:
         if not row or not clean(row[0]):
             continue
@@ -73,7 +70,7 @@ def load_manufacturer_map(path: Path) -> Tuple[Dict[str, str], Dict[str, str]]:
     return id_map, name_map
 
 
-def load_source_devices(path: Path) -> List[Dict[str, object]]:
+def load_source_devices(path: Path) -> list[dict[str, object]]:
     wb = load_workbook(path, data_only=True, read_only=True)
     ws = wb["01 - Master Devices"]
     rows = list(ws.iter_rows(values_only=True))
@@ -94,21 +91,21 @@ def load_source_devices(path: Path) -> List[Dict[str, object]]:
 
 
 def build_registry_rows(
-    source_rows: List[Dict[str, object]],
-    manufacturer_map: Dict[str, str],
-    manufacturer_names: Dict[str, str],
-) -> Tuple[
-    List[Dict[str, object]],
-    List[Dict[str, object]],
-    List[Dict[str, object]],
-    List[Dict[str, object]],
-    List[Dict[str, object]],
+    source_rows: list[dict[str, object]],
+    manufacturer_map: dict[str, str],
+    manufacturer_names: dict[str, str],
+) -> tuple[
+    list[dict[str, object]],
+    list[dict[str, object]],
+    list[dict[str, object]],
+    list[dict[str, object]],
+    list[dict[str, object]],
 ]:
-    device_rows: List[Dict[str, object]] = []
-    alias_rows: List[Dict[str, object]] = []
-    observation_rows: List[Dict[str, object]] = []
-    conflict_rows: List[Dict[str, object]] = []
-    review_rows: List[Dict[str, object]] = []
+    device_rows: list[dict[str, object]] = []
+    alias_rows: list[dict[str, object]] = []
+    observation_rows: list[dict[str, object]] = []
+    conflict_rows: list[dict[str, object]] = []
+    review_rows: list[dict[str, object]] = []
 
     for idx, rec in enumerate(source_rows, start=1):
         device_id = f"DEV{idx:06d}"
@@ -464,7 +461,7 @@ def create_workbook(
     revision_sheet.append(
         [
             "v0.1 Draft",
-            datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+            datetime.now(UTC).replace(microsecond=0).isoformat(),
             "Initial governed device registry draft built from source observations only.",
             "Catalog Governance",
             "Pending Verification",
@@ -526,7 +523,7 @@ def write_markdown_and_json(
     qa_lines.append(f"- Workbook: {OUTPUT_WORKBOOK}")
     qa_lines.append("- Profile: Nocturnix Device Registry v0.1 Draft")
     qa_lines.append(
-        f"- Generated UTC: {datetime.now(timezone.utc).replace(microsecond=0).isoformat()}"
+        f"- Generated UTC: {datetime.now(UTC).replace(microsecond=0).isoformat()}"
     )
     qa_lines.append(f"- Source SHA-256: {json.dumps(source_hashes, indent=2)}")
     qa_lines.append(f"- Workbook SHA-256 before QA: {output_hash_before_qa}")
@@ -560,7 +557,7 @@ def write_markdown_and_json(
     qa_json = {
         "workbook": str(OUTPUT_WORKBOOK),
         "profile": "Nocturnix Device Registry v0.1 Draft",
-        "generated_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "generated_utc": datetime.now(UTC).replace(microsecond=0).isoformat(),
         "source_hashes": source_hashes,
         "output_hash_before_qa": output_hash_before_qa,
         "output_hash_after_qa": output_hash_after_qa,

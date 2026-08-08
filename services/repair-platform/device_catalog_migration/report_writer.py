@@ -10,9 +10,14 @@ from typing import Any
 
 from openpyxl.workbook.workbook import Workbook
 
-from .audit import CellChange, DuplicateIssue, MigrationResult, SourceTable, ValidationIssue
+from .audit import (
+    CellChange,
+    DuplicateIssue,
+    MigrationResult,
+    SourceTable,
+    ValidationIssue,
+)
 from .config import AUDIT_SHEETS, EXCEPTIONS_CSV, LOG_CSV, README_REPORT, REPORT_JSON
-
 
 SUMMARY_HEADERS = ["Metric", "Result", "Details"]
 AUDIT_HEADERS = ["TimestampUTC", "Worksheet", "TableName", "Cell", "RowNumber", "EntityType", "RecordID", "ColumnName", "OldValue", "NewValue", "MatchMethod", "ChangeReason"]

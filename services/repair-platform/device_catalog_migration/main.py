@@ -6,16 +6,26 @@ import argparse
 import hashlib
 import logging
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from .audit import MigrationResult, ValidationIssue
+from .audit import MigrationResult
 from .config import OUTPUT_XLSX
-from .relationship_engine import build_maps, detect_duplicates, read_records, validate_records
+from .relationship_engine import (
+    build_maps,
+    detect_duplicates,
+    read_records,
+    validate_records,
+)
 from .report_writer import replace_audit_sheets, write_external_reports
 from .sheet_updater import apply_changes, plan_updates
 from .validation import scan_ref_errors, validate_reopen, validation_result
-from .workbook_discovery import find_authoritative, inventory_tables, load, print_inspection
+from .workbook_discovery import (
+    find_authoritative,
+    inventory_tables,
+    load,
+    print_inspection,
+)
 
 
 def sha256(path: Path) -> str:
@@ -50,7 +60,7 @@ def main() -> None:
         raise SystemExit(f"Input workbook not found: {input_path}")
     output_path = args.output.resolve()
     report_dir = (args.report_directory or output_path.parent).resolve()
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     backup_path = input_path.with_name(f"{input_path.stem}.backup_{timestamp}{input_path.suffix}")
     source_hash = sha256(input_path)
     wb = load(input_path)

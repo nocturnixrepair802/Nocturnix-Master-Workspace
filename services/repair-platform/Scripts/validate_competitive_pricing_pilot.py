@@ -9,13 +9,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from openpyxl import load_workbook
-
 from generate_competitive_pricing_pilot import (
     CANONICAL_SHA256,
     SHEETS,
     validate_workbook,
 )
+from openpyxl import load_workbook
 
 
 def sha256(path: Path) -> str:

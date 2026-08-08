@@ -1,4 +1,8 @@
-from device_catalog_migration.normalization import normalize_header, normalize_text, trim_text
+from device_catalog_migration.normalization import (
+    normalize_header,
+    normalize_text,
+    trim_text,
+)
 
 
 def test_normalize_header_equivalents():

@@ -5,9 +5,12 @@ Summary: Desktop repair management platform for Nocturnix Mobile Repair
 Requires-Python: >=3.14
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Requires-Dist: fastapi<1,>=0.116
 Requires-Dist: openpyxl<4,>=3.1
 Requires-Dist: pandas<4,>=3
+Requires-Dist: pydantic<3,>=2.11
 Requires-Dist: PySide6<7,>=6.10
+Requires-Dist: uvicorn[standard]<1,>=0.35
 Provides-Extra: dev
 Requires-Dist: pytest<10,>=8; extra == "dev"
 Requires-Dist: pyright<2,>=1.1; extra == "dev"

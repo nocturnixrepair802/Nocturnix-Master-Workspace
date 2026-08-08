@@ -1,5 +1,6 @@
-import openpyxl
 from pathlib import Path
+
+import openpyxl
 
 paths = [
     Path(

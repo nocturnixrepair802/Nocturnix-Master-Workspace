@@ -1,10 +1,16 @@
 from pathlib import Path
 
+from audit_migration_draft import calculate_sha256
 from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.table import Table, TableStyleInfo
-
-from audit_migration_draft import calculate_sha256
-from remediate_migration_draft import BLOCKED, DECISION, SAFE, build_crosswalk_mapping, create_plan, run
+from remediate_migration_draft import (
+    BLOCKED,
+    DECISION,
+    SAFE,
+    build_crosswalk_mapping,
+    create_plan,
+    run,
+)
 
 
 class Args:
