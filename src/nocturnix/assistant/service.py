@@ -284,3 +284,29 @@ class AssistantTaskService:
             limit=limit,
             offset=offset,
         )
+
+    def mark_patch_proposal_applied(
+        self,
+        proposal_id: Identifier,
+        *,
+        owner_user_id: Identifier,
+        applied_by_user_id: Identifier,
+    ) -> AssistantPatchProposalRow:
+        return self._repository.mark_patch_proposal_applied(
+            proposal_id,
+            owner_user_id=owner_user_id,
+            applied_by_user_id=applied_by_user_id,
+        )
+
+    def mark_patch_proposal_failed(
+        self,
+        proposal_id: Identifier,
+        *,
+        owner_user_id: Identifier,
+        failure_reason: str,
+    ) -> AssistantPatchProposalRow:
+        return self._repository.mark_patch_proposal_failed(
+            proposal_id,
+            owner_user_id=owner_user_id,
+            failure_reason=failure_reason,
+        )

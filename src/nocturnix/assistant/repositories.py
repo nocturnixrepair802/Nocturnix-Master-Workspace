@@ -305,9 +305,12 @@ class AssistantTaskRepository:
             original_sha256=original_sha256,
             proposed_sha256=proposed_sha256,
             metadata_json=metadata_json or {},
+            status="pending",
+            applied_at=None,
+            applied_by_user_id=None,
+            failure_reason=None,
             created_at=_utc_now(),
         )
-
         self._session.add(proposal)
         self._session.commit()
         self._session.refresh(proposal)
@@ -371,3 +374,59 @@ class AssistantTaskRepository:
         )
 
         return list(self._session.scalars(statement).all())
+
+    def mark_patch_proposal_applied(
+        self,
+        proposal_id: Identifier,
+        *,
+        owner_user_id: Identifier,
+        applied_by_user_id: Identifier,
+    ) -> AssistantPatchProposalRow:
+        proposal = self.get_patch_proposal(
+            proposal_id,
+            owner_user_id=owner_user_id,
+        )
+
+        if proposal.status != "pending":
+            raise ValueError(
+                f"Patch proposal {proposal.id!r} cannot be applied "
+                f"while its status is {proposal.status!r}."
+            )
+
+        proposal.status = "applied"
+        proposal.applied_at = _utc_now()
+        proposal.applied_by_user_id = normalize_id(applied_by_user_id)
+        proposal.failure_reason = None
+
+        self._session.commit()
+        self._session.refresh(proposal)
+
+        return proposal
+
+    def mark_patch_proposal_failed(
+        self,
+        proposal_id: Identifier,
+        *,
+        owner_user_id: Identifier,
+        failure_reason: str,
+    ) -> AssistantPatchProposalRow:
+        proposal = self.get_patch_proposal(
+            proposal_id,
+            owner_user_id=owner_user_id,
+        )
+
+        if proposal.status != "pending":
+            raise ValueError(
+                f"Patch proposal {proposal.id!r} cannot fail "
+                f"while its status is {proposal.status!r}."
+            )
+
+        proposal.status = "failed"
+        proposal.applied_at = None
+        proposal.applied_by_user_id = None
+        proposal.failure_reason = failure_reason
+
+        self._session.commit()
+        self._session.refresh(proposal)
+
+        return proposal

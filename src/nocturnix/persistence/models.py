@@ -668,6 +668,26 @@ class AssistantPatchProposalRow(Base):
         default=dict,
         nullable=False,
     )
+    status: Mapped[str] = mapped_column(
+        String(40),
+        index=True,
+        default="pending",
+        nullable=False,
+    )
+
+    applied_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    applied_by_user_id: Mapped[str | None] = mapped_column(
+        String(120),
+        index=True,
+    )
+
+    failure_reason: Mapped[str | None] = mapped_column(
+        Text,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
