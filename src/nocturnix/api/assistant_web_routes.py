@@ -363,6 +363,10 @@ def create_assistant_web_router(
             original_sha256=proposal.original_sha256,
             proposed_sha256=proposal.proposed_sha256,
             metadata_json=proposal.metadata_json,
+            status=proposal.status,
+            applied_at=proposal.applied_at,
+            applied_by_user_id=proposal.applied_by_user_id,
+            failure_reason=proposal.failure_reason,
             created_at=proposal.created_at,
         )
 
@@ -411,6 +415,10 @@ def create_assistant_web_router(
                     original_sha256=proposal.original_sha256,
                     proposed_sha256=proposal.proposed_sha256,
                     metadata_json=proposal.metadata_json,
+                    status=proposal.status,
+                    applied_at=proposal.applied_at,
+                    applied_by_user_id=proposal.applied_by_user_id,
+                    failure_reason=proposal.failure_reason,
                     created_at=proposal.created_at,
                 )
                 for proposal in proposals
@@ -599,5 +607,3 @@ def create_assistant_web_router(
         )
 
     return router
-
-   

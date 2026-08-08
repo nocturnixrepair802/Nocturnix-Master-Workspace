@@ -1,46 +1,229 @@
-const conversation = document.querySelector("#conversation");
-const messageInput = document.querySelector("#message");
-const sendButton = document.querySelector("#send");
-const statusText = document.querySelector("#status");
-const errorMessage = document.querySelector("#error");
-const providerBadge = document.querySelector("#provider-badge");
-const mockNotice = document.querySelector("#mock-notice");
+const conversation =
+  document.querySelector("#conversation");
 
-const proposalFileInput =
-  document.querySelector("#proposal-file");
-const addProposalFileButton =
-  document.querySelector("#add-proposal-file");
-const selectedFilesList =
-  document.querySelector("#selected-files");
+const messageInput =
+  document.querySelector("#message");
+
+const sendButton =
+  document.querySelector("#send");
+
+const statusText =
+  document.querySelector("#status");
+
+const errorMessage =
+  document.querySelector("#error");
+
+const providerBadge =
+  document.querySelector("#provider-badge");
+
+const mockNotice =
+  document.querySelector("#mock-notice");
+
+const repoSearch =
+  document.querySelector("#repo-search");
+
+const repoSearchButton =
+  document.querySelector("#repo-search-button");
+
+const repoResults =
+  document.querySelector("#repo-results");
+
+const repoSelected =
+  document.querySelector("#repo-selected");
+
+const repoPreview =
+  document.querySelector("#repo-preview");
+
 const proposalTitleInput =
   document.querySelector("#proposal-title");
+
 const proposalInstructionInput =
   document.querySelector("#proposal-instruction");
+
 const generateProposalButton =
   document.querySelector("#generate-proposal");
+
 const proposalError =
   document.querySelector("#proposal-error");
+
 const proposalResult =
   document.querySelector("#proposal-result");
+
 const proposalResultTitle =
   document.querySelector("#proposal-result-title");
+
 const proposalState =
   document.querySelector("#proposal-state");
+
 const proposalSummary =
   document.querySelector("#proposal-summary");
+
 const proposalAffectedFiles =
   document.querySelector("#proposal-affected-files");
-const proposalDiff =
-  document.querySelector("#proposal-diff");
+
 const proposalWarnings =
   document.querySelector("#proposal-warnings");
+
+const proposalDiff =
+  document.querySelector("#proposal-diff");
+
 const copyDiffButton =
   document.querySelector("#copy-diff");
+
+const applyPatchButton =
+  document.querySelector("#apply-patch");
+
+const applyMessage =
+  document.querySelector("#apply-message");
+
+const refreshHistoryButton =
+  document.querySelector("#refresh-history");
+
+const patchHistory =
+  document.querySelector("#patch-history");
+
+const applyDialog =
+  document.querySelector("#apply-dialog");
+
+const confirmApplyButton =
+  document.querySelector("#confirm-apply");
 
 const selectedFiles = new Set();
 
 let conversationId = null;
-const selectedFiles = new Set();
+let currentProposalId = null;
+let currentPatchTaskId = null;
+let currentUnifiedDiff = "";
+
+
+function requestHeaders() {
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  const devUser =
+    window.localStorage.getItem(
+      "nocturnixDevUser",
+    ) || "local-developer";
+
+  headers["X-Nocturnix-Dev-User"] =
+    devUser;
+
+  return headers;
+}
+
+
+function getErrorDetail(
+  body,
+  fallback,
+) {
+  if (
+    body &&
+    typeof body.detail === "string"
+  ) {
+    return body.detail;
+  }
+
+  if (
+    body &&
+    body.error &&
+    typeof body.error.message === "string"
+  ) {
+    return body.error.message;
+  }
+
+  return fallback;
+}
+
+
+function showError(message) {
+  errorMessage.textContent = message;
+  errorMessage.hidden = false;
+}
+
+
+function clearError() {
+  errorMessage.textContent = "";
+  errorMessage.hidden = true;
+}
+
+
+function showProposalError(message) {
+  proposalError.textContent = message;
+  proposalError.hidden = false;
+}
+
+
+function clearProposalError() {
+  proposalError.textContent = "";
+  proposalError.hidden = true;
+}
+
+
+function showApplyMessage(
+  message,
+  kind = "info",
+) {
+  applyMessage.textContent = message;
+  applyMessage.className =
+    `notice ${kind}`;
+
+  applyMessage.hidden = false;
+}
+
+
+function clearApplyMessage() {
+  applyMessage.textContent = "";
+  applyMessage.className = "notice";
+  applyMessage.hidden = true;
+}
+
+
+function formatDate(value) {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleString();
+}
+
+
+function normalizeStatus(status) {
+  const value =
+    String(status || "pending").toLowerCase();
+
+  if (
+    value === "applied" ||
+    value === "failed"
+  ) {
+    return value;
+  }
+
+  return "pending";
+}
+
+
+function setStatusBadge(
+  element,
+  status,
+) {
+  const normalized =
+    normalizeStatus(status);
+
+  element.className =
+    `status-badge ${normalized}`;
+
+  element.textContent =
+    normalized.charAt(0).toUpperCase() +
+    normalized.slice(1);
+}
+
 
 async function loadHealth() {
   try {
@@ -54,7 +237,12 @@ async function loadHealth() {
     const body = await response.json();
 
     if (!response.ok) {
-      throw new Error("Health check failed.");
+      throw new Error(
+        getErrorDetail(
+          body,
+          "Health check failed.",
+        ),
+      );
     }
 
     const providerLabel =
@@ -67,9 +255,8 @@ async function loadHealth() {
 
     if (body.provider === "mock") {
       mockNotice.textContent =
-        "Mock mode is active. Responses and patch " +
-        "proposals are generated locally and do not " +
-        "consume API credits.";
+        "Mock mode is active. Responses and " +
+        "patch proposals are generated locally.";
 
       mockNotice.hidden = false;
     } else {
@@ -81,6 +268,7 @@ async function loadHealth() {
   }
 }
 
+
 function addMessage(
   kind,
   text,
@@ -89,7 +277,8 @@ function addMessage(
   const article =
     document.createElement("article");
 
-  article.className = `message ${kind}`;
+  article.className =
+    `message ${kind}`;
 
   const label =
     document.createElement("strong");
@@ -104,31 +293,39 @@ function addMessage(
 
   content.textContent = text;
 
-  article.append(label, content);
+  article.append(
+    label,
+    content,
+  );
 
   if (copyable) {
-    const copyButton =
+    const button =
       document.createElement("button");
 
-    copyButton.type = "button";
-    copyButton.className = "copy";
-    copyButton.textContent = "Copy response";
+    button.type = "button";
+    button.className =
+      "secondary-button copy-button";
 
-    copyButton.addEventListener(
+    button.textContent =
+      "Copy response";
+
+    button.addEventListener(
       "click",
       async () => {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(
+          text,
+        );
 
-        copyButton.textContent = "Copied";
+        button.textContent = "Copied";
 
         window.setTimeout(() => {
-          copyButton.textContent =
+          button.textContent =
             "Copy response";
         }, 1500);
       },
     );
 
-    article.append(copyButton);
+    article.append(button);
   }
 
   conversation.append(article);
@@ -139,85 +336,223 @@ function addMessage(
   });
 }
 
-function renderSelected() {
+
+function renderSelectedFiles() {
   repoSelected.replaceChildren();
+
   if (selectedFiles.size === 0) {
-    const empty = document.createElement("p");
-    empty.textContent = "No repository files selected.";
+    const empty =
+      document.createElement("p");
+
+    empty.className = "muted";
+    empty.textContent =
+      "No repository files selected.";
+
     repoSelected.append(empty);
+
     return;
   }
+
   for (const path of selectedFiles) {
-    const row = document.createElement("div");
+    const row =
+      document.createElement("div");
+
     row.className = "repo-row";
-    const name = document.createElement("span");
+
+    const name =
+      document.createElement("span");
+
     name.textContent = path;
-    const remove = document.createElement("button");
+
+    const remove =
+      document.createElement("button");
+
     remove.type = "button";
+    remove.className =
+      "secondary-button small-button";
+
     remove.textContent = "Remove";
-    remove.addEventListener("click", () => {
-      selectedFiles.delete(path);
-      renderSelected();
-    });
-    row.append(name, remove);
+
+    remove.addEventListener(
+      "click",
+      () => {
+        selectedFiles.delete(path);
+        renderSelectedFiles();
+      },
+    );
+
+    row.append(
+      name,
+      remove,
+    );
+
     repoSelected.append(row);
   }
 }
 
-async function previewFile(path) {
-  const response = await fetch(`/api/assistant/repository/file?path=${encodeURIComponent(path)}`, {
-    headers: requestHeaders(),
-  });
-  const body = await response.json();
-  if (!response.ok) throw new Error(body.detail || "File preview failed.");
-  repoPreview.textContent = body.content;
-}
 
-async function searchRepository() {
-  const query = repoSearch.value.trim();
-  if (!query) return;
-  repoResults.textContent = "Searching…";
+async function previewFile(path) {
+  repoPreview.textContent =
+    "Loading...";
+
   try {
-    const response = await fetch("/api/assistant/repository/search", {
-      method: "POST",
-      headers: requestHeaders(),
-      body: JSON.stringify({ query, search_content: true, limit: 25 }),
-    });
+    const response = await fetch(
+      "/api/assistant/repository/file" +
+      `?path=${encodeURIComponent(path)}`,
+      {
+        headers: requestHeaders(),
+      },
+    );
+
     const body = await response.json();
-    if (!response.ok) throw new Error(body.detail || "Repository search failed.");
-    repoResults.replaceChildren();
-    for (const item of body.items) {
-      const row = document.createElement("div");
-      row.className = "repo-row";
-      const label = document.createElement("button");
-      label.type = "button";
-      label.textContent = item.relative_path;
-      label.addEventListener("click", async () => previewFile(item.relative_path));
-      const add = document.createElement("button");
-      add.type = "button";
-      add.textContent = "Attach";
-      add.addEventListener("click", () => {
-        selectedFiles.add(item.relative_path);
-        renderSelected();
-      });
-      row.append(label, add);
-      repoResults.append(row);
+
+    if (!response.ok) {
+      throw new Error(
+        getErrorDetail(
+          body,
+          "File preview failed.",
+        ),
+      );
     }
-    if (body.items.length === 0) repoResults.textContent = "No approved file matches.";
-  } catch (caught) {
-    repoResults.textContent =
-      caught instanceof Error ? caught.message : "Repository search failed.";
+
+    repoPreview.textContent =
+      body.content;
+  } catch (caughtError) {
+    repoPreview.textContent =
+      caughtError instanceof Error
+        ? caughtError.message
+        : "File preview failed.";
   }
 }
 
-async function submit() {
-  const text = message.value.trim();
-  if (!text || send.disabled) return;
-  error.hidden = true;
-  addMessage("user", text);
+
+async function searchRepository() {
+  const query =
+    repoSearch.value.trim();
+
+  if (!query) {
+    return;
+  }
+
+  repoResults.textContent =
+    "Searching...";
+
+  try {
+    const response = await fetch(
+      "/api/assistant/repository/search",
+      {
+        method: "POST",
+        headers: requestHeaders(),
+        body: JSON.stringify({
+          query,
+          search_content: true,
+          limit: 25,
+        }),
+      },
+    );
+
+    const body = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        getErrorDetail(
+          body,
+          "Repository search failed.",
+        ),
+      );
+    }
+
+    repoResults.replaceChildren();
+
+    for (const item of body.items) {
+      const row =
+        document.createElement("div");
+
+      row.className = "repo-row";
+
+      const preview =
+        document.createElement("button");
+
+      preview.type = "button";
+      preview.className =
+        "link-button";
+
+      preview.textContent =
+        item.path;
+
+      preview.addEventListener(
+        "click",
+        () => {
+          previewFile(item.path);
+        },
+      );
+
+      const attach =
+        document.createElement("button");
+
+      attach.type = "button";
+      attach.className =
+        "secondary-button small-button";
+
+      attach.textContent =
+        selectedFiles.has(item.path)
+          ? "Attached"
+          : "Attach";
+
+      attach.disabled =
+        selectedFiles.has(item.path);
+
+      attach.addEventListener(
+        "click",
+        () => {
+          selectedFiles.add(item.path);
+          renderSelectedFiles();
+          searchRepository();
+        },
+      );
+
+      row.append(
+        preview,
+        attach,
+      );
+
+      repoResults.append(row);
+    }
+
+    if (body.items.length === 0) {
+      repoResults.textContent =
+        "No approved file matches.";
+    }
+  } catch (caughtError) {
+    repoResults.textContent =
+      caughtError instanceof Error
+        ? caughtError.message
+        : "Repository search failed.";
+  }
+}
+
+
+async function submitChat() {
+  const text =
+    messageInput.value.trim();
+
+  if (
+    !text ||
+    sendButton.disabled
+  ) {
+    return;
+  }
+
+  clearError();
+
+  addMessage(
+    "user",
+    text,
+  );
 
   messageInput.value = "";
   sendButton.disabled = true;
+
   statusText.textContent =
     "Generating response...";
 
@@ -229,7 +564,8 @@ async function submit() {
         headers: requestHeaders(),
         body: JSON.stringify({
           message: text,
-          conversation_id: conversationId,
+          conversation_id:
+            conversationId,
           selected_files:
             Array.from(selectedFiles),
         }),
@@ -240,8 +576,10 @@ async function submit() {
 
     if (!response.ok) {
       throw new Error(
-        body.detail ||
+        getErrorDetail(
+          body,
           "The assistant request failed.",
+        ),
       );
     }
 
@@ -272,6 +610,7 @@ async function submit() {
   }
 }
 
+
 function renderStringList(
   container,
   values,
@@ -279,14 +618,17 @@ function renderStringList(
 ) {
   container.replaceChildren();
 
-  if (!Array.isArray(values) ||
-      values.length === 0) {
-    const emptyItem =
+  if (
+    !Array.isArray(values) ||
+    values.length === 0
+  ) {
+    const item =
       document.createElement("li");
 
-    emptyItem.textContent = emptyText;
+    item.textContent =
+      emptyText;
 
-    container.append(emptyItem);
+    container.append(item);
 
     return;
   }
@@ -295,11 +637,13 @@ function renderStringList(
     const item =
       document.createElement("li");
 
-    item.textContent = String(value);
+    item.textContent =
+      String(value);
 
     container.append(item);
   }
 }
+
 
 async function generateProposal() {
   const instruction =
@@ -325,8 +669,10 @@ async function generateProposal() {
   }
 
   clearProposalError();
+  clearApplyMessage();
 
   generateProposalButton.disabled = true;
+
   generateProposalButton.textContent =
     "Generating...";
 
@@ -351,10 +697,18 @@ async function generateProposal() {
 
     if (!response.ok) {
       throw new Error(
-        body.detail ||
+        getErrorDetail(
+          body,
           "The patch proposal request failed.",
+        ),
       );
     }
+
+    currentProposalId =
+      body.proposal_id;
+
+    currentPatchTaskId =
+      body.task_id;
 
     currentUnifiedDiff =
       body.unified_diff || "";
@@ -365,13 +719,15 @@ async function generateProposal() {
     proposalSummary.textContent =
       body.summary;
 
-    proposalState.textContent =
-      body.applied
-        ? "Applied"
-        : "Proposal only - not applied";
-
     proposalDiff.textContent =
       currentUnifiedDiff;
+
+    setStatusBadge(
+      proposalState,
+      body.applied
+        ? "applied"
+        : "pending",
+    );
 
     renderStringList(
       proposalAffectedFiles,
@@ -385,7 +741,15 @@ async function generateProposal() {
       "No warnings.",
     );
 
+    applyPatchButton.disabled =
+      Boolean(body.applied);
+
     proposalResult.hidden = false;
+
+    refreshHistoryButton.disabled =
+      false;
+
+    await loadPatchHistory();
   } catch (caughtError) {
     const detail =
       caughtError instanceof Error
@@ -395,24 +759,386 @@ async function generateProposal() {
     showProposalError(detail);
   } finally {
     generateProposalButton.disabled = false;
+
     generateProposalButton.textContent =
       "Generate proposal";
   }
 }
 
-send.addEventListener("click", submit);
-message.addEventListener("keydown", (event) => {
-  if (event.ctrlKey && event.key === "Enter") submit();
-});
-repoSearchButton.addEventListener("click", searchRepository);
-repoSearch.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") searchRepository();
-});
 
-renderSelected();
-loadHealth();
+async function loadPatchHistory() {
+  if (!currentPatchTaskId) {
+    patchHistory.innerHTML =
+      '<p class="muted">' +
+      "Generate a proposal to view its history." +
+      "</p>";
 
-  copyDiffButton.textContent = "Copied";
+    return;
+  }
+
+  refreshHistoryButton.disabled = true;
+  patchHistory.textContent =
+    "Loading history...";
+
+  try {
+    const response = await fetch(
+      `/api/assistant/tasks/${encodeURIComponent(
+        currentPatchTaskId,
+      )}/patches`,
+      {
+        headers: requestHeaders(),
+      },
+    );
+
+    const body = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        getErrorDetail(
+          body,
+          "Unable to load patch history.",
+        ),
+      );
+    }
+
+    renderPatchHistory(
+      body.items || [],
+    );
+  } catch (caughtError) {
+    patchHistory.textContent =
+      caughtError instanceof Error
+        ? caughtError.message
+        : "Unable to load patch history.";
+  } finally {
+    refreshHistoryButton.disabled =
+      false;
+  }
+}
+
+
+function renderPatchHistory(items) {
+  patchHistory.replaceChildren();
+
+  if (
+    !Array.isArray(items) ||
+    items.length === 0
+  ) {
+    const empty =
+      document.createElement("p");
+
+    empty.className = "muted";
+
+    empty.textContent =
+      "No proposals were found.";
+
+    patchHistory.append(empty);
+
+    return;
+  }
+
+  for (const item of items) {
+    const card =
+      document.createElement("article");
+
+    card.className = "history-card";
+
+    const top =
+      document.createElement("div");
+
+    top.className = "history-card-top";
+
+    const title =
+      document.createElement("strong");
+
+    title.textContent =
+      item.metadata_json?.title ||
+      item.target_file;
+
+    const badge =
+      document.createElement("span");
+
+    setStatusBadge(
+      badge,
+      item.status,
+    );
+
+    top.append(
+      title,
+      badge,
+    );
+
+    const target =
+      document.createElement("p");
+
+    target.className = "history-path";
+
+    target.textContent =
+      item.target_file;
+
+    const date =
+      document.createElement("p");
+
+    date.className = "muted";
+
+    date.textContent =
+      `Created: ${formatDate(
+        item.created_at,
+      )}`;
+
+    const controls =
+      document.createElement("div");
+
+    controls.className =
+      "history-controls";
+
+    const viewButton =
+      document.createElement("button");
+
+    viewButton.type = "button";
+
+    viewButton.className =
+      "secondary-button small-button";
+
+    viewButton.textContent =
+      "View diff";
+
+    viewButton.addEventListener(
+      "click",
+      () => {
+        selectHistoryProposal(item);
+      },
+    );
+
+    controls.append(viewButton);
+
+    if (
+      normalizeStatus(item.status) ===
+      "pending"
+    ) {
+      const applyButton =
+        document.createElement("button");
+
+      applyButton.type = "button";
+
+      applyButton.className =
+        "danger-button small-button";
+
+      applyButton.textContent =
+        "Apply";
+
+      applyButton.addEventListener(
+        "click",
+        () => {
+          selectHistoryProposal(item);
+          openApplyConfirmation();
+        },
+      );
+
+      controls.append(applyButton);
+    }
+
+    card.append(
+      top,
+      target,
+      date,
+    );
+
+    if (item.applied_at) {
+      const applied =
+        document.createElement("p");
+
+      applied.className =
+        "muted";
+
+      applied.textContent =
+        `Applied: ${formatDate(
+          item.applied_at,
+        )}`;
+
+      card.append(applied);
+    }
+
+    if (item.failure_reason) {
+      const failure =
+        document.createElement("p");
+
+      failure.className =
+        "history-failure";
+
+      failure.textContent =
+        item.failure_reason;
+
+      card.append(failure);
+    }
+
+    card.append(controls);
+
+    patchHistory.append(card);
+  }
+}
+
+
+function selectHistoryProposal(item) {
+  currentProposalId =
+    item.id;
+
+  currentPatchTaskId =
+    item.task_id;
+
+  currentUnifiedDiff =
+    item.unified_diff || "";
+
+  proposalResultTitle.textContent =
+    item.metadata_json?.title ||
+    "Patch proposal";
+
+  proposalSummary.textContent =
+    item.metadata_json?.summary ||
+    item.instructions;
+
+  proposalDiff.textContent =
+    currentUnifiedDiff;
+
+  renderStringList(
+    proposalAffectedFiles,
+    [item.target_file],
+    "No affected files.",
+  );
+
+  renderStringList(
+    proposalWarnings,
+    item.metadata_json?.warnings || [],
+    "No warnings.",
+  );
+
+  setStatusBadge(
+    proposalState,
+    item.status,
+  );
+
+  applyPatchButton.disabled =
+    normalizeStatus(item.status) !==
+    "pending";
+
+  proposalResult.hidden = false;
+
+  proposalResult.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
+
+function openApplyConfirmation() {
+  if (!currentProposalId) {
+    showApplyMessage(
+      "No patch proposal is selected.",
+      "error",
+    );
+
+    return;
+  }
+
+  if (
+    typeof applyDialog.showModal ===
+    "function"
+  ) {
+    applyDialog.showModal();
+  } else {
+    const confirmed =
+      window.confirm(
+        "Apply this patch to the repository?",
+      );
+
+    if (confirmed) {
+      applyCurrentPatch();
+    }
+  }
+}
+
+
+async function applyCurrentPatch() {
+  if (!currentProposalId) {
+    return;
+  }
+
+  clearApplyMessage();
+
+  applyPatchButton.disabled = true;
+  applyPatchButton.textContent =
+    "Applying...";
+
+  try {
+    const response = await fetch(
+      `/api/assistant/patches/${encodeURIComponent(
+        currentProposalId,
+      )}/apply`,
+      {
+        method: "POST",
+        headers: requestHeaders(),
+        body: JSON.stringify({
+          confirm: true,
+        }),
+      },
+    );
+
+    const body = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        getErrorDetail(
+          body,
+          "Patch application failed.",
+        ),
+      );
+    }
+
+    setStatusBadge(
+      proposalState,
+      body.status,
+    );
+
+    applyPatchButton.disabled = true;
+
+    showApplyMessage(
+      `Patch applied successfully to ${body.target_file}.`,
+      "success-notice",
+    );
+
+    await loadPatchHistory();
+  } catch (caughtError) {
+    const detail =
+      caughtError instanceof Error
+        ? caughtError.message
+        : "Patch application failed.";
+
+    showApplyMessage(
+      detail,
+      "error",
+    );
+
+    applyPatchButton.disabled =
+      false;
+
+    await loadPatchHistory();
+  } finally {
+    applyPatchButton.textContent =
+      "Apply Patch";
+  }
+}
+
+
+async function copyDiff() {
+  if (!currentUnifiedDiff) {
+    return;
+  }
+
+  await navigator.clipboard.writeText(
+    currentUnifiedDiff,
+  );
+
+  copyDiffButton.textContent =
+    "Copied";
 
   window.setTimeout(() => {
     copyDiffButton.textContent =
@@ -420,10 +1146,12 @@ loadHealth();
   }, 1500);
 }
 
+
 sendButton.addEventListener(
   "click",
   submitChat,
 );
+
 
 messageInput.addEventListener(
   "keydown",
@@ -438,34 +1166,69 @@ messageInput.addEventListener(
   },
 );
 
-addProposalFileButton.addEventListener(
+
+repoSearchButton.addEventListener(
   "click",
-  addSelectedFile,
+  searchRepository,
 );
 
-proposalFileInput.addEventListener(
+
+repoSearch.addEventListener(
   "keydown",
   (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      addSelectedFile();
+      searchRepository();
     }
   },
 );
+
 
 generateProposalButton.addEventListener(
   "click",
   generateProposal,
 );
 
+
 copyDiffButton.addEventListener(
   "click",
   copyDiff,
 );
 
-selectedFiles.add(
-  "src/nocturnix/assistant/service.py",
+
+applyPatchButton.addEventListener(
+  "click",
+  openApplyConfirmation,
 );
+
+
+refreshHistoryButton.addEventListener(
+  "click",
+  loadPatchHistory,
+);
+
+
+applyDialog.addEventListener(
+  "close",
+  () => {
+    if (
+      applyDialog.returnValue ===
+      "confirm"
+    ) {
+      applyCurrentPatch();
+    }
+  },
+);
+
+
+confirmApplyButton.addEventListener(
+  "click",
+  () => {
+    applyDialog.returnValue =
+      "confirm";
+  },
+);
+
 
 renderSelectedFiles();
 loadHealth();

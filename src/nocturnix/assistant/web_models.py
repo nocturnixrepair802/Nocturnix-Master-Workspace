@@ -194,6 +194,10 @@ class AssistantPatchProposalHistoryItem(BaseModel):
     original_sha256: str
     proposed_sha256: str
     metadata_json: dict[str, object]
+    status: str
+    applied_at: datetime | None
+    applied_by_user_id: str | None
+    failure_reason: str | None
     created_at: datetime
 
 
