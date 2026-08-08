@@ -199,3 +199,19 @@ class AssistantPatchProposalHistoryItem(BaseModel):
 
 class AssistantPatchProposalHistoryResponse(BaseModel):
     items: list[AssistantPatchProposalHistoryItem]
+
+
+class AssistantPatchApplyRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    confirm: bool = True
+
+
+class AssistantPatchApplyResponse(BaseModel):
+    proposal_id: str
+    task_id: str
+    status: str
+    target_file: str
+    applied_at: datetime | None
+    applied_by_user_id: str | None
+    failure_reason: str | None

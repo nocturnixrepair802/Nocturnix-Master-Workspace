@@ -9,6 +9,10 @@ from fastapi.responses import FileResponse
 from nocturnix.assistant.coding_service import CodingAssistantService, ConversationAccessError
 from nocturnix.assistant.exceptions import AssistantTaskNotFoundError
 from nocturnix.assistant.openai_provider import CodingAssistantProvider, CodingProviderError
+from nocturnix.assistant.patch_apply import (
+    PatchApplyError,
+    PatchApplyService,
+)
 from nocturnix.assistant.patch_models import PatchProposalError
 from nocturnix.assistant.patch_proposals import propose_patch
 from nocturnix.assistant.provider_factory import provider_name
@@ -31,6 +35,8 @@ from nocturnix.assistant.web_models import (
     AssistantChatRequest,
     AssistantChatResponse,
     AssistantHealthResponse,
+    AssistantPatchApplyRequest,
+    AssistantPatchApplyResponse,
     AssistantPatchProposalHistoryItem,
     AssistantPatchProposalHistoryResponse,
     AssistantPatchProposalRequest,
@@ -540,7 +546,58 @@ def create_assistant_web_router(
             ]
         )
 
+    @router.post(
+        "/api/assistant/patches/{proposal_id}/apply",
+        response_model=AssistantPatchApplyResponse,
+    )
+    def apply_patch_proposal(
+        proposal_id: str,
+        payload: AssistantPatchApplyRequest,
+        services=Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> AssistantPatchApplyResponse:
+        require_assistant_permission(
+            services,
+            user,
+        )
+
+        if not payload.confirm:
+            raise HTTPException(
+                status_code=400,
+                detail="Patch application requires explicit confirmation.",
+            )
+
+        task_service = AssistantTaskService(AssistantTaskRepository(services.session))
+
+        apply_service = PatchApplyService(task_service)
+
+        try:
+            proposal = apply_service.apply(
+                proposal_id,
+                owner_user_id=user.user_id,
+                applied_by_user_id=user.user_id,
+            )
+        except LookupError as exc:
+            raise HTTPException(
+                status_code=404,
+                detail="Patch proposal not found.",
+            ) from exc
+        except PatchApplyError as exc:
+            raise HTTPException(
+                status_code=409,
+                detail=str(exc),
+            ) from exc
+
+        return AssistantPatchApplyResponse(
+            proposal_id=proposal.id,
+            task_id=proposal.task_id,
+            status=proposal.status,
+            target_file=proposal.target_file,
+            applied_at=proposal.applied_at,
+            applied_by_user_id=proposal.applied_by_user_id,
+            failure_reason=proposal.failure_reason,
+        )
+
     return router
 
-
-__all__ = ["create_assistant_web_router"]
+   
