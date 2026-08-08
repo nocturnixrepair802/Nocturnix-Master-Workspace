@@ -1,0 +1,17 @@
+document.addEventListener("DOMContentLoaded", () => {
+
+    const button = document.getElementById("newRepairButton");
+
+    if(button){
+
+        button.addEventListener("click", openRepairForm);
+
+    }
+
+});
+
+function openRepairForm(){
+
+    alert("Repair Intake Form");
+
+}

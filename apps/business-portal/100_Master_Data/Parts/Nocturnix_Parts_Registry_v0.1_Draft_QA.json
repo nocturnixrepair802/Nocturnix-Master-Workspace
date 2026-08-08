@@ -1,0 +1,29 @@
+{
+  "workbook": "D:/Business Portal/100_Master_Data/Parts/Nocturnix_Parts_Registry_v0.1_Draft.xlsx",
+  "profile": "Nocturnix Parts Registry v0.1 Draft",
+  "generated_utc": "2026-07-24T05:51:28.212Z",
+  "source_sha256": {
+    "Nocturnix_Master_Parts_Catalog_v1.xlsx": "3F6387B43647AA63C69F2995FBC0C272D9F85C0DD1A340EBAAB842704D3C3464",
+    "Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx": "24A26319432D919C8D14B4B44377FB3826D7282657347D7283E90A73635412B9"
+  },
+  "source_hashes_after": {
+    "Nocturnix_Master_Parts_Catalog_v1.xlsx": "3F6387B43647AA63C69F2995FBC0C272D9F85C0DD1A340EBAAB842704D3C3464",
+    "Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx": "24A26319432D919C8D14B4B44377FB3826D7282657347D7283E90A73635412B9"
+  },
+  "workbook_sha256": "EEA22D165381546F92D43D6CB93E86A95D7539C0BE97B69B252A2E8E2EE56FBB",
+  "final_status": "WARN",
+  "counts": {
+    "registry_records": 48,
+    "alias_records": 144,
+    "source_observations": 336,
+    "identity_conflicts": 96,
+    "review_queue_items": 96
+  },
+  "findings": {
+    "unique_part_ids": "PASS",
+    "required_fields": "PASS",
+    "manufacturer_references": "WARN",
+    "governance_gates": "PASS",
+    "formula_error_scan": "WARN"
+  }
+}

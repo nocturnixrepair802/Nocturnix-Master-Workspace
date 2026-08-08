@@ -1,0 +1,24 @@
+{
+  "artifact": "Nocturnix_Services_Registry_v0.1_Draft.xlsx",
+  "status": "STRUCTURALLY VALID; GOVERNANCE BLOCKED; NOT PRODUCTION READY",
+  "gates": {
+    "Structural Validity": "PASS",
+    "Source Integrity": "PASS",
+    "Identity Verification": "BLOCKED",
+    "Alias Approval": "BLOCKED",
+    "Relationship Approval": "BLOCKED",
+    "Production Import": "PROHIBITED",
+    "Pricing Activation": "NOT AUTHORIZED"
+  },
+  "blockingCounts": {
+    "pendingServices": 314,
+    "openConflicts": 333,
+    "reviewItems": 333
+  },
+  "nextActions": [
+    "Verify service identities using approved evidence.",
+    "Resolve manufacturer, device, part, and labor reference conflicts.",
+    "Approve or reject service aliases.",
+    "Authorize production import and pricing activation only through a later governed approval."
+  ]
+}

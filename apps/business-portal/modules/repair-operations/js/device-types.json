@@ -1,0 +1,11 @@
+{
+  "deviceTypes": [
+    "Smartphone",
+    "Tablet",
+    "Laptop",
+    "Smartwatch",
+    "Gaming Console",
+    "Desktop",
+    "Other"
+  ]
+}

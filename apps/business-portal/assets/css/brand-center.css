@@ -1,0 +1,50 @@
+/* ==========================================================
+   Brand Center
+========================================================== */
+
+.brand-grid {
+  display: grid;
+
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+
+  gap: var(--spacing-xl);
+
+  margin-top: var(--spacing-xl);
+}
+
+.brand-card {
+  background: var(--background-card);
+
+  border: 1px solid var(--border);
+
+  border-left: 5px solid var(--accent);
+
+  border-radius: var(--radius-medium);
+
+  padding: var(--spacing-xl);
+
+  transition: var(--transition-fast);
+}
+
+.brand-card:hover {
+  transform: translateY(-4px);
+
+  box-shadow: var(--shadow-medium);
+}
+
+.brand-card h2 {
+  margin-bottom: var(--spacing-md);
+
+  color: var(--accent);
+}
+
+.brand-card p,
+.brand-card li {
+  color: var(--text-secondary);
+
+  line-height: 1.7;
+}
+
+.brand-card ul {
+  padding-left: var(--spacing-lg);
+}

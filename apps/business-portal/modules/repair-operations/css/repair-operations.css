@@ -1,0 +1,75 @@
+/* ==========================================================
+   Repair Intake
+========================================================== */
+
+.repair-form {
+  margin-top: var(--spacing-xl);
+}
+
+.form-grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: var(--spacing-lg);
+}
+
+.form-group {
+  display: flex;
+
+  flex-direction: column;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  margin-bottom: var(--spacing-sm);
+
+  font-weight: bold;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background: var(--secondary);
+
+  border: 1px solid var(--border);
+
+  color: var(--text);
+
+  padding: var(--spacing-md);
+
+  border-radius: var(--radius-medium);
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.save-button {
+  margin-top: var(--spacing-xl);
+
+  background: var(--accent);
+
+  color: var(--primary);
+
+  border: none;
+
+  padding: var(--spacing-lg);
+
+  border-radius: var(--radius-medium);
+
+  cursor: pointer;
+
+  font-size: 1rem;
+
+  font-weight: bold;
+
+  transition: var(--transition-fast);
+}
+
+.save-button:hover {
+  background: var(--accent-light);
+}

@@ -1,0 +1,516 @@
+/*
+=========================================================
+Nocturnix Business Portal
+
+Main Stylesheet
+
+Version 0.8.0 Alpha
+=========================================================
+*/
+
+/* ==========================================================
+   Brand Colors
+========================================================== */
+
+/* ==========================================================
+   Reset
+========================================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ==========================================================
+   Page
+========================================================== */
+
+body {
+  background: var(--secondary);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ==========================
+Headings
+============================= */
+
+h1 {
+  color: var(--accent);
+  font-size: 2.5rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+h2 {
+  color: var(--accent);
+  margin-bottom: var(--spacing-md);
+}
+
+h3 {
+  color: var(--accent);
+}
+
+/* ==========================
+Paragraphs
+============================= */
+
+p {
+  margin-bottom: var(--spacing-md);
+}
+
+/* ==========================
+Links
+============================= */
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ==========================
+Lists
+============================= */
+
+ul,
+ol {
+  margin-left: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
+}
+
+/* ==========================
+Images
+============================= */
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ==========================
+Buttons
+============================= */
+
+button {
+  background: var(--secondary);
+  color: var(--primary);
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-small);
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+/* ==========================================================
+   Header
+========================================================== */
+
+/* ==========================================================
+   Portal Layout
+========================================================== */
+
+.portal-container {
+  display: flex;
+
+  min-height: calc(100vh - 130px);
+}
+
+/* ==========================================================
+   Sidebar
+========================================================== */
+
+.sidebar {
+  width: 280px;
+
+  background: var(--secondary);
+
+  border-right: 2px solid var(--accent);
+
+  padding: var(--spacing-2xl);
+}
+
+.sidebar h2 {
+  color: var(--accent);
+
+  margin-bottom: var(--spacing-xl);
+}
+
+.sidebar ul {
+  list-style: none;
+}
+
+.sidebar li {
+  margin-bottom: var(--spacing-sm);
+}
+
+.sidebar a {
+  display: block;
+
+  padding: 12px 16px;
+
+  color: var(--text);
+
+  text-decoration: none;
+
+  border-radius: var(--radius-medium);
+
+  transition: var(--transition-fast);
+}
+
+.sidebar a:hover {
+  background: var(--secondary);
+
+  color: var(--primary);
+}
+
+/* ==========================================================
+   Future SVG Icons
+========================================================== */
+
+/*
+Future Layout
+
+<a href="#">
+
+    <img src="assets/icons/dashboard.svg"
+
+         class="nav-icon"
+
+         alt="Dashboard">
+
+    Dashboard
+
+</a>
+
+*/
+
+.nav-icon {
+  width: var(--spacing-lg);
+
+  height: var(--spacing-lg);
+
+  margin-right: 12px;
+
+  vertical-align: middle;
+}
+
+/* ==========================================================
+   Workspace
+========================================================== */
+
+.workspace {
+  flex: 1;
+
+  padding: var(--spacing-3xl);
+}
+
+.dashboard {
+  max-width: 1000px;
+}
+
+.dashboard {
+  border: 1px solid var(--border);
+
+  margin: 35px 0;
+}
+
+/* ==========================================================
+   Header
+========================================================== */
+
+header {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  padding: var(--spacing-lg) 35px;
+
+  background: var(--background-header);
+
+  border-bottom: 2px var(--accent);
+}
+
+.logo {
+  font-size: 2rem;
+
+  font-weight: bold;
+
+  color: var(--accent);
+}
+
+/* ==========================================================
+   Dashboard Grid
+========================================================== */
+
+.dashboard-grid {
+  display: grid;
+
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+
+  gap: var(--spacing-xl);
+
+  margin-top: 35px;
+}
+
+/* ==========================================================
+   Dashboard Cards
+========================================================== */
+
+.card {
+  background: var(--secondary);
+
+  border: 1px solid var(--border);
+
+  border-left: var(--spacing-sm) solid var(--accent);
+
+  border-radius: var(--radius-medium);
+
+  padding: var(--spacing-xl);
+
+  transition: all var(--transition-fast);
+
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+
+  border-color: var(--accent);
+
+  box-shadow: var(--shadow-large);
+}
+
+.card h3 {
+  margin-bottom: var(--spacing-md);
+}
+
+.card p {
+  color: var(--text-secondary);
+}
+
+/* ==========================================================
+   Header v2
+========================================================== */
+
+.header-left {
+  display: flex;
+
+  align-items: center;
+
+  gap: var(--spacing-lg);
+}
+
+.title-group {
+  display: flex;
+
+  flex-direction: column;
+}
+
+.title-group h1 {
+  margin: 0;
+
+  font-size: 1.5rem;
+}
+
+.title-group span {
+  color: var(--text-secondary);
+
+  font-size: 0.85rem;
+}
+
+.header-center {
+  flex: 1;
+
+  display: flex;
+
+  justify-content: center;
+}
+
+.search-box {
+  width: 420px;
+
+  max-width: 100%;
+
+  padding: 12px 16px;
+
+  border-radius: 8px;
+
+  border: none;
+
+  background: var(--secondary);
+
+  color: var(--text);
+}
+
+.search-box::placeholder {
+  color: var(--text-secondary);
+}
+
+.header-right {
+  display: flex;
+
+  align-items: center;
+
+  gap: var(--spacing-lg);
+}
+
+.version {
+  color: var(--text-secondary);
+}
+
+.profile-button {
+  background: var(--background-header);
+
+  color: var(--primary);
+
+  border: none;
+
+  padding: var(--spacing-sm) var(--spacing-lg);
+
+  border-radius: var(--radius-medium);
+
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+.profile-button:hover {
+  background: var(--text);
+}
+
+/* ==========================================================
+   Footer
+========================================================== */
+
+footer {
+  background: var(--background-header);
+
+  border-top: 2px solid var(--accent);
+
+  color: var(--text-secondary);
+
+  text-align: center;
+
+  padding: var(--spacing-md);
+}
+/* ==========================================================
+   Quick Actions
+========================================================== */
+
+.quick-actions {
+  margin: var(--spacing-3xl) 0;
+}
+
+.quick-actions-grid {
+  display: grid;
+
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+
+  gap: var(--spacing-lg);
+}
+
+.action-button {
+  background: var(--accent);
+
+  color: var(--primary);
+
+  padding: var(--spacing-lg);
+
+  border: none;
+
+  border-radius: var(--radius-medium);
+
+  font-size: 1rem;
+
+  font-weight: bold;
+
+  cursor: pointer;
+
+  transition: var(--transition-fast);
+}
+
+.action-button:hover {
+  transform: translateY(-3px);
+
+  background: var(--accent-light);
+}
+/* ==========================================================
+   Recent Repairs
+========================================================== */
+
+.recent-repairs {
+  margin: var(--spacing-3xl) 0;
+}
+
+.repair-card {
+  background: var(--background-card);
+
+  border-left: 5px solid var(--accent);
+
+  border-radius: var(--radius-medium);
+
+  padding: var(--spacing-xl);
+
+  margin-bottom: var(--spacing-lg);
+
+  transition: var(--transition-fast);
+}
+
+.repair-card:hover {
+  transform: translateX(6px);
+
+  box-shadow: var(--shadow-medium);
+}
+
+.repair-card h3 {
+  color: var(--accent);
+
+  margin-bottom: var(--spacing-sm);
+}
+/* ==========================================================
+   Business Snapshot
+========================================================== */
+
+.business-snapshot {
+  margin: var(--spacing-3xl) 0;
+}
+
+.snapshot-grid {
+  display: grid;
+
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+
+  gap: var(--spacing-lg);
+}
+
+.snapshot-card {
+  background: var(--background-card);
+
+  border: 1px solid var(--border);
+
+  border-top: 5px solid var(--accent);
+
+  border-radius: var(--radius-medium);
+
+  padding: var(--spacing-xl);
+
+  transition: var(--transition-fast);
+}
+
+.snapshot-card:hover {
+  transform: translateY(-4px);
+
+  box-shadow: var(--shadow-medium);
+}

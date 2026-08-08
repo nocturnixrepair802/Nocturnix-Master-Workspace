@@ -1,0 +1,20 @@
+{
+  "application": "Nocturnix Business Portal",
+  "version": "0.6.0 Alpha",
+  "author": "Ryan Brown",
+  "theme": "Nocturnix Dark",
+  "defaultModule": "dashboard",
+  "modules": [
+    "dashboard",
+    "brand-center",
+    "website",
+    "repair-operations",
+    "inventory",
+    "customers",
+    "manuals",
+    "sops",
+    "forms",
+    "ai",
+    "settings"
+  ]
+}

@@ -1,0 +1,227 @@
+{
+  "workbook": "D:\\Business Portal\\100_Master_Data\\Devices\\Nocturnix_Device_Registry_v0.1_Draft.xlsx",
+  "profile": "Nocturnix Device Registry v0.1 Draft",
+  "generated_utc": "2026-07-24T05:19:42+00:00",
+  "source_hashes": {
+    "Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx": "24a26319432d919c8d14b4b44377fb3826d7282657347d7283e90a73635412b9",
+    "Nocturnix_Master_Devices_Catalog_v1.xlsx": "23840312b08a55031021e73aed6ea8835ddccbe215b8bf133751b64fd44aad96",
+    "Nocturnix_Master_Parts_Catalog_v1.xlsx": "3f6387b43647aa63c69f2995fbc0c272d9f85c0dd1a340ebaab842704d3c3464",
+    "Nocturnix_Master_Services_Catalog_v1.xlsx": "f1a85069f3f7655e2fd375cf2ee63c5c716422e1a7d2befe61073005396e34c2",
+    "Nocturnix_Master_Compatibility_Catalog_v1.xlsx": "58442236fa3587eb29e86f70ac5439e5cba9681feb26b7c1848c290e9287baf4"
+  },
+  "output_hash_before_qa": "b43dd38c8897e3665605f039591a0cfffd3554fa1f3144a242a0ffd7971d9d9a",
+  "output_hash_after_qa": "b43dd38c8897e3665605f039591a0cfffd3554fa1f3144a242a0ffd7971d9d9a",
+  "validation_summary": [
+    {
+      "Validation": "Unique Device IDs",
+      "Status": "PASS",
+      "Details": "All generated Device IDs are unique."
+    },
+    {
+      "Validation": "Manufacturer References",
+      "Status": "WARN",
+      "Details": "Some devices remain unresolved against the canonical manufacturer registry."
+    },
+    {
+      "Validation": "Duplicate Device Detection",
+      "Status": "PASS",
+      "Details": "No duplicate device records were detected."
+    },
+    {
+      "Validation": "Alias Consistency",
+      "Status": "WARN",
+      "Details": "Alias records were preserved as observations only and remain pending verification."
+    },
+    {
+      "Validation": "Required Fields",
+      "Status": "PASS",
+      "Details": "The required registry fields are present for every device row."
+    },
+    {
+      "Validation": "Worksheet Integrity",
+      "Status": "PASS",
+      "Details": "All required worksheets are present with headers."
+    },
+    {
+      "Validation": "Governance Gates",
+      "Status": "PASS",
+      "Details": "Governance status remains pending verification and no production flags are enabled."
+    }
+  ],
+  "governance_blockers": [
+    "Canonical manufacturer mappings remain unresolved for observed manufacturer values that do not exist in the approved manufacturer registry.",
+    "Identity conflicts were preserved as pending verification rather than approved."
+  ],
+  "unresolved_conflicts": [
+    {
+      "Device ID": "DEV000001",
+      "Observed Value": "iPhone",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000002",
+      "Observed Value": "iPhone",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000003",
+      "Observed Value": "iPhone",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000004",
+      "Observed Value": "iPhone",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000005",
+      "Observed Value": "iPhone",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000006",
+      "Observed Value": "iPhone",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000007",
+      "Observed Value": "iPhone",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000008",
+      "Observed Value": "iPhone",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000009",
+      "Observed Value": "iPhone",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000010",
+      "Observed Value": "iPhone",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000011",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000012",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000013",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000014",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000015",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000016",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000017",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000018",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000019",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000020",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000021",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000022",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000023",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000025",
+      "Observed Value": "Galaxy",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000029",
+      "Observed Value": "Maxwest",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000030",
+      "Observed Value": "TCL",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000039",
+      "Observed Value": "N/A",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000040",
+      "Observed Value": "N/A",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000041",
+      "Observed Value": "N/A",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000042",
+      "Observed Value": "N/A",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000043",
+      "Observed Value": "N/A",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000044",
+      "Observed Value": "N/A",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000045",
+      "Observed Value": "N/A",
+      "Canonical Value": ""
+    },
+    {
+      "Device ID": "DEV000046",
+      "Observed Value": "N/A",
+      "Canonical Value": ""
+    }
+  ]
+}

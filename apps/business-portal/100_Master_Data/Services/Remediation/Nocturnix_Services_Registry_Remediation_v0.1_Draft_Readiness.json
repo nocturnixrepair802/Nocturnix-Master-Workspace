@@ -1,0 +1,34 @@
+{
+  "artifact": "Nocturnix_Services_Registry_Remediation_v0.1_Draft.xlsx",
+  "status": "STRUCTURALLY VALID; GOVERNANCE BLOCKED; NOT PRODUCTION READY",
+  "gates": {
+    "Structural Validity": "PASS",
+    "Source Integrity": "PASS",
+    "Existing Services Registry Unchanged": "PASS",
+    "Identity Approval": "BLOCKED",
+    "Relationship Approval": "BLOCKED",
+    "Production Import": "PROHIBITED",
+    "Pricing Activation": "PROHIBITED"
+  },
+  "blockingCounts": {
+    "exactManufacturerCandidates": 0,
+    "ambiguousManufacturerCandidates": 0,
+    "unresolvedManufacturerObservations": 314,
+    "exactDeviceApplicabilityCandidates": 0,
+    "ambiguousDeviceApplicabilityCandidates": 0,
+    "exactPartRequirementCandidates": 0,
+    "ambiguousPartRequirementCandidates": 0,
+    "exactLaborReferenceCandidates": 0,
+    "ambiguousLaborReferenceCandidates": 0,
+    "unsupportedRelationships": 314,
+    "duplicateGroupsReviewed": 15,
+    "identityConflicts": 314,
+    "reviewItems": 314
+  },
+  "governanceBlockers": [
+    "All candidate mappings remain Pending Verification.",
+    "Unresolved manufacturer observations require governed review.",
+    "Ambiguous and unsupported relationships are not approved or promoted.",
+    "Production import and pricing activation remain prohibited."
+  ]
+}

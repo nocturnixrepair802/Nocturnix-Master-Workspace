@@ -1,0 +1,122 @@
+{
+  "source": "D:\\Business Portal\\100_Master_Data\\Devices\\Nocturnix_Master_Devices_Catalog_v1.2_Lookup_Review_Draft.xlsx",
+  "device_working_output": "D:\\Business Portal\\100_Master_Data\\Devices\\Nocturnix_Master_Devices_Catalog_v1.3_ID_Crosswalk_Draft.xlsx",
+  "central_lookup_catalog": "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Nocturnix_Master_Lookups_v0.1_Draft.xlsx",
+  "lookup_registry_output": "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Lookup Registry\\Nocturnix_Lookup_Registry_v0.1_Draft.xlsx",
+  "data_dictionary_output": "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Data Dictionary\\Nocturnix_Lookup_Data_Dictionary_v0.1_Draft.xlsx",
+  "crosswalk_output": "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\ID Crosswalks\\Nocturnix_Lookup_ID_Crosswalks_v0.1_Draft.xlsx",
+  "duplicate_review_output": "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Duplicate Reviews\\Nocturnix_Model_Duplicate_Review_v0.1_Draft.xlsx",
+  "governance_standard_output": "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Standards\\Nocturnix_Lookup_Governance_Standard_v0.1_Draft.md",
+  "change_log_output": "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Change Log\\Nocturnix_Lookup_Governance_Change_Log_v0.1_Draft.xlsx",
+  "source_sha256_before": "83792EC41742CB85DEA72F2BB025A4C21728C8AEFA11CE885E9AC708FEC6A742",
+  "source_sha256_after": "83792EC41742CB85DEA72F2BB025A4C21728C8AEFA11CE885E9AC708FEC6A742",
+  "output_hashes": {
+    "D:\\Business Portal\\100_Master_Data\\Devices\\Nocturnix_Master_Devices_Catalog_v1.3_ID_Crosswalk_Draft.xlsx": "D230B29E0034CC4652E37000390A66D56510D70FBDBB744D42E0E9326E3CE0DA",
+    "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Nocturnix_Master_Lookups_v0.1_Draft.xlsx": "FA60C80E338474B1D41CAB02B2FDD55122A68A008B37197E1E905951C9A9973F",
+    "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Lookup Registry\\Nocturnix_Lookup_Registry_v0.1_Draft.xlsx": "F70DC676C8CF67EC2B36AE3DCB795AB9E18740FEB3F00F12679ADC6A576F2F15",
+    "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Data Dictionary\\Nocturnix_Lookup_Data_Dictionary_v0.1_Draft.xlsx": "579F0B67594AAB3EADBAC9438E19AE91AF0AF4827FC39D3AFE8A0945A0A34EEE",
+    "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\ID Crosswalks\\Nocturnix_Lookup_ID_Crosswalks_v0.1_Draft.xlsx": "CA03D979A9C06D851BA0564B5B854F448B893A11E0A8D7604847BD77B0EA6409",
+    "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Duplicate Reviews\\Nocturnix_Model_Duplicate_Review_v0.1_Draft.xlsx": "5A66C967611B7773741BBF2324333BE0F2951C7C3BF32B00B3F789064DA3A99C",
+    "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Standards\\Nocturnix_Lookup_Governance_Standard_v0.1_Draft.md": "DDF5D4CCAD2D1EAFED1561055A91DA8FFBEB564CF9542BDCFA4AC12AEA946646",
+    "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Change Log\\Nocturnix_Lookup_Governance_Change_Log_v0.1_Draft.xlsx": "8670ED4963FBE02684103507EF3AFE8FB51E1751D6EF568ADADC27420D8685DF",
+    "D:\\Business Portal\\100_Master_Data\\Devices\\QA Reports\\Nocturnix_Master_Devices_Catalog_v1.3_ID_Crosswalk_QA_Report.md": "FF2B00E21D94AAC665A964F21AF8C3041C9CC83BA1049B7D75911C5054B9EB06",
+    "D:\\Business Portal\\100_Master_Data\\Devices\\QA Reports\\Nocturnix_Master_Devices_Catalog_v1.3_ID_Crosswalk_QA_Report.json": "9D51CBE7CCF66C1540B815FF4F4D9D45737F26949E2081AF1BE47BE02E706B13",
+    "D:\\Business Portal\\100_Master_Data\\Devices\\Readiness Reports\\Nocturnix_Master_Devices_Catalog_v1.3_ID_Crosswalk_Readiness_Report.md": "3E83CAE5240DA498F0792B84D251F4F138E888C2D6049D0C09D3FF969FDAECAC",
+    "D:\\Business Portal\\100_Master_Data\\Devices\\Readiness Reports\\Nocturnix_Master_Devices_Catalog_v1.3_ID_Crosswalk_Readiness_Report.json": "256F0B01A7DF6EE567BAF37630BAE07402310DDFFFAAE253F450DE0FEC58E981",
+    "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\QA Reports\\Nocturnix_Master_Lookups_v0.1_QA_Report.md": "946AE0C2B9022CD573FA2BFFE3D3E553CABBE2046185C76A5A3C0806D07D2069",
+    "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\QA Reports\\Nocturnix_Master_Lookups_v0.1_QA_Report.json": "9D51CBE7CCF66C1540B815FF4F4D9D45737F26949E2081AF1BE47BE02E706B13",
+    "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Readiness Reports\\Nocturnix_Master_Lookups_v0.1_Readiness_Report.md": "C67EB7CE637D0DB57F344470E242A70F7854478B5274D21693B83008A407ABC6",
+    "D:\\Business Portal\\100_Master_Data\\Governance\\Lookup Governance\\Readiness Reports\\Nocturnix_Master_Lookups_v0.1_Readiness_Report.json": "256F0B01A7DF6EE567BAF37630BAE07402310DDFFFAAE253F450DE0FEC58E981"
+  },
+  "runtime_version": "3.12.13 (main, Mar  3 2026, 15:01:35) [MSC v.1944 64 bit (AMD64)]",
+  "spreadsheet_library_version": "3.1.5",
+  "openpyxl_warnings": [],
+  "unsupported_feature_risks": [
+    "openpyxl may preserve but not evaluate Excel formulas; formula health checked structurally.",
+    "Excel COM validation not completed"
+  ],
+  "source_worksheet_inventory": [
+    "00 - Instructions",
+    "01 - Master Devices",
+    "02 - Manufacturers",
+    "03 - Device Families",
+    "04 - Product Lines",
+    "05 - Device Series",
+    "06 - Form Factors",
+    "07 - Operating Systems",
+    "08 - Network Types",
+    "09 - Device Statuses",
+    "10 - Identity Review",
+    "11 - Relationship Review",
+    "12 - Validation Summary",
+    "13 - Revision History",
+    "14 - Import Metadata",
+    "15 LL_Device",
+    "15 LL_Repair",
+    "15 LL_Customers",
+    "15 LL_Description",
+    "15 LL_Tools",
+    "15 LL_Warranty",
+    "15 LL_Payments",
+    "15 LL_ Geographic ",
+    "16 - Lookup Audit",
+    "17 - FK Exceptions",
+    "18 - Duplicate Candidates"
+  ],
+  "lookup_worksheet_count": 8,
+  "lookup_table_count": 49,
+  "registry_row_count": 49,
+  "data_dictionary_row_count": 247,
+  "crosswalk_counts": {
+    "manufacturer": 20,
+    "device_family": 127,
+    "device_type": 12,
+    "other": 0
+  },
+  "confidence_counts": {
+    "High": 159
+  },
+  "unresolved_mapping_counts": {
+    "multiple_candidate": 0,
+    "no_match": 0
+  },
+  "foreign_key_exception_count": 1902,
+  "duplicate_group_count": 6,
+  "duplicate_candidate_count": 13,
+  "central_catalog_table_count": 58,
+  "dependency_findings": {
+    "rows": 155,
+    "external_indicators": [
+      "xl/externalLinks/externalLink1.xml",
+      "xl/externalLinks/_rels/externalLink1.xml.rels"
+    ]
+  },
+  "formula_validation": "PASS - no literal formula error tokens found in generated workbooks",
+  "named_range_validation": "PASS - source named ranges inventoried",
+  "data_validation_findings": "PASS - source data validations inventoried; new validation applied to review fields",
+  "external_link_findings": [
+    "xl/externalLinks/externalLink1.xml",
+    "xl/externalLinks/_rels/externalLink1.xml.rels"
+  ],
+  "governance_blockers": [
+    "Mappings pending review",
+    "Duplicate candidates not adjudicated",
+    "Dependencies require review",
+    "Not database-import ready",
+    "Not production ready"
+  ],
+  "manual_review_requirements": [
+    "Review lookup registry warnings",
+    "Review all crosswalk proposals",
+    "Review FK exceptions",
+    "Review duplicate model candidates",
+    "Approve data dictionary definitions"
+  ],
+  "database_import_readiness": "Not Ready",
+  "production_readiness": "Not Ready",
+  "qa_status": "PASS WITH WARNINGS",
+  "readiness_status": "STRUCTURALLY VALID\nLOOKUP REVIEW DRAFT\nCENTRAL LOOKUP CATALOG DRAFT CREATED\nID CROSSWALKS PENDING REVIEW\nDUPLICATE CANDIDATES NOT ADJUDICATED\nDATA DICTIONARY PENDING REVIEW\nDEPENDENCIES REQUIRE REVIEW\nMANUAL REVIEW REQUIRED\nGOVERNANCE BLOCKED\nNOT DATABASE-IMPORT READY\nNOT PRODUCTION READY",
+  "match_method_counts": {
+    "Exact ID": 159
+  }
+}

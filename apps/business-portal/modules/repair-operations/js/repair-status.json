@@ -1,0 +1,14 @@
+{
+  "statuses": [
+    "New Intake",
+    "Diagnosing",
+    "Waiting on Parts",
+    "Repairing",
+    "Quality Check",
+    "Ready for Pickup",
+    "Completed",
+    "Returned",
+    "Cancelled",
+    "Warranty Repair"
+  ]
+}

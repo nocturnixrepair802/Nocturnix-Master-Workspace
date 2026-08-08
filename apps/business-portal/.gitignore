@@ -1,0 +1,22 @@
+# Logs
+logs/
+*.log
+
+# VS Code
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Backups
+database/backups/
+
+# Exports
+database/exports/
+
+# Temporary
+temp/
+
+# Node
+node_modules/
