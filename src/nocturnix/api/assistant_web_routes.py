@@ -3,7 +3,13 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+)
 from fastapi.responses import FileResponse
 
 from nocturnix.assistant.coding_service import CodingAssistantService, ConversationAccessError
@@ -17,6 +23,23 @@ from nocturnix.assistant.patch_models import PatchProposalError
 from nocturnix.assistant.patch_proposals import propose_patch
 from nocturnix.assistant.provider_factory import provider_name
 from nocturnix.assistant.reference_analysis import analyze_repository_references
+from nocturnix.assistant.repair_action_models import (
+    AssistantRepairActionApplyRequest,
+    AssistantRepairActionApplyResponse,
+    AssistantRepairActionProposalResponse,
+    AssistantRepairAddNoteProposalRequest,
+)
+from nocturnix.assistant.repair_actions import (
+    AssistantRepairActionConfirmationError,
+    AssistantRepairActionError,
+    AssistantRepairActionNotFoundError,
+    AssistantRepairActionService,
+    AssistantRepairActionStateError,
+    SqlAssistantRepairActionRepository,
+)
+from nocturnix.assistant.repair_context import (
+    AssistantRepairContextService,
+)
 from nocturnix.assistant.repositories import AssistantTaskRepository
 from nocturnix.assistant.repository_access import RepositoryAccessError, RepositoryAccessService
 from nocturnix.assistant.repository_models import (
@@ -42,6 +65,8 @@ from nocturnix.assistant.web_models import (
     AssistantPatchProposalHistoryResponse,
     AssistantPatchProposalRequest,
     AssistantPatchProposalResponse,
+    AssistantRepairTicketContextResponse,
+    AssistantRepairTicketListResponse,
     AssistantRepositoryReferenceItem,
     AssistantRepositoryReferencesRequest,
     AssistantRepositoryReferencesResponse,
@@ -56,6 +81,13 @@ from nocturnix.assistant.web_models import (
 )
 from nocturnix.db import database_ready
 from nocturnix.models import UserIdentity
+from nocturnix.repair_models import (
+    RepairTicketStatus,
+)
+from nocturnix.repair_services import (
+    RepairResourceNotFound,
+    RepairService,
+)
 from nocturnix.security.auth import AuthorizationService
 
 
@@ -74,6 +106,19 @@ def create_assistant_web_router(
         AuthorizationService(services.session).require(
             user,
             "assistant.chat",
+        )
+
+    def repair_context_service(
+        services,
+    ) -> AssistantRepairContextService:
+        return AssistantRepairContextService(RepairService(services.session))
+
+    def repair_action_service(
+        services,
+    ) -> AssistantRepairActionService:
+        return AssistantRepairActionService(
+            RepairService(services.session),
+            SqlAssistantRepairActionRepository(services.session),
         )
 
     @router.post(
@@ -269,6 +314,168 @@ def create_assistant_web_router(
             ),
             database_configured=database_ready(settings.database_url),
         )
+
+    @router.get(
+        "/api/assistant/repair/tickets",
+        response_model=(AssistantRepairTicketListResponse),
+    )
+    def assistant_repair_tickets(
+        status: RepairTicketStatus | None = None,
+        limit: int = Query(
+            default=20,
+            ge=1,
+            le=100,
+        ),
+        services=Depends(get_services),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> AssistantRepairTicketListResponse:
+        require_assistant_permission(
+            services,
+            user,
+        )
+
+        context_service = repair_context_service(services)
+
+        return context_service.list_ticket_context(
+            user.user_id,
+            status=status,
+            limit=limit,
+        )
+
+    @router.get(
+        "/api/assistant/repair/tickets/{ticket_id}",
+        response_model=(AssistantRepairTicketContextResponse),
+    )
+    def assistant_repair_ticket(
+        ticket_id: str,
+        services=Depends(get_services),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> AssistantRepairTicketContextResponse:
+        require_assistant_permission(
+            services,
+            user,
+        )
+
+        context_service = repair_context_service(services)
+
+        try:
+            return context_service.get_ticket_context(
+                user.user_id,
+                ticket_id,
+            )
+        except RepairResourceNotFound as exc:
+            raise HTTPException(
+                status_code=404,
+                detail=("Repair ticket not found."),
+            ) from exc
+
+    @router.post(
+        "/api/assistant/repair/actions/notes/propose",
+        response_model=(AssistantRepairActionProposalResponse),
+    )
+    def propose_repair_ticket_note(
+        payload: AssistantRepairAddNoteProposalRequest,
+        services=Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> AssistantRepairActionProposalResponse:
+        require_assistant_permission(
+            services,
+            user,
+        )
+
+        action_service = repair_action_service(services)
+
+        try:
+            proposal = action_service.propose_add_ticket_note(
+                owner_user_id=user.user_id,
+                created_by_user_id=user.user_id,
+                request=payload,
+            )
+        except RepairResourceNotFound as exc:
+            raise HTTPException(
+                status_code=404,
+                detail="Repair ticket not found.",
+            ) from exc
+
+        return AssistantRepairActionProposalResponse.from_proposal(proposal)
+
+    @router.get(
+        "/api/assistant/repair/actions/{proposal_id}",
+        response_model=(AssistantRepairActionProposalResponse),
+    )
+    def get_repair_action_proposal(
+        proposal_id: str,
+        services=Depends(get_services),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> AssistantRepairActionProposalResponse:
+        require_assistant_permission(
+            services,
+            user,
+        )
+
+        action_service = repair_action_service(services)
+
+        try:
+            proposal = action_service.get_proposal(
+                proposal_id,
+                owner_user_id=user.user_id,
+            )
+        except AssistantRepairActionNotFoundError as exc:
+            raise HTTPException(
+                status_code=404,
+                detail=("Repair action proposal not found."),
+            ) from exc
+
+        return AssistantRepairActionProposalResponse.from_proposal(proposal)
+
+    @router.post(
+        ("/api/assistant/repair/actions/{proposal_id}/apply"),
+        response_model=(AssistantRepairActionApplyResponse),
+    )
+    def apply_repair_action_proposal(
+        proposal_id: str,
+        payload: AssistantRepairActionApplyRequest,
+        services=Depends(get_services),
+        user: UserIdentity = Depends(require_csrf),
+    ) -> AssistantRepairActionApplyResponse:
+        require_assistant_permission(
+            services,
+            user,
+        )
+
+        action_service = repair_action_service(services)
+
+        try:
+            return action_service.apply(
+                proposal_id,
+                owner_user_id=user.user_id,
+                applied_by_user_id=user.user_id,
+                confirm=payload.confirm,
+            )
+
+        except AssistantRepairActionNotFoundError as exc:
+            raise HTTPException(
+                status_code=404,
+                detail=("Repair action proposal not found."),
+            ) from exc
+
+        except AssistantRepairActionConfirmationError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=str(exc),
+            ) from exc
+
+        except AssistantRepairActionStateError as exc:
+            raise HTTPException(
+                status_code=409,
+                detail=str(exc),
+            ) from exc
+
+        except AssistantRepairActionError as exc:
+            raise HTTPException(
+                status_code=409,
+                detail=str(exc),
+            ) from exc
 
     @router.post("/api/assistant/chat", response_model=AssistantChatResponse)
     def chat(

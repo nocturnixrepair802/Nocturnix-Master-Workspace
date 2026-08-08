@@ -763,3 +763,74 @@ class AssistantPatchProposalFileRow(Base):
     proposal: Mapped[AssistantPatchProposalRow] = relationship(
         back_populates="file_changes",
     )
+
+
+class AssistantRepairActionProposalRow(Base):
+    __tablename__ = "assistant_repair_action_proposals"
+
+    id: Mapped[str] = mapped_column(
+        String(64),
+        primary_key=True,
+    )
+
+    owner_user_id: Mapped[str] = mapped_column(
+        String(120),
+        index=True,
+        nullable=False,
+    )
+
+    created_by_user_id: Mapped[str] = mapped_column(
+        String(120),
+        nullable=False,
+    )
+
+    action_type: Mapped[str] = mapped_column(
+        String(80),
+        index=True,
+        nullable=False,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(30),
+        index=True,
+        nullable=False,
+    )
+
+    ticket_id: Mapped[str] = mapped_column(
+        String(64),
+        index=True,
+        nullable=False,
+    )
+
+    note_type: Mapped[str] = mapped_column(
+        String(40),
+        nullable=False,
+    )
+
+    body: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    customer_visible: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    applied_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    applied_by_user_id: Mapped[str | None] = mapped_column(
+        String(120),
+    )
+
+    failure_reason: Mapped[str | None] = mapped_column(
+        Text,
+    )

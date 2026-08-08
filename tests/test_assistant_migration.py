@@ -10,8 +10,8 @@ def test_assistant_migration_creates_task_and_result_tables_at_head(tmp_path: Pa
 
     run_migrations(database_url)
 
-    assert current_revision(database_url) == "20260808_001"
-    assert head_revision() == "20260808_001"
+    assert current_revision(database_url) == "20260808_002"
+    assert head_revision() == "20260808_002"
 
     engine = create_database_engine(database_url)
     try:

@@ -4,6 +4,18 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from nocturnix.repair_models import (
+    CustomerDeviceResponse,
+    CustomerResponse,
+    RepairPriority,
+    RepairTicketFinancialSummaryResponse,
+    RepairTicketLineItemResponse,
+    RepairTicketNoteResponse,
+    RepairTicketResponse,
+    RepairTicketStatus,
+    RepairTicketStatusHistoryResponse,
+)
+
 
 class AssistantChatRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -228,3 +240,36 @@ class AssistantPatchApplyResponse(BaseModel):
     applied_at: datetime | None
     applied_by_user_id: str | None
     failure_reason: str | None
+
+
+class AssistantRepairTicketSummary(BaseModel):
+    id: str
+    ticket_number: str
+    status: RepairTicketStatus
+    priority: RepairPriority
+    issue_description: str
+    diagnostic_summary: str | None
+    customer_id: str
+    customer_name: str
+    device_id: str
+    device_label: str
+    estimated_cost_cents: int | None
+    approved_cost_cents: int | None
+    currency: str
+    due_at: datetime | None
+    updated_at: datetime
+
+
+class AssistantRepairTicketListResponse(BaseModel):
+    items: list[AssistantRepairTicketSummary]
+    total: int
+
+
+class AssistantRepairTicketContextResponse(BaseModel):
+    ticket: RepairTicketResponse
+    customer: CustomerResponse
+    device: CustomerDeviceResponse
+    notes: list[RepairTicketNoteResponse]
+    status_history: list[RepairTicketStatusHistoryResponse]
+    line_items: list[RepairTicketLineItemResponse]
+    financial_summary: RepairTicketFinancialSummaryResponse
