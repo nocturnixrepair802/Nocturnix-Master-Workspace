@@ -10,7 +10,11 @@ from nocturnix.assistant.exceptions import (
     AssistantResultNotFoundError,
     AssistantTaskNotFoundError,
 )
-from nocturnix.persistence.models import AssistantResultRow, AssistantTaskRow
+from nocturnix.persistence.models import (
+    AssistantPatchProposalRow,
+    AssistantResultRow,
+    AssistantTaskRow,
+)
 
 Identifier = UUID | str
 
@@ -261,4 +265,109 @@ class AssistantTaskRepository:
                 AssistantResultRow.owner_user_id == normalize_id(owner_user_id)
             )
         statement = statement.order_by(AssistantResultRow.created_at.asc())
+        return list(self._session.scalars(statement).all())
+
+    def add_patch_proposal(
+        self,
+        *,
+        owner_user_id: Identifier,
+        task_id: Identifier,
+        repository_root: str,
+        target_file: str,
+        instructions: str,
+        unified_diff: str,
+        original_sha256: str,
+        proposed_sha256: str,
+        conversation_id: Identifier | None = None,
+        metadata_json: dict[str, object] | None = None,
+    ) -> AssistantPatchProposalRow:
+        owner_id = normalize_id(owner_user_id)
+        task_key = normalize_id(task_id)
+
+        task = self.get_task(
+            task_key,
+            owner_id,
+        )
+
+        conversation_key = (
+            normalize_id(conversation_id) if conversation_id is not None else task.conversation_id
+        )
+
+        proposal = AssistantPatchProposalRow(
+            id=str(uuid4()),
+            owner_user_id=owner_id,
+            task_id=task_key,
+            conversation_id=conversation_key,
+            repository_root=repository_root,
+            target_file=target_file,
+            instructions=instructions,
+            unified_diff=unified_diff,
+            original_sha256=original_sha256,
+            proposed_sha256=proposed_sha256,
+            metadata_json=metadata_json or {},
+            created_at=_utc_now(),
+        )
+
+        self._session.add(proposal)
+        self._session.commit()
+        self._session.refresh(proposal)
+
+        return proposal
+
+    def get_patch_proposal(
+        self,
+        proposal_id: Identifier,
+        *,
+        owner_user_id: Identifier | None = None,
+    ) -> AssistantPatchProposalRow:
+        proposal_key = normalize_id(proposal_id)
+
+        statement = select(AssistantPatchProposalRow).where(
+            AssistantPatchProposalRow.id == proposal_key
+        )
+
+        if owner_user_id is not None:
+            statement = statement.where(
+                AssistantPatchProposalRow.owner_user_id == normalize_id(owner_user_id)
+            )
+
+        proposal = self._session.scalar(statement)
+
+        if proposal is None:
+            raise LookupError(f"Assistant patch proposal {proposal_id!r} was not found.")
+
+        return proposal
+
+    def list_patch_proposals(
+        self,
+        *,
+        owner_user_id: Identifier,
+        task_id: Identifier | None = None,
+        conversation_id: Identifier | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[AssistantPatchProposalRow]:
+        owner_id = normalize_id(owner_user_id)
+
+        statement: Select[tuple[AssistantPatchProposalRow]] = select(
+            AssistantPatchProposalRow
+        ).where(AssistantPatchProposalRow.owner_user_id == owner_id)
+
+        if task_id is not None:
+            statement = statement.where(AssistantPatchProposalRow.task_id == normalize_id(task_id))
+
+        if conversation_id is not None:
+            statement = statement.where(
+                AssistantPatchProposalRow.conversation_id == normalize_id(conversation_id)
+            )
+
+        statement = (
+            statement.order_by(
+                AssistantPatchProposalRow.created_at.desc(),
+                AssistantPatchProposalRow.id.desc(),
+            )
+            .offset(offset)
+            .limit(limit)
+        )
+
         return list(self._session.scalars(statement).all())

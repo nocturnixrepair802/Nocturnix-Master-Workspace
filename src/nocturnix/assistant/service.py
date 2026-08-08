@@ -3,7 +3,11 @@ from __future__ import annotations
 from nocturnix.assistant.exceptions import AssistantTaskStateError
 from nocturnix.assistant.registry import AssistantToolRegistry
 from nocturnix.assistant.repositories import AssistantTaskRepository, Identifier
-from nocturnix.persistence.models import AssistantResultRow, AssistantTaskRow
+from nocturnix.persistence.models import (
+    AssistantPatchProposalRow,
+    AssistantResultRow,
+    AssistantTaskRow,
+)
 
 
 class AssistantTaskService:
@@ -224,4 +228,59 @@ class AssistantTaskService:
             f"Cannot {operation} assistant task {task.id!r} "
             f"while its status is {task.status!r}. "
             f"Allowed status values: {allowed_text}."
+        )
+
+    def save_patch_proposal(
+        self,
+        *,
+        owner_user_id: Identifier,
+        task_id: Identifier,
+        repository_root: str,
+        target_file: str,
+        instructions: str,
+        unified_diff: str,
+        original_sha256: str,
+        proposed_sha256: str,
+        conversation_id: Identifier | None = None,
+        metadata_json: dict[str, object] | None = None,
+    ) -> AssistantPatchProposalRow:
+        return self._repository.add_patch_proposal(
+            owner_user_id=owner_user_id,
+            task_id=task_id,
+            repository_root=repository_root,
+            target_file=target_file,
+            instructions=instructions,
+            unified_diff=unified_diff,
+            original_sha256=original_sha256,
+            proposed_sha256=proposed_sha256,
+            conversation_id=conversation_id,
+            metadata_json=metadata_json,
+        )
+
+    def get_patch_proposal(
+        self,
+        proposal_id: Identifier,
+        *,
+        owner_user_id: Identifier,
+    ) -> AssistantPatchProposalRow:
+        return self._repository.get_patch_proposal(
+            proposal_id,
+            owner_user_id=owner_user_id,
+        )
+
+    def list_patch_proposals(
+        self,
+        *,
+        owner_user_id: Identifier,
+        task_id: Identifier | None = None,
+        conversation_id: Identifier | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[AssistantPatchProposalRow]:
+        return self._repository.list_patch_proposals(
+            owner_user_id=owner_user_id,
+            task_id=task_id,
+            conversation_id=conversation_id,
+            limit=limit,
+            offset=offset,
         )

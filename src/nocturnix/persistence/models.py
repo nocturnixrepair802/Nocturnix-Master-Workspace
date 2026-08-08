@@ -616,3 +616,59 @@ class AssistantResultRow(Base):
         DateTime(timezone=True),
         nullable=False,
     )
+
+
+class AssistantPatchProposalRow(Base):
+    __tablename__ = "assistant_patch_proposals"
+
+    id: Mapped[str] = mapped_column(
+        String(64),
+        primary_key=True,
+    )
+    owner_user_id: Mapped[str] = mapped_column(
+        String(120),
+        index=True,
+        nullable=False,
+    )
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("assistant_tasks.id"),
+        index=True,
+        nullable=False,
+    )
+    conversation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("conversations.id"),
+        index=True,
+    )
+    repository_root: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
+    target_file: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
+    instructions: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+    unified_diff: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+    original_sha256: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+    proposed_sha256: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+    metadata_json: Mapped[dict[str, object]] = mapped_column(
+        JSON,
+        default=dict,
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
