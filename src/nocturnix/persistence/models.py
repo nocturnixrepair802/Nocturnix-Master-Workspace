@@ -692,3 +692,74 @@ class AssistantPatchProposalRow(Base):
         DateTime(timezone=True),
         nullable=False,
     )
+
+    file_changes: Mapped[list[AssistantPatchProposalFileRow]] = relationship(
+        back_populates="proposal",
+        cascade="all, delete-orphan",
+        order_by="AssistantPatchProposalFileRow.ordinal",
+    )
+
+
+class AssistantPatchProposalFileRow(Base):
+    __tablename__ = "assistant_patch_proposal_files"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "proposal_id",
+            "ordinal",
+            name="uq_patch_proposal_file_ordinal",
+        ),
+        UniqueConstraint(
+            "proposal_id",
+            "path",
+            name="uq_patch_proposal_file_path",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+    )
+
+    proposal_id: Mapped[str] = mapped_column(
+        ForeignKey(
+            "assistant_patch_proposals.id",
+            ondelete="CASCADE",
+        ),
+        index=True,
+        nullable=False,
+    )
+
+    ordinal: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    path: Mapped[str] = mapped_column(
+        String(1000),
+        nullable=False,
+    )
+
+    unified_diff: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    original_sha256: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    proposed_sha256: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    proposal: Mapped[AssistantPatchProposalRow] = relationship(
+        back_populates="file_changes",
+    )

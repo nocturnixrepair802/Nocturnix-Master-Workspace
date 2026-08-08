@@ -4,6 +4,7 @@ from nocturnix.assistant.exceptions import AssistantTaskStateError
 from nocturnix.assistant.registry import AssistantToolRegistry
 from nocturnix.assistant.repositories import AssistantTaskRepository, Identifier
 from nocturnix.persistence.models import (
+    AssistantPatchProposalFileRow,
     AssistantPatchProposalRow,
     AssistantResultRow,
     AssistantTaskRow,
@@ -243,6 +244,7 @@ class AssistantTaskService:
         proposed_sha256: str,
         conversation_id: Identifier | None = None,
         metadata_json: dict[str, object] | None = None,
+        file_changes: list[dict[str, str]] | None = None,
     ) -> AssistantPatchProposalRow:
         return self._repository.add_patch_proposal(
             owner_user_id=owner_user_id,
@@ -255,6 +257,18 @@ class AssistantTaskService:
             proposed_sha256=proposed_sha256,
             conversation_id=conversation_id,
             metadata_json=metadata_json,
+            file_changes=file_changes,
+        )
+
+    def list_patch_proposal_files(
+        self,
+        proposal_id: Identifier,
+        *,
+        owner_user_id: Identifier | None = None,
+    ) -> list[AssistantPatchProposalFileRow]:
+        return self._repository.list_patch_proposal_files(
+            proposal_id,
+            owner_user_id=owner_user_id,
         )
 
     def get_patch_proposal(
