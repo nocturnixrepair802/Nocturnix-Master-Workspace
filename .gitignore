@@ -6,3 +6,9 @@ Backups/*.zip
 # Local backup archives
 Backups/*.zip
 **/Backups/*.zip
+
+# Python build artifacts
+*.egg-info/
+__pycache__/
+.pytest_cache/
+.pyright/
