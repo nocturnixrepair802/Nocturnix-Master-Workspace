@@ -49,6 +49,7 @@ from nocturnix.assistant.web_models import (
 )
 from nocturnix.db import database_ready
 from nocturnix.models import UserIdentity
+from nocturnix.security.auth import AuthorizationService
 
 
 def create_assistant_web_router(
@@ -59,6 +60,15 @@ def create_assistant_web_router(
     router = APIRouter()
     static_root = Path(__file__).resolve().parents[1] / "static"
 
+    def require_assistant_permission(
+        services,
+        user: UserIdentity,
+    ) -> None:
+        AuthorizationService(services.session).require(
+            user,
+            "assistant.chat",
+        )
+
     @router.post(
         "/api/assistant/repository/propose-patch",
         response_model=AssistantPatchProposalResponse,
@@ -68,6 +78,11 @@ def create_assistant_web_router(
         services=Depends(get_services),
         user: UserIdentity = Depends(require_csrf),
     ) -> AssistantPatchProposalResponse:
+        require_assistant_permission(
+            services,
+            user,
+        )
+
         default_repository_root = Path(__file__).resolve().parents[3]
 
         repository_root = (
@@ -313,6 +328,11 @@ def create_assistant_web_router(
         services=Depends(get_services),
         user: UserIdentity = Depends(auth_identity),
     ) -> AssistantPatchProposalHistoryItem:
+        require_assistant_permission(
+            services,
+            user,
+        )
+
         task_service = AssistantTaskService(AssistantTaskRepository(services.session))
 
         try:
@@ -349,6 +369,11 @@ def create_assistant_web_router(
         services=Depends(get_services),
         user: UserIdentity = Depends(auth_identity),
     ) -> AssistantPatchProposalHistoryResponse:
+        require_assistant_permission(
+            services,
+            user,
+        )
+
         task_service = AssistantTaskService(AssistantTaskRepository(services.session))
 
         try:
