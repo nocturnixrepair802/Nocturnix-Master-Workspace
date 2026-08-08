@@ -1,0 +1,328 @@
+# Project Status
+
+## Initial operational coding assistant
+
+The integrated application includes a development-only browser assistant at `/assistant`, local
+readiness at `/api/assistant/health`, and authenticated chat/task/result endpoints. Coding requests
+and responses use the existing SQL assistant task/result records. The provider uses the OpenAI
+Responses API only when both external-provider flags and the key are configured.
+
+This is not a production release. The assistant cannot inspect or modify repository files, execute
+commands, push Git changes, or invoke external research tools. The next milestone is usability and
+security hardening after owner review; autonomous actions remain out of scope.
+# Nocturnix AI Platform
+
+## Project Status
+
+**Status**
+
+🟢 ACTIVE DEVELOPMENT
+
+---
+
+# Current Phase
+
+Backend Stabilization Complete
+
+The project has successfully completed the backend repair and stabilization phase.
+
+Major infrastructure components are now operational.
+
+Current verification:
+
+✅ Tests Passing
+
+```
+142 / 142
+```
+
+✅ Static Analysis
+
+- Ruff
+- Mypy
+- Pylance
+
+All passing.
+
+---
+
+# Completed Systems
+
+## Assistant
+
+Status:
+
+Operational
+
+Completed:
+
+- Repository
+- Service
+- Registry
+- Task Lifecycle
+- Results
+- Validation
+- Tests
+
+---
+
+## Pricing Engine
+
+Status:
+
+Operational
+
+Completed:
+
+- Pricing calculations
+- Validation
+- Test coverage
+
+---
+
+## Persistence
+
+Status:
+
+Operational
+
+Completed:
+
+- Repository layer
+- Models
+- Database abstraction
+
+---
+
+## Testing
+
+Status:
+
+Complete
+
+Current Results:
+
+```
+142 Passed
+0 Failed
+```
+
+---
+
+# Development Environment
+
+Python Environment:
+
+Operational
+
+Dependency Management:
+
+uv
+
+OpenAI API:
+
+Configured
+
+Virtual Environment:
+
+Operational
+
+---
+
+# Next Development Phase
+
+## Web Platform
+
+Planned work:
+
+- FastAPI integration
+- Browser UI
+- Authentication
+- REST API
+- AI Chat
+- Dashboard
+
+---
+
+## AI Platform
+
+Planned work:
+
+- Coding Assistant
+- Conversation History
+- Project Management
+- Tool Integration
+- Assistant Orchestration
+
+---
+
+## Deployment
+
+Future milestones:
+
+- Local browser application
+- Private staging deployment
+- Production deployment
+
+---
+
+# Overall Progress
+
+Infrastructure
+
+████████████████████ 100%
+
+Backend Services
+
+████████████████████ 100%
+
+Testing
+
+████████████████████ 100%
+
+AI Integration
+
+██████████░░░░░░░░░░ 50%
+
+Web Platform
+
+██░░░░░░░░░░░░░░░░░░ 10%
+
+Deployment
+
+░░░░░░░░░░░░░░░░░░░░ 0%
+
+---
+
+# Immediate Goal
+
+Build the first browser-based version of Nocturnix by adding a FastAPI web application directly to the existing repository and connecting it to the repaired assistant services.
+
+The objective is to evolve Nocturnix from a tested backend into a fully interactive AI development platform while maintaining the current green build (142 passing tests).
+
+
+
+Nocturnix v0.1.3 is implemented as a development-only, mock-only FastAPI foundation with durable SQL-backed local persistence and formal Alembic migrations. The project is not production-ready and must not be deployed as a production service.
+
+# Nocturnix AI Assistant v0.1.3 Durable Persistence
+
+Version 0.1.3 keeps Nocturnix development-only and mock-only while replacing normal application in-memory persistence with SQL-backed repositories. SQLite is the only enabled local provider for this milestone; Gmail, Google Calendar, WordPress, Square, production AI providers, notifications, real customer systems, and paid/live calls remain disabled.
+
+## Architecture
+
+The canonical package remains `src/nocturnix/` and the only UI remains `src/nocturnix/static/`. FastAPI routes depend on request-scoped services. Services depend on repository protocols, not raw SQL. SQLAlchemy persistence models live separately from Pydantic request/response/domain models, and Alembic owns schema creation.
+
+## Database settings
+
+Safe local defaults:
+
+```text
+DATABASE_URL=sqlite:///./data/nocturnix_assistant.db
+DATABASE_ECHO=false
+DATABASE_MIGRATION_MODE=manual
+DATA_RETENTION_DAYS=30
+AUDIT_RETENTION_DAYS=365
+CONVERSATION_RETENTION_DAYS=30
+REPAIR_INTAKE_RETENTION_DAYS=90
+```
+
+The app reports only provider/readiness/revision metadata from `/api/v1/status`; it does not return full database URLs, credentials, absolute database paths, secrets, or environment dumps. Local database files under `data/` plus `*.db`, `*.sqlite`, and `*.sqlite3` are ignored by Git.
+
+## Migrations
+
+Migrations are explicit and non-destructive by policy. Run from the repository root:
+
+```bash
+alembic -x database_url=sqlite:///./data/nocturnix_assistant.db upgrade head
+alembic current
+```
+
+PowerShell example:
+
+```powershell
+$env:NOCTURNIX_DATABASE_URL = "sqlite:///./data/nocturnix_assistant.db"
+alembic upgrade head
+alembic current
+```
+
+Downgrade is intentionally not implemented for v0.1.3 because dropping the initial durable schema would be destructive. Back up the SQLite database file before migration experiments. PostgreSQL support is deferred, but repository boundaries and SQLAlchemy models avoid route rewrites later.
+
+## Persisted records
+
+The initial schema stores approvals and execution state, append-oriented audit events, conversations, ordered chat messages, repair intakes, safe user preferences, and mock email/calendar metadata. Chat persistence stores visible user/assistant content and safe source/tool summaries only; hidden system instructions are never persisted.
+
+## Transaction strategy
+
+Each API request opens a short SQLAlchemy session scope that commits on success, rolls back on failure, and closes the session. Approval execution uses a conditional SQL update that can claim only pending, unexpired, not-yet-started approvals owned by the caller. This prevents duplicate execution without relying on an in-memory lock.
+
+## Approval and audit protections
+
+Owner isolation, expiration checks, rejection checks, duplicate-execution prevention, content hashing, action-integrity hashing, mock-only execution, and audit records are preserved. Audit metadata is redacted before repository writes for keys such as tokens, passwords, secrets, cards, SSNs, IMEIs, serial numbers, and auth codes.
+
+## Retention foundation
+
+Retention cleanup is explicit and dry-run by default at `POST /api/v1/retention/cleanup`. It reports candidate counts, records cleanup activity in the audit log, preserves pending approvals and audit integrity, and performs no physical deletion while policy decisions are unresolved.
+
+## Testing
+
+Tests use isolated temporary SQLite databases with explicit test-only migration mode. Run:
+
+```bash
+ruff format --check .
+ruff check .
+mypy src tests
+pytest
+bandit -c pyproject.toml -r src
+pip-audit
+```
+
+## Future OAuth/token milestone
+
+Real OAuth/token storage must be a separate security milestone with encrypted token storage, rotation, least-privilege scopes, revocation, audit trails, operational key management, and production authentication before any live provider connection is considered.
+
+# Nocturnix AI Assistant v0.1.4 Authentication and OAuth Security Foundation
+
+Version 0.1.4 remains development-only and mock-only. It adds durable user accounts, Argon2 password hashing through `pwdlib`, server-side opaque sessions, CSRF checks for cookie-authenticated state changes, role-based permissions, password reset records with development-only mock delivery, encrypted secret-storage abstractions using authenticated encryption, provider-account metadata, and mock-only OAuth state/PKCE preparation. No Gmail, Google Calendar, WordPress, Square, production AI provider, email, SMS, or live OAuth network call is made.
+
+## Implemented
+
+- Durable `users`, `roles`, `permissions`, `user_roles`, `role_permissions`, `sessions`, `password_reset_challenges`, `provider_accounts`, `encrypted_secret_records`, and `oauth_authorization_states` tables.
+- `session`, `development_header`, and `disabled` authentication modes. `development_header` requires explicit development opt-in and is rejected in production-like settings.
+- RBAC roles: owner, administrator, operator, and viewer. Permissions are explicit and checked centrally.
+- Mock OAuth provider identifier: `mock_google`; redirect URIs are allowlisted and PKCE/state records are single-use and short-lived.
+- Local encrypted secret records are for development only and require `NOCTURNIX_SECRET_ENCRYPTION_KEY` when enabled; this is not production key management.
+
+## Permission matrix
+
+| Permission | Owner | Administrator | Operator | Viewer |
+| --- | --- | --- | --- | --- |
+| assistant.chat | yes | yes | yes | yes |
+| repair_intake.create/read | yes | yes | yes | no |
+| approvals.create/read/decide | yes | yes | yes | read only |
+| audit.read | yes | yes | no | yes |
+| preferences.read/update | yes | yes | read only | read only |
+| email_mock.read/calendar_mock.read | yes | yes | yes | yes |
+| provider_accounts.read/manage | yes | yes | read only | read only |
+| security_sessions.read/revoke | yes | yes | no | no |
+| users.read/manage | yes | read only | no | no |
+
+## Development limitations and owner decisions
+
+Local HTTP cannot provide the same transport protection as production TLS. Registration and reset-token mock delivery are disabled unless explicitly enabled. Distributed rate limiting, production cookie settings, real OAuth client registration, external secret management, verified redirect domains, consent copy, Gmail read-only scope approval, incident response processes, and administrator bootstrap policy remain owner decisions before v0.2.0.
+
+## Threat model summary
+
+Threats considered include credential theft, password database compromise, session theft/fixation, CSRF, brute force, account enumeration, privilege escalation, cross-user access, OAuth state theft, authorization-code interception, PKCE bypass, redirect abuse, scope escalation, token theft, key compromise, secret logging, audit leakage, malicious documents, prompt-injection approval bypass attempts, compromised developer machines, and SQLite disclosure. Mitigations include adaptive hashing, opaque hashed sessions, CSRF tokens, generic auth failures, account lockout, deny-by-default RBAC, owner-scoped queries, hashed OAuth state, PKCE, redirect allowlisting, disabled live providers, encrypted secret abstraction, audit redaction, and preserved approval controls. Remaining limitations require production TLS, distributed throttling, managed KMS/HSM, hardened deployment, monitoring, backups, and formal security review.
+
+
+# Nocturnix AI Assistant v0.1.6 Memory, Planning & Autonomous Task Engine
+
+Version 0.1.6 remains development-only and mock-only. It adds durable owner-scoped memories, conversation-summary storage, planning tasks, reminder readiness records, focus mode, dashboard/search APIs, and a natural-language command router for capture and retrieval. No repair-ticket platform, production AI provider, notification provider, deployment, or live integration is added.
+
+## Assistant mock provider status
+
+The development browser assistant now supports `NOCTURNIX_CODING_PROVIDER=mock` for zero-cost local workflow testing. Mock mode makes no external calls and provides deterministic responses while still persisting assistant tasks and results. OpenAI mode remains available with explicit `NOCTURNIX_OPENAI_ENABLED=true`, `NOCTURNIX_EXTERNAL_PROVIDERS_ENABLED=true`, and `OPENAI_API_KEY` configuration.
+
+## Repository awareness status
+
+The development browser assistant now has a read-only repository-access service with deterministic listing and filename/content search. It enforces configured-root confinement, ignore rules, safe text extensions, file-size limits, binary rejection, symlink escape prevention, and safe selected-file loading into assistant context. Current limitations: no semantic search, no embeddings, no file writes, no shell execution, no Git mutation, no automatic commits or pushes, and no live OAuth/provider filesystem expansion.

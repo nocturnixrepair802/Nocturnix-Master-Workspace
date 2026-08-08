@@ -1,0 +1,210 @@
+from datetime import UTC, datetime, timedelta
+from typing import Any, cast
+
+from nocturnix.db import (
+    Base,
+    create_database_engine,
+    create_session_factory,
+    session_scope,
+)
+from nocturnix.persistence.models import ReminderRow
+from nocturnix.services.business import (
+    BusinessService,
+    InAppMockNotificationProvider,
+    make_id,
+    now_utc,
+)
+
+
+def test_business_focus_briefing_waiting_and_mock_delivery(
+    tmp_path,
+) -> None:
+    engine = create_database_engine(f"sqlite:///{tmp_path / 'v015.db'}")
+    Base.metadata.create_all(engine)
+    factory = create_session_factory(engine)
+
+    with session_scope(factory) as session:
+        service = BusinessService(session)
+
+        overdue = service.create_task(
+            "owner",
+            {
+                "title": "Call customer",
+                "category": "repair",
+                "related_repair_id": "r1",
+                "priority": "high",
+                "due_at": datetime.now(UTC) - timedelta(hours=1),
+                "estimated_effort_minutes": 10,
+                "next_action": "Call",
+            },
+        )
+
+        quick = service.create_task(
+            "owner",
+            {
+                "title": "Order label",
+                "priority": "normal",
+                "estimated_effort_minutes": 5,
+                "next_action": "Print",
+            },
+        )
+
+        waiting = service.create_task(
+            "owner",
+            {
+                "title": "Supplier reply",
+                "status": "waiting",
+                "waiting_on_type": "supplier",
+                "due_at": datetime.now(UTC),
+                "updated_at": datetime.now(UTC) - timedelta(days=4),
+            },
+        )
+
+        service.create_task(
+            "owner",
+            {
+                "title": "Too long",
+                "estimated_effort_minutes": 120,
+            },
+        )
+        service.create_task(
+            "owner",
+            {
+                "title": "Another",
+                "priority": "low",
+            },
+        )
+
+        focus = cast(
+            dict[str, Any],
+            service.focus_now("owner"),
+        )
+        focus_items = cast(
+            list[dict[str, Any]],
+            focus["items"],
+        )
+
+        assert len(focus_items) == 3
+
+        first_focus_item = focus_items[0]
+        first_focus_task = cast(
+            dict[str, Any],
+            first_focus_item["task"],
+        )
+
+        assert str(first_focus_task["id"]) == str(overdue["id"])
+
+        second_focus_item = focus_items[1]
+        explanations = cast(
+            list[str],
+            second_focus_item["explanations"],
+        )
+
+        assert any("quick" in reason for reason in explanations)
+
+        waiting_payload = cast(
+            dict[str, Any],
+            service.waiting_on("owner"),
+        )
+        waiting_items = cast(
+            list[dict[str, Any]],
+            waiting_payload["items"],
+        )
+        follow_up_today = cast(
+            list[dict[str, Any]],
+            waiting_payload["follow_up_today"],
+        )
+
+        assert str(waiting_items[0]["id"]) == str(waiting["id"])
+        assert follow_up_today
+
+        briefing = cast(
+            dict[str, Any],
+            service.briefing("owner"),
+        )
+        briefing_focus_items = cast(
+            list[dict[str, Any]],
+            briefing["focus_items"],
+        )
+        quick_win = cast(
+            dict[str, Any] | None,
+            briefing["quick_win"],
+        )
+
+        assert briefing_focus_items
+        assert quick_win is not None
+
+        end_of_day = cast(
+            dict[str, Any],
+            service.end_of_day("owner"),
+        )
+        unfinished_tasks = cast(
+            list[dict[str, Any]],
+            end_of_day["unfinished_tasks"],
+        )
+        recovery_choices = cast(
+            list[str],
+            end_of_day["recovery_choices"],
+        )
+
+        assert unfinished_tasks
+        assert "reschedule" in recovery_choices
+
+        quick_id = str(quick["id"])
+        overdue_id = str(overdue["id"])
+
+        completed = cast(
+            dict[str, Any],
+            service.complete(
+                "owner",
+                quick_id,
+            ),
+        )
+
+        assert completed["status"] == "completed"
+
+        snoozed = cast(
+            dict[str, Any],
+            service.snooze(
+                "owner",
+                overdue_id,
+                now_utc() + timedelta(minutes=30),
+            ),
+        )
+
+        assert snoozed["status"] == "deferred"
+
+        rescheduled = cast(
+            dict[str, Any],
+            service.reschedule(
+                "owner",
+                overdue_id,
+                now_utc() + timedelta(days=1),
+            ),
+        )
+
+        assert rescheduled["status"] == "planned"
+
+        reminder = ReminderRow(
+            id=make_id("rem"),
+            owner_user_id="owner",
+            reminder_type="scheduled",
+            scheduled_at=now_utc(),
+            status="scheduled",
+            priority="normal",
+            delivery_channel="in_app_mock",
+            title="password token supplier",
+            created_at=now_utc(),
+        )
+
+        session.add(reminder)
+        session.flush()
+
+        event = InAppMockNotificationProvider().deliver(
+            session,
+            reminder,
+        )
+
+        assert event.safe_summary == "[REDACTED REMINDER]"
+
+    engine.dispose()

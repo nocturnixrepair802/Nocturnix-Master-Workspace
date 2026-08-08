@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+  <title>Nocturnix Development Assistant</title>
+  <link
+    rel="stylesheet"
+    href="/static/coding-assistant.css"
+  >
+</head>
+
+<body>
+  <main class="shell">
+    <header class="app-header">
+      <div class="mark">N</div>
+
+      <div>
+        <h1>Nocturnix</h1>
+        <p>Development Assistant</p>
+
+        <span
+          id="provider-badge"
+          class="provider-badge"
+        >
+          Development provider: checking...
+        </span>
+      </div>
+    </header>
+
+    <p
+      id="mock-notice"
+      class="notice success-notice"
+      hidden
+    ></p>
+
+    <div class="workspace">
+      <section class="main-column">
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Repository Context</h2>
+              <p>
+                Search approved repository files and attach
+                them to assistant requests.
+              </p>
+            </div>
+          </div>
+
+          <label for="repo-search">
+            Search approved files
+          </label>
+
+          <div class="inline-control">
+            <input
+              id="repo-search"
+              type="search"
+              placeholder="Search filenames or content"
+            >
+
+            <button
+              id="repo-search-button"
+              type="button"
+            >
+              Search
+            </button>
+          </div>
+
+          <div
+            id="repo-results"
+            class="repo-list"
+            aria-live="polite"
+          ></div>
+
+          <h3>Selected files</h3>
+
+          <div
+            id="repo-selected"
+            class="repo-list"
+          ></div>
+
+          <h3>Preview</h3>
+
+          <pre
+            id="repo-preview"
+            class="repo-preview"
+          >No file selected.</pre>
+        </section>
+
+        <section class="panel chat-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Assistant</h2>
+              <p>
+                Ask for explanations, reviews, tests, or
+                development guidance.
+              </p>
+            </div>
+          </div>
+
+          <section
+            id="conversation"
+            class="conversation"
+            aria-live="polite"
+          >
+            <div class="welcome">
+              <h3>What are you building?</h3>
+              <p>
+                Selected repository files can be included
+                automatically with your request.
+              </p>
+            </div>
+          </section>
+
+          <div class="composer">
+            <label for="message">
+              Message
+            </label>
+
+            <textarea
+              id="message"
+              rows="5"
+              placeholder="Ask Nocturnix about the code..."
+            ></textarea>
+
+            <div class="actions">
+              <span id="status">
+                Ready
+              </span>
+
+              <button
+                id="send"
+                type="button"
+              >
+                Send
+              </button>
+            </div>
+
+            <p
+              id="error"
+              class="notice error"
+              hidden
+            ></p>
+          </div>
+        </section>
+      </section>
+
+      <aside class="side-column">
+        <section class="panel proposal-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Patch Proposal</h2>
+              <p>
+                Generate a read-only patch proposal from the
+                selected repository file.
+              </p>
+            </div>
+          </div>
+
+          <label for="proposal-title">
+            Proposal title
+          </label>
+
+          <input
+            id="proposal-title"
+            type="text"
+            maxlength="200"
+            placeholder="Optional title"
+          >
+
+          <label for="proposal-instruction">
+            Instruction
+          </label>
+
+          <textarea
+            id="proposal-instruction"
+            rows="5"
+            placeholder="Example: Add a class docstring to AssistantTaskService."
+          ></textarea>
+
+          <button
+            id="generate-proposal"
+            type="button"
+            class="full-button"
+          >
+            Generate proposal
+          </button>
+
+          <p
+            id="proposal-error"
+            class="notice error"
+            hidden
+          ></p>
+
+          <section
+            id="proposal-result"
+            class="proposal-result"
+            hidden
+          >
+            <div class="proposal-meta">
+              <h3 id="proposal-result-title">
+                Proposal
+              </h3>
+
+              <span
+                id="proposal-state"
+                class="status-badge pending"
+              >
+                Pending
+              </span>
+            </div>
+
+            <p id="proposal-summary"></p>
+
+            <h4>Affected files</h4>
+
+            <ul
+              id="proposal-affected-files"
+              class="simple-list"
+            ></ul>
+
+            <h4>Warnings</h4>
+
+            <ul
+              id="proposal-warnings"
+              class="simple-list"
+            ></ul>
+
+            <div class="diff-heading">
+              <h4>Unified diff</h4>
+
+              <button
+                id="copy-diff"
+                type="button"
+                class="secondary-button"
+              >
+                Copy diff
+              </button>
+            </div>
+
+            <pre
+              id="proposal-diff"
+              class="diff-preview"
+            ></pre>
+
+            <div class="apply-actions">
+              <button
+                id="apply-patch"
+                type="button"
+                class="danger-button"
+              >
+                Apply Patch
+              </button>
+            </div>
+
+            <p
+              id="apply-message"
+              class="notice"
+              hidden
+            ></p>
+          </section>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading history-heading">
+            <div>
+              <h2>Patch History</h2>
+              <p>
+                Proposals associated with the current patch
+                task.
+              </p>
+            </div>
+
+            <button
+              id="refresh-history"
+              type="button"
+              class="secondary-button"
+              disabled
+            >
+              Refresh
+            </button>
+          </div>
+
+          <div
+            id="patch-history"
+            class="history-list"
+          >
+            <p class="muted">
+              Generate a proposal to view its history.
+            </p>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <dialog id="apply-dialog">
+    <form method="dialog">
+      <h2>Apply patch?</h2>
+
+      <p>
+        This will modify the repository file on disk.
+        Nocturnix will verify that the file has not changed
+        since the proposal was generated.
+      </p>
+
+      <p class="warning-text">
+        Review the diff before continuing.
+      </p>
+
+      <div class="dialog-actions">
+        <button
+          value="cancel"
+          class="secondary-button"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="confirm-apply"
+          value="confirm"
+          class="danger-button"
+        >
+          Apply Patch
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <script
+    src="/static/coding-assistant.js"
+    defer
+  ></script>
+</body>
+</html>

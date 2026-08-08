@@ -1,0 +1,3 @@
+@'
+...entire README contents...
+'@ | Set-Content README.md -Encoding UTF8
