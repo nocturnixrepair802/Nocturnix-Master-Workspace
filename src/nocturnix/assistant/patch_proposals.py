@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import difflib
 import re
+from hashlib import sha256
 from pathlib import Path
 
 from nocturnix.assistant.patch_models import (
@@ -131,6 +132,10 @@ def propose_patch(
         class_name,
     )
 
+    original_sha256 = sha256(original_content.encode("utf-8")).hexdigest()
+
+    proposed_sha256 = sha256(modified_content.encode("utf-8")).hexdigest()
+
     unified_diff = _build_unified_diff(
         file_reference.path,
         original_content,
@@ -151,9 +156,11 @@ def propose_patch(
 
     return PatchProposalResult(
         title=proposal_title,
-        summary=f"Adds a missing class docstring to {class_name}.",
+        summary=(f"Adds a missing class docstring to {class_name}."),
         affected_files=[file_reference.path],
         unified_diff=unified_diff,
+        original_sha256=original_sha256,
+        proposed_sha256=proposed_sha256,
         warnings=[
             "This proposal was generated locally.",
             "The proposed patch has not been applied.",

@@ -22,6 +22,7 @@ from nocturnix.assistant.repository_models import (
     RepositorySearchResponse,
     RepositoryStatusResponse,
 )
+from nocturnix.assistant.service import AssistantTaskService
 from nocturnix.assistant.symbol_graph import (
     build_project_symbol_graph,
     symbol_graph_for_symbol,
@@ -30,6 +31,8 @@ from nocturnix.assistant.web_models import (
     AssistantChatRequest,
     AssistantChatResponse,
     AssistantHealthResponse,
+    AssistantPatchProposalHistoryItem,
+    AssistantPatchProposalHistoryResponse,
     AssistantPatchProposalRequest,
     AssistantPatchProposalResponse,
     AssistantRepositoryReferenceItem,
@@ -65,9 +68,6 @@ def create_assistant_web_router(
         services=Depends(get_services),
         user: UserIdentity = Depends(require_csrf),
     ) -> AssistantPatchProposalResponse:
-        del services
-        del user
-
         default_repository_root = Path(__file__).resolve().parents[3]
 
         repository_root = (
@@ -89,7 +89,52 @@ def create_assistant_web_router(
                 detail=str(exc),
             ) from exc
 
+        task_service = AssistantTaskService(AssistantTaskRepository(services.session))
+
+        task = task_service.create_task(
+            owner_user_id=user.user_id,
+            task_type="patch_proposal",
+            title=proposal.title,
+            instructions=payload.instruction,
+            input_data={
+                "repository_root": str(repository_root.resolve()),
+                "selected_files": proposal.affected_files,
+            },
+        )
+
+        task_service.start_task(
+            task.id,
+            owner_user_id=user.user_id,
+        )
+
+        persisted_proposal = task_service.save_patch_proposal(
+            owner_user_id=user.user_id,
+            task_id=task.id,
+            repository_root=str(repository_root.resolve()),
+            target_file=proposal.affected_files[0],
+            instructions=payload.instruction,
+            unified_diff=proposal.unified_diff,
+            original_sha256=proposal.original_sha256,
+            proposed_sha256=proposal.proposed_sha256,
+            metadata_json={
+                "title": proposal.title,
+                "summary": proposal.summary,
+                "affected_files": proposal.affected_files,
+                "warnings": proposal.warnings,
+                "generated_locally": proposal.generated_locally,
+                "applied": proposal.applied,
+            },
+        )
+
+        task_service.complete_task(
+            task.id,
+            result_summary="Patch proposal generated and persisted.",
+            owner_user_id=user.user_id,
+        )
+
         return AssistantPatchProposalResponse(
+            proposal_id=persisted_proposal.id,
+            task_id=task.id,
             title=proposal.title,
             summary=proposal.summary,
             affected_files=proposal.affected_files,
@@ -256,6 +301,88 @@ def create_assistant_web_router(
                     excerpt=item.excerpt,
                 )
                 for item in items
+            ]
+        )
+
+    @router.get(
+        "/api/assistant/patches/{proposal_id}",
+        response_model=AssistantPatchProposalHistoryItem,
+    )
+    def patch_proposal(
+        proposal_id: str,
+        services=Depends(get_services),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> AssistantPatchProposalHistoryItem:
+        task_service = AssistantTaskService(AssistantTaskRepository(services.session))
+
+        try:
+            proposal = task_service.get_patch_proposal(
+                proposal_id,
+                owner_user_id=user.user_id,
+            )
+        except LookupError as exc:
+            raise HTTPException(
+                status_code=404,
+                detail="Patch proposal not found.",
+            ) from exc
+
+        return AssistantPatchProposalHistoryItem(
+            id=proposal.id,
+            task_id=proposal.task_id,
+            conversation_id=proposal.conversation_id,
+            repository_root=proposal.repository_root,
+            target_file=proposal.target_file,
+            instructions=proposal.instructions,
+            unified_diff=proposal.unified_diff,
+            original_sha256=proposal.original_sha256,
+            proposed_sha256=proposal.proposed_sha256,
+            metadata_json=proposal.metadata_json,
+            created_at=proposal.created_at,
+        )
+
+    @router.get(
+        "/api/assistant/tasks/{task_id}/patches",
+        response_model=AssistantPatchProposalHistoryResponse,
+    )
+    def task_patch_proposals(
+        task_id: str,
+        services=Depends(get_services),
+        user: UserIdentity = Depends(auth_identity),
+    ) -> AssistantPatchProposalHistoryResponse:
+        task_service = AssistantTaskService(AssistantTaskRepository(services.session))
+
+        try:
+            task_service.get_task(
+                task_id,
+                owner_user_id=user.user_id,
+            )
+        except AssistantTaskNotFoundError as exc:
+            raise HTTPException(
+                status_code=404,
+                detail="Assistant task not found.",
+            ) from exc
+
+        proposals = task_service.list_patch_proposals(
+            owner_user_id=user.user_id,
+            task_id=task_id,
+        )
+
+        return AssistantPatchProposalHistoryResponse(
+            items=[
+                AssistantPatchProposalHistoryItem(
+                    id=proposal.id,
+                    task_id=proposal.task_id,
+                    conversation_id=proposal.conversation_id,
+                    repository_root=proposal.repository_root,
+                    target_file=proposal.target_file,
+                    instructions=proposal.instructions,
+                    unified_diff=proposal.unified_diff,
+                    original_sha256=proposal.original_sha256,
+                    proposed_sha256=proposal.proposed_sha256,
+                    metadata_json=proposal.metadata_json,
+                    created_at=proposal.created_at,
+                )
+                for proposal in proposals
             ]
         )
 

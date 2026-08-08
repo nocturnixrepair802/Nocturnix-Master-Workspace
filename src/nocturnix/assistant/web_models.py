@@ -172,6 +172,8 @@ class AssistantPatchProposalRequest(BaseModel):
 
 
 class AssistantPatchProposalResponse(BaseModel):
+    proposal_id: str
+    task_id: str
     title: str
     summary: str
     affected_files: list[str]
@@ -179,3 +181,21 @@ class AssistantPatchProposalResponse(BaseModel):
     warnings: list[str]
     generated_locally: bool
     applied: bool
+
+
+class AssistantPatchProposalHistoryItem(BaseModel):
+    id: str
+    task_id: str
+    conversation_id: str | None
+    repository_root: str
+    target_file: str
+    instructions: str
+    unified_diff: str
+    original_sha256: str
+    proposed_sha256: str
+    metadata_json: dict[str, object]
+    created_at: datetime
+
+
+class AssistantPatchProposalHistoryResponse(BaseModel):
+    items: list[AssistantPatchProposalHistoryItem]
