@@ -1,0 +1,32 @@
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+Backups/
+
+# Excel temporary and backup files
+~$*.xlsx
+~$*.xlsm
+*.backup_*.xlsx
+
+# Device catalog generated outputs
+Nocturnix_Master_Devices_Catalog_v*_Normalized_Draft.xlsx
+Nocturnix_Master_Devices_Catalog_v*_Migration_Report.json
+Nocturnix_Master_Devices_Catalog_v*_Migration_Log.csv
+Nocturnix_Master_Devices_Catalog_v*_Exceptions.csv
+
+# Migration execution folders
+idempotency_check/
+migration_audit_*/
+migration_remediation_*/
+# Device catalog migration generated artifacts
+Archives/
+Imports/
+MigrationReports/
+MigrationReports_*/
+Nocturnix_Master_Devices_Catalog_*.xlsx
+git_review.txt

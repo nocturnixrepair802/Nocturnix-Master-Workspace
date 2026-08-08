@@ -1,0 +1,75 @@
+class DatabaseValidator:
+
+    def __init__(self, data):
+        self.data = data
+        self.errors = []
+        self.warnings = []
+
+    def validate(self):
+
+        print("\nDATABASE VALIDATION")
+        print("-" * 70)
+
+        self.validate_required_tables()
+        self.validate_empty_tables()
+
+        self.print_summary()
+
+    def validate_required_tables(self):
+
+        required_tables = [
+            "manufacturers",
+            "device_families",
+            "devices",
+            "service_types",
+            "compatibility",
+            "pricing",
+            "catalog"
+        ]
+
+        print("Checking Required Tables")
+
+        for table in required_tables:
+
+            if table in self.data:
+                print(f"   ✓ {table}")
+            else:
+                print(f"   ✗ {table}")
+                self.errors.append(f"Missing table: {table}")
+
+        print()
+
+    def validate_empty_tables(self):
+
+        print("Checking Empty Tables")
+
+        for name, dataframe in self.data.items():
+
+            if dataframe.empty:
+                print(f"   ✗ {name} is empty")
+                self.errors.append(f"{name} contains no data")
+            else:
+                print(f"   ✓ {name} ({len(dataframe)} rows)")
+
+        print()
+
+    def print_summary(self):
+
+        print("=" * 70)
+
+        if not self.errors:
+            print("DATABASE STATUS : PASS")
+        else:
+            print("DATABASE STATUS : FAIL")
+
+        print()
+
+        print(f"Errors   : {len(self.errors)}")
+        print(f"Warnings : {len(self.warnings)}")
+
+        if self.errors:
+
+            print("\nError List")
+
+            for error in self.errors:
+                print(f"   • {error}")

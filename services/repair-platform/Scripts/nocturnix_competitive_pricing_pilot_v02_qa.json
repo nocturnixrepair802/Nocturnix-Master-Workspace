@@ -1,0 +1,139 @@
+{
+  "profile_name": "Nocturnix Competitive Pricing Pilot v0.2 Draft",
+  "profile_version": "v0.2-draft-qa-1.0",
+  "expected_sheets": [
+    "00 - Instructions",
+    "01 - Pilot Pricing Records",
+    "02 - Competitor Observations",
+    "03 - Supplier Cost Evidence",
+    "04 - Labor References",
+    "05 - Canonical References",
+    "06 - Pricing Policy",
+    "07 - Calculation Results",
+    "08 - Review Queue",
+    "09 - Validation Summary",
+    "10 - Revision History",
+    "11 - Import Metadata"
+  ],
+  "sheets": {
+    "00 - Instructions": {
+      "table_name": "tblInstructions",
+      "required_headers": ["Topic", "Instruction"],
+      "expected_data_rows": 15,
+      "freeze_panes": "A2"
+    },
+    "01 - Pilot Pricing Records": {
+      "table_name": "tblPilotPricingRecords",
+      "required_headers": ["Pricing Record ID", "Service ID", "Canonical Service Type ID", "Candidate Status", "Identity Resolution Status", "Identity Evidence Reference", "Identity Reviewer", "Identity Verified At", "Identity Dataset Version"],
+      "required_fields": ["Pricing Record ID", "Service ID", "Canonical Service Type ID", "Candidate Status", "Identity Resolution Status"],
+      "expected_data_rows": 25,
+      "duplicate_keys": [["Pricing Record ID"], ["Service ID"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Candidate Status", "Identity Resolution Status"],
+      "business_rules": [
+        {"type": "regex", "fields": ["Pricing Record ID"], "pattern": "^PRC[0-9]{6}$", "code": "PRICING_ID_FORMAT", "message": "Pricing Record ID is malformed."},
+        {"type": "regex", "fields": ["Service ID"], "pattern": "^SVC[0-9]{6}$", "code": "SERVICE_ID_FORMAT", "message": "Service ID is malformed."},
+        {"type": "forbidden_values", "fields": ["Service ID"], "values": ["SVC000343"], "code": "EXCLUDED_SERVICE_PRESENT", "message": "SVC000343 is prohibited from the cohort."},
+        {"type": "allowed_values", "fields": ["Identity Resolution Status"], "values": ["Pending Governance"], "code": "IDENTITY_STATUS", "message": "Identity status must remain Pending Governance in this transformation."}
+      ]
+    },
+    "02 - Competitor Observations": {
+      "table_name": "tblCompetitorObservations",
+      "required_headers": ["Observation ID", "Pricing Record ID", "Verification Status", "Record Role", "Evidence Package Status", "Competitor Dataset Version", "Verification Date"],
+      "expected_data_rows": 1,
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Evidence Type", "Verification Status", "Record Role"]
+    },
+    "03 - Supplier Cost Evidence": {
+      "table_name": "tblSupplierCostEvidence",
+      "required_headers": ["Pricing Record ID", "Service ID", "Verification Status", "Evidence Record Status", "Evidence Package Status", "Supplier Dataset Version", "Verified At", "Evidence Completeness", "Missing Evidence Reason"],
+      "required_fields": ["Pricing Record ID", "Service ID", "Verification Status", "Evidence Record Status", "Evidence Package Status", "Evidence Completeness", "Missing Evidence Reason"],
+      "expected_data_rows": 25,
+      "duplicate_keys": [["Pricing Record ID"], ["Service ID"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Verification Status", "Evidence Record Status", "Evidence Package Status"]
+    },
+    "04 - Labor References": {
+      "table_name": "tblLaborReferences",
+      "required_headers": ["Pricing Record ID", "Service ID", "Labor Standard ID", "Mapping Status", "Verification Status", "Approval Status", "Approver", "Approval Date", "Labor Policy Version", "Evidence Reference", "Labor Dataset Version", "Labor Readiness Status"],
+      "required_fields": ["Pricing Record ID", "Service ID", "Mapping Status", "Verification Status", "Approval Status", "Labor Readiness Status"],
+      "expected_data_rows": 25,
+      "duplicate_keys": [["Pricing Record ID"], ["Service ID"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Verification Status", "Approval Status"]
+    },
+    "05 - Canonical References": {
+      "table_name": "tblCanonicalReferences",
+      "required_headers": ["Pricing Record ID", "Service ID", "Canonical Service Type ID", "Canonical Service Type", "Source SHA-256"],
+      "required_fields": ["Pricing Record ID", "Service ID", "Canonical Service Type ID", "Canonical Service Type", "Source SHA-256"],
+      "expected_data_rows": 25,
+      "duplicate_keys": [["Pricing Record ID"], ["Service ID"]],
+      "freeze_panes": "A2"
+    },
+    "06 - Pricing Policy": {
+      "table_name": "tblPricingPolicy",
+      "required_headers": ["Policy Key", "Policy Value", "Approval Status", "Policy Version", "Approved By", "Approval Date", "Effective Date", "Decision Evidence Reference", "Policy Gate Status"],
+      "required_fields": ["Policy Key", "Policy Area", "Approval Status", "Policy Gate Status"],
+      "expected_data_rows": 13,
+      "duplicate_keys": [["Policy Key"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Approval Status", "Policy Gate Status"],
+      "business_rules": [
+        {"type": "allowed_values", "fields": ["Approval Status"], "values": ["Pending Approval"], "code": "POLICY_STATUS", "message": "Policies must remain Pending Approval."},
+        {"type": "allowed_values", "fields": ["Policy Gate Status"], "values": ["Blocked - Pending Approval"], "code": "POLICY_GATE", "message": "Policy gates must remain blocked."}
+      ]
+    },
+    "07 - Calculation Results": {
+      "table_name": "tblCalculationResults",
+      "required_headers": ["Pricing Record ID", "Service ID", "Recommended Price", "Final Approved Price", "Calculation Status", "Blocking Reason", "Policy Version", "Supplier Dataset Version", "Labor Dataset Version", "Competitor Dataset Version", "Gate Status", "Gate Blocking Reason"],
+      "required_fields": ["Pricing Record ID", "Service ID", "Calculation Status", "Blocking Reason", "Gate Status", "Gate Blocking Reason"],
+      "expected_data_rows": 25,
+      "duplicate_keys": [["Pricing Record ID"], ["Service ID"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Calculation Status", "Gate Status"],
+      "business_rules": [
+        {"type": "allowed_values", "fields": ["Calculation Status"], "values": ["Disabled"], "code": "CALCULATION_DISABLED", "message": "Calculation Status must remain Disabled."},
+        {"type": "allowed_values", "fields": ["Gate Status"], "values": ["Blocked"], "code": "CALCULATION_GATE", "message": "Calculation gate must remain Blocked."}
+      ]
+    },
+    "08 - Review Queue": {
+      "table_name": "tblReviewQueue",
+      "required_headers": ["Review Item ID", "Pricing Record ID", "Service ID", "Current Status", "Resolution Evidence", "Due Date", "Resolution Reviewer", "Closure Date", "Approval State"],
+      "required_fields": ["Review Item ID", "Pricing Record ID", "Service ID", "Current Status", "Approval State"],
+      "expected_data_rows": 125,
+      "duplicate_keys": [["Review Item ID"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Current Status", "Approval State"]
+    },
+    "09 - Validation Summary": {
+      "table_name": "tblValidationSummary",
+      "required_headers": ["Gate ID", "Gate Category", "Required State", "Actual State", "Gate Status", "Blocking Count", "Notes"],
+      "required_fields": ["Gate ID", "Gate Category", "Required State", "Actual State", "Gate Status"],
+      "expected_data_rows": 10,
+      "duplicate_keys": [["Gate ID"], ["Gate Category"]],
+      "freeze_panes": "A2",
+      "validation_fields": ["Gate Status"]
+    },
+    "10 - Revision History": {
+      "table_name": "tblRevisionHistory",
+      "required_headers": ["Version", "Revision Timestamp UTC", "Change Type", "Description", "Author", "Approval Status"],
+      "expected_data_rows": 2,
+      "freeze_panes": "A2"
+    },
+    "11 - Import Metadata": {
+      "table_name": "tblImportMetadata",
+      "required_headers": ["Metadata Field", "Value", "Notes"],
+      "required_fields": ["Metadata Field", "Value"],
+      "expected_data_rows": 22,
+      "duplicate_keys": [["Metadata Field"]],
+      "freeze_panes": "A2"
+    }
+  }
+}

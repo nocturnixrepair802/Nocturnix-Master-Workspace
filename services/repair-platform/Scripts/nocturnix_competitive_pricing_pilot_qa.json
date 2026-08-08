@@ -1,0 +1,224 @@
+{
+  "profile_name": "Nocturnix Competitive Pricing Pilot v0.1",
+  "expected_sheets": [
+    "00 - Instructions",
+    "01 - Pilot Pricing Records",
+    "02 - Competitor Observations",
+    "03 - Supplier Cost Evidence",
+    "04 - Labor References",
+    "05 - Canonical References",
+    "06 - Pricing Policy",
+    "07 - Calculation Results",
+    "08 - Review Queue",
+    "09 - Validation Summary",
+    "10 - Revision History",
+    "11 - Import Metadata"
+  ],
+  "sheets": {
+    "00 - Instructions": {
+      "table_name": "tblInstructions",
+      "required_headers": ["Topic", "Instruction"],
+      "expected_data_rows": 10,
+      "freeze_panes": "A2"
+    },
+    "01 - Pilot Pricing Records": {
+      "table_name": "tblPilotPricingRecords",
+      "required_headers": [
+        "Pricing Record ID",
+        "Service ID",
+        "Service Name",
+        "Canonical Service Type ID",
+        "Canonical Service Type",
+        "Candidate Status"
+      ],
+      "required_fields": [
+        "Pricing Record ID",
+        "Service ID",
+        "Service Name",
+        "Canonical Service Type ID",
+        "Canonical Service Type",
+        "Candidate Status"
+      ],
+      "expected_data_rows": 25,
+      "duplicate_keys": [["Pricing Record ID"], ["Service ID"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Candidate Status"],
+      "business_rules": [
+        {
+          "type": "regex",
+          "fields": ["Pricing Record ID"],
+          "pattern": "^PRC[0-9]{6}$",
+          "code": "PRICING_ID_FORMAT",
+          "message": "Pricing Record ID is malformed."
+        },
+        {
+          "type": "regex",
+          "fields": ["Service ID"],
+          "pattern": "^SVC[0-9]{6}$",
+          "code": "SERVICE_ID_FORMAT",
+          "message": "Service ID is malformed."
+        },
+        {
+          "type": "forbidden_values",
+          "fields": ["Service ID"],
+          "values": ["SVC000343"],
+          "code": "EXCLUDED_SERVICE_PRESENT",
+          "message": "SVC000343 is prohibited from the pilot cohort."
+        },
+        {
+          "type": "allowed_values",
+          "fields": ["Candidate Status"],
+          "values": ["Draft", "Pending Research"],
+          "code": "CANDIDATE_STATUS",
+          "message": "Candidate Status is outside the approved pilot values."
+        }
+      ]
+    },
+    "02 - Competitor Observations": {
+      "table_name": "tblCompetitorObservations",
+      "required_headers": [
+        "Observation ID",
+        "Pricing Record ID",
+        "Service ID",
+        "Effective Comparison Price",
+        "Evidence Type",
+        "Verification Status"
+      ],
+      "expected_data_rows": 1,
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Evidence Type", "Verification Status"]
+    },
+    "03 - Supplier Cost Evidence": {
+      "table_name": "tblSupplierCostEvidence",
+      "required_headers": [
+        "Evidence ID",
+        "Pricing Record ID",
+        "Service ID",
+        "Part Cost",
+        "Verification Status"
+      ],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Verification Status"]
+    },
+    "04 - Labor References": {
+      "table_name": "tblLaborReferences",
+      "required_headers": [
+        "Pricing Record ID",
+        "Service ID",
+        "Labor Standard ID",
+        "Mapping Status",
+        "Verification Status"
+      ],
+      "required_fields": ["Pricing Record ID", "Service ID", "Mapping Status", "Verification Status"],
+      "expected_data_rows": 25,
+      "duplicate_keys": [["Pricing Record ID"], ["Service ID"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Verification Status"],
+      "business_rules": [
+        {
+          "type": "regex",
+          "fields": ["Labor Standard ID"],
+          "pattern": "^LAB[0-9]{6}$",
+          "code": "LABOR_ID_FORMAT",
+          "message": "Populated Labor Standard ID is not a governed LAB identity."
+        }
+      ]
+    },
+    "05 - Canonical References": {
+      "table_name": "tblCanonicalReferences",
+      "required_headers": [
+        "Pricing Record ID",
+        "Service ID",
+        "Service Name",
+        "Canonical Service Type ID",
+        "Canonical Service Type",
+        "Source SHA-256"
+      ],
+      "required_fields": [
+        "Pricing Record ID",
+        "Service ID",
+        "Service Name",
+        "Canonical Service Type ID",
+        "Canonical Service Type",
+        "Source SHA-256"
+      ],
+      "expected_data_rows": 25,
+      "duplicate_keys": [["Pricing Record ID"], ["Service ID"]],
+      "freeze_panes": "A2"
+    },
+    "06 - Pricing Policy": {
+      "table_name": "tblPricingPolicy",
+      "required_headers": ["Policy Key", "Policy Area", "Policy Value", "Approval Status"],
+      "required_fields": ["Policy Key", "Policy Area", "Approval Status"],
+      "expected_data_rows": 13,
+      "duplicate_keys": [["Policy Key"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Approval Status"],
+      "business_rules": [
+        {
+          "type": "allowed_values",
+          "fields": ["Approval Status"],
+          "values": ["Pending Approval"],
+          "code": "POLICY_APPROVAL_STATUS",
+          "message": "Pilot policy must remain Pending Approval."
+        }
+      ]
+    },
+    "07 - Calculation Results": {
+      "table_name": "tblCalculationResults",
+      "required_headers": [
+        "Pricing Record ID",
+        "Service ID",
+        "Total Internal Cost",
+        "Recommended Price",
+        "Final Approved Price",
+        "Calculation Status"
+      ],
+      "required_fields": ["Pricing Record ID", "Service ID", "Calculation Status"],
+      "expected_data_rows": 25,
+      "duplicate_keys": [["Pricing Record ID"], ["Service ID"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Calculation Status"],
+      "business_rules": [
+        {
+          "type": "allowed_values",
+          "fields": ["Calculation Status"],
+          "values": ["Blocked"],
+          "code": "CALCULATION_STATUS",
+          "message": "Calculation Status must remain Blocked in Pilot v0.1."
+        }
+      ]
+    },
+    "08 - Review Queue": {
+      "table_name": "tblReviewQueue",
+      "required_headers": ["Review Item ID", "Pricing Record ID", "Service ID", "Review Category", "Current Status"],
+      "required_fields": ["Review Item ID", "Pricing Record ID", "Service ID", "Review Category", "Current Status"],
+      "expected_data_rows": 125,
+      "duplicate_keys": [["Review Item ID"]],
+      "freeze_panes": "A2",
+      "require_filter": true,
+      "validation_fields": ["Current Status"]
+    },
+    "09 - Validation Summary": {
+      "table_name": "tblValidationSummary",
+      "required_headers": ["Check ID", "Validation Check", "Expected", "Actual", "Result"],
+      "freeze_panes": "A2"
+    },
+    "10 - Revision History": {
+      "table_name": "tblRevisionHistory",
+      "required_headers": ["Version", "Revision Timestamp UTC", "Change Type", "Description", "Approval Status"],
+      "freeze_panes": "A2"
+    },
+    "11 - Import Metadata": {
+      "table_name": "tblImportMetadata",
+      "required_headers": ["Metadata Field", "Value", "Notes"],
+      "freeze_panes": "A2"
+    }
+  }
+}

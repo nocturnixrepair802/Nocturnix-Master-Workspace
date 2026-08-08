@@ -1,0 +1,295 @@
+{
+  "sheet": "37. Raw Import",
+  "row_count": 743,
+  "column_count": 21,
+  "headers": [
+    "\u2b05 Return to Table of Contents",
+    "",
+    "",
+    "SKU",
+    "Group",
+    "Category",
+    "Type",
+    "Manufacturer",
+    "Name",
+    "Price",
+    "Cost",
+    "Stock",
+    "Serial Number",
+    "Condition",
+    "Tax Free",
+    "Bin",
+    "Supplier",
+    "Note",
+    "Updated At",
+    "Created At",
+    "Column1"
+  ],
+  "blank_counts": {
+    "\u2b05 Return to Table of Contents": 735,
+    "": 1482,
+    "SKU": 0,
+    "Group": 0,
+    "Category": 0,
+    "Type": 0,
+    "Manufacturer": 93,
+    "Name": 0,
+    "Price": 0,
+    "Cost": 0,
+    "Stock": 0,
+    "Serial Number": 706,
+    "Condition": 0,
+    "Tax Free": 0,
+    "Bin": 716,
+    "Supplier": 650,
+    "Note": 718,
+    "Updated At": 0,
+    "Created At": 0,
+    "Column1": 743
+  },
+  "types": {
+    "\u2b05 Return to Table of Contents": {
+      "str": 8
+    },
+    "": {
+      "str": 4
+    },
+    "SKU": {
+      "int": 93,
+      "str": 650
+    },
+    "Group": {
+      "str": 743
+    },
+    "Category": {
+      "str": 743
+    },
+    "Type": {
+      "str": 743
+    },
+    "Manufacturer": {
+      "str": 650
+    },
+    "Name": {
+      "str": 743
+    },
+    "Price": {
+      "float": 124,
+      "int": 619
+    },
+    "Cost": {
+      "float": 120,
+      "int": 619,
+      "str": 4
+    },
+    "Stock": {
+      "int": 743
+    },
+    "Serial Number": {
+      "int": 23,
+      "str": 14
+    },
+    "Condition": {
+      "str": 743
+    },
+    "Tax Free": {
+      "str": 743
+    },
+    "Bin": {
+      "str": 27
+    },
+    "Supplier": {
+      "str": 93
+    },
+    "Note": {
+      "str": 25
+    },
+    "Updated At": {
+      "str": 743
+    },
+    "Created At": {
+      "str": 743
+    },
+    "Column1": {}
+  },
+  "duplicates": {
+    "full_rows": 315,
+    "unique_full_row_dupes": 315
+  },
+  "sku_missing": 0,
+  "manufacturer_missing": 93,
+  "supplier_missing": 650,
+  "price_missing": 0,
+  "cost_missing": 0,
+  "zero_price": 232,
+  "negative_price": 0,
+  "zero_cost": 604,
+  "negative_cost": 0,
+  "numeric_text": {
+    "Cost": 4
+  },
+  "top_groups": [
+    [
+      "Miscellaneous Repair",
+      416
+    ],
+    [
+      "Samsung Screen Repair",
+      104
+    ],
+    [
+      "iPhone Screen Repair",
+      54
+    ],
+    [
+      "Screen Adhesive",
+      50
+    ],
+    [
+      "Miscellaneous Tool",
+      20
+    ],
+    [
+      "Miscellaneous Device",
+      16
+    ],
+    [
+      "Samsung",
+      15
+    ],
+    [
+      "Electrical",
+      10
+    ],
+    [
+      "Miscellaneous Part",
+      10
+    ],
+    [
+      "Apple",
+      10
+    ],
+    [
+      "Tape",
+      8
+    ],
+    [
+      "Battery Adhesive",
+      7
+    ],
+    [
+      "Cleaning",
+      6
+    ],
+    [
+      "Misc Phones",
+      3
+    ],
+    [
+      "Apple Watch",
+      2
+    ],
+    [
+      "Rebuild Parts",
+      2
+    ],
+    [
+      "Cold Adhesives",
+      2
+    ],
+    [
+      "New Battery",
+      2
+    ],
+    [
+      "Wearables / Accessories",
+      2
+    ],
+    [
+      "Motorola",
+      2
+    ]
+  ],
+  "top_categories": [
+    [
+      "Repair",
+      574
+    ],
+    [
+      "Part",
+      84
+    ],
+    [
+      "Device",
+      46
+    ],
+    [
+      "Tool",
+      38
+    ],
+    [
+      "Accessory",
+      1
+    ]
+  ],
+  "top_types": [
+    [
+      "Repair - Phone",
+      574
+    ],
+    [
+      "Part - Phone",
+      62
+    ],
+    [
+      "Device - Phone",
+      41
+    ],
+    [
+      "Tools",
+      38
+    ],
+    [
+      "Part - Other",
+      16
+    ],
+    [
+      "Device - Tablet",
+      7
+    ],
+    [
+      "Part - Tablet",
+      4
+    ],
+    [
+      "Accessory - Other",
+      1
+    ]
+  ],
+  "top_conditions": [
+    [
+      "New",
+      699
+    ],
+    [
+      "Damaged",
+      24
+    ],
+    [
+      "Used",
+      20
+    ]
+  ],
+  "top_suppliers": [
+    [
+      "Injured Gadgets",
+      75
+    ],
+    [
+      "MobileSentrix",
+      18
+    ]
+  ],
+  "duplicate_sku_count": 323,
+  "unique_duplicate_skus": 322
+}
