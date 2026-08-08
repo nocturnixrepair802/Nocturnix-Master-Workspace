@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -7,11 +8,22 @@ from tempfile import NamedTemporaryFile
 from nocturnix.assistant.patch_models import PatchProposalError
 from nocturnix.assistant.repository_access import RepositoryAccessError
 from nocturnix.assistant.service import AssistantTaskService
-from nocturnix.persistence.models import AssistantPatchProposalRow
+from nocturnix.persistence.models import (
+    AssistantPatchProposalFileRow,
+    AssistantPatchProposalRow,
+)
 
 
 class PatchApplyError(RuntimeError):
     """Raised when a persisted patch proposal cannot be applied safely."""
+
+
+@dataclass(frozen=True)
+class PreparedPatchFile:
+    path: Path
+    original_content: str
+    proposed_content: str
+    proposed_sha256: str
 
 
 class PatchApplyService:
@@ -40,42 +52,23 @@ class PatchApplyService:
             )
 
         try:
-            target_path = self._resolve_target(proposal)
-            original_bytes = target_path.read_bytes()
-            original_content = original_bytes.decode("utf-8")
-
-            current_sha256 = sha256(original_bytes).hexdigest()
-
-            if current_sha256 != proposal.original_sha256:
-                raise PatchApplyError(
-                    "The target file changed after the patch proposal was generated."
-                )
-
-            proposed_content = self._apply_unified_diff(
-                original_content,
-                proposal.unified_diff,
+            file_changes = self._task_service.list_patch_proposal_files(
+                proposal.id,
+                owner_user_id=owner_user_id,
             )
 
-            proposed_sha256 = sha256(proposed_content.encode("utf-8")).hexdigest()
+            if not file_changes:
+                file_changes = [self._legacy_file_change(proposal)]
 
-            if proposed_sha256 != proposal.proposed_sha256:
-                raise PatchApplyError(
-                    "The reconstructed patched file does not match the stored proposal hash."
+            prepared_files = [
+                self._prepare_file_change(
+                    proposal,
+                    change,
                 )
+                for change in file_changes
+            ]
 
-            self._atomic_write(
-                target_path,
-                proposed_content,
-            )
-
-            written_sha256 = sha256(target_path.read_bytes()).hexdigest()
-
-            if written_sha256 != proposal.proposed_sha256:
-                self._atomic_write(
-                    target_path,
-                    original_content,
-                )
-                raise PatchApplyError("Patch verification failed after writing the file.")
+            self._apply_prepared_files(prepared_files)
 
         except (
             OSError,
@@ -90,7 +83,10 @@ class PatchApplyService:
                 reason=str(exc),
             )
 
-            if isinstance(exc, PatchApplyError):
+            if isinstance(
+                exc,
+                PatchApplyError,
+            ):
                 raise
 
             raise PatchApplyError(str(exc)) from exc
@@ -101,16 +97,129 @@ class PatchApplyService:
             applied_by_user_id=applied_by_user_id,
         )
 
-    @staticmethod
-    def _resolve_target(
+    def _prepare_file_change(
+        self,
         proposal: AssistantPatchProposalRow,
+        change: AssistantPatchProposalFileRow,
+    ) -> PreparedPatchFile:
+        target_path = self._resolve_target_path(
+            proposal.repository_root,
+            change.path,
+        )
+
+        original_bytes = target_path.read_bytes()
+
+        original_content = original_bytes.decode("utf-8")
+
+        current_sha256 = sha256(original_bytes).hexdigest()
+
+        if current_sha256 != change.original_sha256:
+            raise PatchApplyError("The target file changed after the patch proposal was generated.")
+
+        proposed_content = self._apply_unified_diff(
+            original_content,
+            change.unified_diff,
+        )
+
+        reconstructed_sha256 = sha256(proposed_content.encode("utf-8")).hexdigest()
+
+        if reconstructed_sha256 != change.proposed_sha256:
+            raise PatchApplyError(
+                "The reconstructed patched file does not match the stored proposal hash."
+            )
+
+        return PreparedPatchFile(
+            path=target_path,
+            original_content=original_content,
+            proposed_content=proposed_content,
+            proposed_sha256=(change.proposed_sha256),
+        )
+
+    def _apply_prepared_files(
+        self,
+        prepared_files: list[PreparedPatchFile],
+    ) -> None:
+        written_files: list[PreparedPatchFile] = []
+
+        try:
+            for prepared in prepared_files:
+                self._atomic_write(
+                    prepared.path,
+                    prepared.proposed_content,
+                )
+
+                written_files.append(prepared)
+
+                written_sha256 = sha256(prepared.path.read_bytes()).hexdigest()
+
+                if written_sha256 != prepared.proposed_sha256:
+                    raise PatchApplyError("Patch verification failed after writing the file.")
+
+        except (
+            OSError,
+            PatchApplyError,
+        ) as exc:
+            rollback_error = self._rollback_files(written_files)
+
+            if rollback_error is not None:
+                raise PatchApplyError(
+                    f"Patch application failed and rollback was incomplete: {rollback_error}"
+                ) from exc
+
+            if isinstance(
+                exc,
+                PatchApplyError,
+            ):
+                raise
+
+            raise PatchApplyError(str(exc)) from exc
+
+    def _rollback_files(
+        self,
+        written_files: list[PreparedPatchFile],
+    ) -> str | None:
+        errors: list[str] = []
+
+        for prepared in reversed(written_files):
+            try:
+                self._atomic_write(
+                    prepared.path,
+                    prepared.original_content,
+                )
+            except OSError as exc:
+                errors.append(f"{prepared.path}: {exc}")
+
+        if errors:
+            return "; ".join(errors)
+
+        return None
+
+    @staticmethod
+    def _legacy_file_change(
+        proposal: AssistantPatchProposalRow,
+    ) -> AssistantPatchProposalFileRow:
+        return AssistantPatchProposalFileRow(
+            id="legacy",
+            proposal_id=proposal.id,
+            ordinal=0,
+            path=proposal.target_file,
+            unified_diff=proposal.unified_diff,
+            original_sha256=proposal.original_sha256,
+            proposed_sha256=proposal.proposed_sha256,
+            created_at=proposal.created_at,
+        )
+
+    @staticmethod
+    def _resolve_target_path(
+        repository_root_value: str,
+        relative_path_value: str,
     ) -> Path:
-        repository_root = Path(proposal.repository_root).expanduser().resolve(strict=True)
+        repository_root = Path(repository_root_value).expanduser().resolve(strict=True)
 
         if not repository_root.is_dir():
             raise PatchApplyError("The stored repository root is not a directory.")
 
-        relative_path = Path(proposal.target_file)
+        relative_path = Path(relative_path_value)
 
         if relative_path.is_absolute():
             raise PatchApplyError("Absolute patch target paths are not allowed.")
@@ -129,11 +238,21 @@ class PatchApplyService:
         return target_path
 
     @staticmethod
+    def _resolve_target(
+        proposal: AssistantPatchProposalRow,
+    ) -> Path:
+        return PatchApplyService._resolve_target_path(
+            proposal.repository_root,
+            proposal.target_file,
+        )
+
+    @staticmethod
     def _apply_unified_diff(
         original_content: str,
         unified_diff: str,
     ) -> str:
         original_lines = original_content.splitlines(keepends=True)
+
         diff_lines = unified_diff.splitlines()
 
         if len(diff_lines) < 3:
@@ -154,9 +273,6 @@ class PatchApplyService:
         while line_index < len(diff_lines):
             line = diff_lines[line_index]
 
-            # The current proposal generator uses keepends=True and
-            # then joins diff output with "\n". This can create bare
-            # separator lines between otherwise valid diff lines.
             if not line:
                 line_index += 1
                 continue
@@ -180,6 +296,7 @@ class PatchApplyService:
             result.extend(original_lines[original_index:target_index])
 
             original_index = target_index
+
             line_index += 1
 
             while line_index < len(diff_lines):
@@ -192,7 +309,7 @@ class PatchApplyService:
                     line_index += 1
                     continue
 
-                if diff_line == ("\\ No newline at end of file"):
+                if diff_line == "\\ No newline at end of file":
                     line_index += 1
                     continue
 
@@ -209,6 +326,7 @@ class PatchApplyService:
                         raise PatchApplyError("The patch context does not match the current file.")
 
                     result.append(original_lines[original_index])
+
                     original_index += 1
 
                 elif marker == "-":
@@ -247,9 +365,15 @@ class PatchApplyService:
     ) -> int:
         try:
             old_range = hunk_header.split()[1]
+
             old_start = old_range[1:].split(",")[0]
+
             return int(old_start)
-        except (IndexError, ValueError) as exc:
+
+        except (
+            IndexError,
+            ValueError,
+        ) as exc:
             raise PatchApplyError(
                 "The stored unified diff contains an invalid hunk header."
             ) from exc
@@ -278,11 +402,12 @@ class PatchApplyService:
             encoding="utf-8",
             newline="",
             dir=parent,
-            prefix=f".{target_path.name}.",
+            prefix=(f".{target_path.name}."),
             suffix=".tmp",
             delete=False,
         ) as handle:
             temporary_path = Path(handle.name)
+
             handle.write(content)
             handle.flush()
 
@@ -300,10 +425,12 @@ class PatchApplyService:
         reason: str,
     ) -> None:
         try:
-            self._task_service.mark_patch_proposal_failed(
-                proposal.id,
-                owner_user_id=owner_user_id,
-                failure_reason=reason[:2000],
+            (
+                self._task_service.mark_patch_proposal_failed(
+                    proposal.id,
+                    owner_user_id=owner_user_id,
+                    failure_reason=reason[:2000],
+                )
             )
         except ValueError:
             pass

@@ -37,6 +37,7 @@ from nocturnix.assistant.web_models import (
     AssistantHealthResponse,
     AssistantPatchApplyRequest,
     AssistantPatchApplyResponse,
+    AssistantPatchProposalFileResponse,
     AssistantPatchProposalHistoryItem,
     AssistantPatchProposalHistoryResponse,
     AssistantPatchProposalRequest,
@@ -132,11 +133,11 @@ def create_assistant_web_router(
             owner_user_id=user.user_id,
             task_id=task.id,
             repository_root=str(repository_root.resolve()),
-            target_file=proposal.affected_files[0],
+            target_file=proposal.file_changes[0].path,
             instructions=payload.instruction,
             unified_diff=proposal.unified_diff,
-            original_sha256=proposal.original_sha256,
-            proposed_sha256=proposal.proposed_sha256,
+            original_sha256=(proposal.file_changes[0].original_sha256),
+            proposed_sha256=(proposal.file_changes[0].proposed_sha256),
             metadata_json={
                 "title": proposal.title,
                 "summary": proposal.summary,
@@ -145,12 +146,15 @@ def create_assistant_web_router(
                 "generated_locally": proposal.generated_locally,
                 "applied": proposal.applied,
             },
-        )
-
-        task_service.complete_task(
-            task.id,
-            result_summary="Patch proposal generated and persisted.",
-            owner_user_id=user.user_id,
+            file_changes=[
+                {
+                    "path": change.path,
+                    "unified_diff": change.unified_diff,
+                    "original_sha256": change.original_sha256,
+                    "proposed_sha256": change.proposed_sha256,
+                }
+                for change in proposal.file_changes
+            ],
         )
 
         return AssistantPatchProposalResponse(
@@ -160,6 +164,15 @@ def create_assistant_web_router(
             summary=proposal.summary,
             affected_files=proposal.affected_files,
             unified_diff=proposal.unified_diff,
+            files=[
+                AssistantPatchProposalFileResponse(
+                    path=change.path,
+                    unified_diff=change.unified_diff,
+                    original_sha256=change.original_sha256,
+                    proposed_sha256=change.proposed_sha256,
+                )
+                for change in proposal.file_changes
+            ],
             warnings=proposal.warnings,
             generated_locally=proposal.generated_locally,
             applied=proposal.applied,
@@ -346,6 +359,11 @@ def create_assistant_web_router(
                 proposal_id,
                 owner_user_id=user.user_id,
             )
+
+            file_changes = task_service.list_patch_proposal_files(
+                proposal.id,
+                owner_user_id=user.user_id,
+            )
         except LookupError as exc:
             raise HTTPException(
                 status_code=404,
@@ -362,6 +380,15 @@ def create_assistant_web_router(
             unified_diff=proposal.unified_diff,
             original_sha256=proposal.original_sha256,
             proposed_sha256=proposal.proposed_sha256,
+            files=[
+                AssistantPatchProposalFileResponse(
+                    path=change.path,
+                    unified_diff=change.unified_diff,
+                    original_sha256=change.original_sha256,
+                    proposed_sha256=change.proposed_sha256,
+                )
+                for change in file_changes
+            ],
             metadata_json=proposal.metadata_json,
             status=proposal.status,
             applied_at=proposal.applied_at,
@@ -402,8 +429,15 @@ def create_assistant_web_router(
             task_id=task_id,
         )
 
-        return AssistantPatchProposalHistoryResponse(
-            items=[
+        items: list[AssistantPatchProposalHistoryItem] = []
+
+        for proposal in proposals:
+            file_changes = task_service.list_patch_proposal_files(
+                proposal.id,
+                owner_user_id=user.user_id,
+            )
+
+            items.append(
                 AssistantPatchProposalHistoryItem(
                     id=proposal.id,
                     task_id=proposal.task_id,
@@ -414,16 +448,25 @@ def create_assistant_web_router(
                     unified_diff=proposal.unified_diff,
                     original_sha256=proposal.original_sha256,
                     proposed_sha256=proposal.proposed_sha256,
+                    files=[
+                        AssistantPatchProposalFileResponse(
+                            path=change.path,
+                            unified_diff=change.unified_diff,
+                            original_sha256=(change.original_sha256),
+                            proposed_sha256=(change.proposed_sha256),
+                        )
+                        for change in file_changes
+                    ],
                     metadata_json=proposal.metadata_json,
                     status=proposal.status,
                     applied_at=proposal.applied_at,
-                    applied_by_user_id=proposal.applied_by_user_id,
+                    applied_by_user_id=(proposal.applied_by_user_id),
                     failure_reason=proposal.failure_reason,
                     created_at=proposal.created_at,
                 )
-                for proposal in proposals
-            ]
-        )
+            )
+
+        return AssistantPatchProposalHistoryResponse(items=items)
 
     @router.get(
         "/api/assistant/repository/symbols",

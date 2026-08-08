@@ -171,6 +171,13 @@ class AssistantPatchProposalRequest(BaseModel):
         return normalized_files
 
 
+class AssistantPatchProposalFileResponse(BaseModel):
+    path: str
+    unified_diff: str
+    original_sha256: str
+    proposed_sha256: str
+
+
 class AssistantPatchProposalResponse(BaseModel):
     proposal_id: str
     task_id: str
@@ -178,6 +185,7 @@ class AssistantPatchProposalResponse(BaseModel):
     summary: str
     affected_files: list[str]
     unified_diff: str
+    files: list[AssistantPatchProposalFileResponse]
     warnings: list[str]
     generated_locally: bool
     applied: bool
@@ -193,6 +201,7 @@ class AssistantPatchProposalHistoryItem(BaseModel):
     unified_diff: str
     original_sha256: str
     proposed_sha256: str
+    files: list[AssistantPatchProposalFileResponse]
     metadata_json: dict[str, object]
     status: str
     applied_at: datetime | None

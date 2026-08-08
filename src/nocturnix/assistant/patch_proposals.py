@@ -7,6 +7,7 @@ from hashlib import sha256
 from pathlib import Path
 
 from nocturnix.assistant.patch_models import (
+    PatchFileChange,
     PatchProposalError,
     PatchProposalResult,
 )
@@ -62,10 +63,8 @@ def propose_patch(
     if not normalized_instruction:
         raise PatchProposalError("Patch proposal instruction must not be blank.")
 
-    if len(selected_files) != 1:
-        raise PatchProposalError(
-            "The initial patch proposal implementation requires exactly one selected file."
-        )
+    if not selected_files:
+        raise PatchProposalError("At least one repository file must be selected.")
 
     class_match = CLASS_DOCSTRING_PATTERN.fullmatch(normalized_instruction.rstrip("."))
 
@@ -76,21 +75,65 @@ def propose_patch(
         )
 
     class_name = class_match.group("class_name")
-    selected_path = selected_files[0]
     resolved_root = repository_root.resolve()
 
     if not resolved_root.exists() or not resolved_root.is_dir():
         raise PatchProposalError("The configured repository root does not exist.")
 
+    file_changes: list[PatchFileChange] = []
+
+    for selected_path in selected_files:
+        change = _build_class_docstring_change(
+            repository_root=resolved_root,
+            selected_path=selected_path,
+            class_name=class_name,
+        )
+
+        if change is not None:
+            file_changes.append(change)
+
+    if not file_changes:
+        raise PatchProposalError(
+            f"Class {class_name!r} was not found in any selected repository file."
+        )
+
+    proposal_title = (
+        title.strip() if title is not None and title.strip() else f"Document {class_name}"
+    )
+
+    affected_files = [change.path for change in file_changes]
+
+    file_label = "file" if len(file_changes) == 1 else "files"
+
+    return PatchProposalResult(
+        title=proposal_title,
+        summary=(
+            f"Adds a missing class docstring to {class_name} in {len(file_changes)} {file_label}."
+        ),
+        affected_files=affected_files,
+        file_changes=file_changes,
+        warnings=[
+            "This proposal was generated locally.",
+            "The proposed patch has not been applied.",
+        ],
+    )
+
+
+def _build_class_docstring_change(
+    *,
+    repository_root: Path,
+    selected_path: str,
+    class_name: str,
+) -> PatchFileChange | None:
     resolved_file = _validate_selected_file(
-        resolved_root,
+        repository_root,
         selected_path,
     )
 
     try:
         repository_context = load_repository_context(
             RepositoryAccessRequest(
-                repository_root=str(resolved_root),
+                repository_root=str(repository_root),
                 selected_files=[selected_path],
                 max_file_count=1,
                 max_file_content_length=MAX_PATCH_FILE_BYTES,
@@ -121,10 +164,16 @@ def propose_patch(
     )
 
     if target_class is None:
-        raise PatchProposalError(f"Class {class_name!r} was not found in {file_reference.path!r}.")
+        return None
 
-    if ast.get_docstring(target_class, clean=False) is not None:
-        raise PatchProposalError(f"Class {class_name!r} already has a docstring.")
+    if (
+        ast.get_docstring(
+            target_class,
+            clean=False,
+        )
+        is not None
+    ):
+        return None
 
     modified_content = _insert_class_docstring(
         original_content,
@@ -143,28 +192,18 @@ def propose_patch(
     )
 
     if not unified_diff:
-        raise PatchProposalError("The requested patch would not change the selected file.")
+        return None
 
     current_content = resolved_file.read_bytes().decode("utf-8")
 
     if current_content != original_content:
         raise PatchProposalError("The selected file changed while the proposal was generated.")
 
-    proposal_title = (
-        title.strip() if title is not None and title.strip() else f"Document {class_name}"
-    )
-
-    return PatchProposalResult(
-        title=proposal_title,
-        summary=(f"Adds a missing class docstring to {class_name}."),
-        affected_files=[file_reference.path],
+    return PatchFileChange(
+        path=file_reference.path,
         unified_diff=unified_diff,
         original_sha256=original_sha256,
         proposed_sha256=proposed_sha256,
-        warnings=[
-            "This proposal was generated locally.",
-            "The proposed patch has not been applied.",
-        ],
     )
 
 
