@@ -2,21 +2,18 @@ from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import json
 import re
 import shutil
 import sys
 import tempfile
-from collections import Counter, defaultdict
+from collections import defaultdict
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 
-from openpyxl import load_workbook
-
 from audit_migration_draft import calculate_sha256, run_audit
-
+from openpyxl import load_workbook
 
 SAFE = "SAFE_AUTOMATIC"
 DECISION = "NEEDS_DECISION"

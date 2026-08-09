@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from openpyxl import load_workbook
-from openpyxl.workbook.workbook import Workbook
 from openpyxl.utils import range_boundaries
+from openpyxl.workbook.workbook import Workbook
 
 from .audit import SourceTable
 from .config import ENTITY_SPECS

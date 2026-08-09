@@ -1,5 +1,6 @@
-import openpyxl
 from pathlib import Path
+
+import openpyxl
 
 path = Path(
     r"D:\Business Portal\300_Pricing\Working\Nocturnix_Manufacturer_Registry_v0.1_Draft.xlsx"

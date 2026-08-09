@@ -15,7 +15,6 @@ from pathlib import Path
 from openpyxl import load_workbook
 from openpyxl.utils.cell import range_boundaries
 
-
 SEVERITIES = ("PASS", "INFO", "WARNING", "ERROR", "BLOCKER")
 STATUS_VALUES = {"Draft", "Pending Review", "Approved", "Active", "Retired", "Deprecated"}
 CROSSWALK_STATUS_VALUES = {"Draft", "Pending Review", "Approved", "Retired"}

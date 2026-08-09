@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-
 ID_PATTERNS = {
     "DeviceType": re.compile(r"^DT\d+$"),
     "Manufacturer": re.compile(r"^MFG\d+$"),

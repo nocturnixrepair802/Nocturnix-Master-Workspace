@@ -2,18 +2,17 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from openpyxl.cell.cell import Cell
-from openpyxl.utils import get_column_letter, range_boundaries
+from openpyxl.utils import range_boundaries
 from openpyxl.workbook.workbook import Workbook
 
 from .audit import CellChange
 from .config import ALIASES, AUDIT_SHEETS
 from .normalization import format_bool_like, normalize_header, trim_text, valid_id
 from .table_reader import table_headers
-
 
 ENTITY_COLUMNS = {
     "DeviceModel": ("devicemodelid", "DeviceModel"),
@@ -47,7 +46,7 @@ def plan_updates(wb: Workbook, maps: dict[str, Any], source_sheet: str) -> tuple
     updated_sheets: set[str] = set()
     matched_by_id = 0
     unknown_ids = 0
-    timestamp = datetime.now(timezone.utc).isoformat()
+    timestamp = datetime.now(UTC).isoformat()
     records = maps["records"]
     for ws in wb.worksheets:
         if ws.title in AUDIT_SHEETS or ws.title == source_sheet:

@@ -1,9 +1,9 @@
-from openpyxl import Workbook, load_workbook
-from openpyxl.worksheet.table import Table, TableStyleInfo
-from openpyxl.worksheet.datavalidation import DataValidation
-from openpyxl.styles import Font, Alignment, NamedStyle, PatternFill, Border, Side
-from openpyxl.utils import get_column_letter
 from datetime import date
+
+from openpyxl import Workbook, load_workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.worksheet.table import Table, TableStyleInfo
 
 file_path = r"D:\Business Portal\300_Pricing\Nocturnix_Standard_Labor_Catalog_v1.xlsx"
 

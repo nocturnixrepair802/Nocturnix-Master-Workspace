@@ -6,3 +6,14 @@ Backups/*.zip
 # Local backup archives
 Backups/*.zip
 **/Backups/*.zip
+
+# Python build artifacts
+*.egg-info/
+__pycache__/
+.pytest_cache/
+.pyright/
+
+# Local operational databases
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -31,3 +32,24 @@ TABLES = {
     "retail_pricing": "tblRetailPricing",
     "profit_margin": "tblProfitMargin",
 }
+# ======================================================
+# Operational SQLite Database
+# ======================================================
+
+OPERATIONS_DATA_FOLDER = PROJECT_ROOT / "data"
+
+OPERATIONS_DATABASE = OPERATIONS_DATA_FOLDER / "nocturnix_operations.sqlite3"
+# ======================================================
+# Read-Only Master Catalog SQLite Database
+# ======================================================
+
+CATALOG_DATABASE = Path(
+    os.environ.get(
+        "NOCTURNIX_CATALOG_DATABASE",
+        (
+            r"D:\Development\Desktop Application"
+            r"\Nocturnix_Core_Desktop_v0.2"
+            r"\data\nocturnix_dev.sqlite3"
+        ),
+    )
+)

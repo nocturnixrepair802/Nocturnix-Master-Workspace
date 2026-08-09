@@ -1,9 +1,8 @@
 from pathlib import Path
 
+from audit_migration_draft import Audit, Finding, determine_readiness, run_audit
 from openpyxl import Workbook
 from openpyxl.worksheet.table import Table, TableStyleInfo
-
-from audit_migration_draft import Audit, Finding, determine_readiness, run_audit
 
 
 def add_table(ws, name, ref):

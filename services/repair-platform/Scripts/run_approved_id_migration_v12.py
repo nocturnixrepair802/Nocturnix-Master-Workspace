@@ -11,7 +11,7 @@ import warnings
 import zipfile
 from collections import Counter, defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from openpyxl import load_workbook
@@ -356,7 +356,7 @@ def main():
     if args.apply and output.exists():
         raise SystemExit(f"Refusing to overwrite existing output: {output}")
 
-    run_timestamp = datetime.now(timezone.utc).isoformat()
+    run_timestamp = datetime.now(UTC).isoformat()
     source_before = sha256(source)
     wb, warnings_seen = workbook_health(source)
     entries, migration_rows, fk_exceptions, summary = analyze(wb, source)

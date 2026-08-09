@@ -7,19 +7,16 @@ import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
-
-from openpyxl import load_workbook
 
 from generate_competitive_pricing_pilot_v02 import (
     CANONICAL_SHA256,
     QA_PROFILE_VERSION,
-    SHEETS,
     V01_SHA256,
     headers,
     table_rows,
     validate_v02,
 )
+from openpyxl import load_workbook
 
 
 def sha256(path: Path) -> str:

@@ -1,102 +1,788 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
+<section class="repair-operations">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <header class="repair-operations-header">
+        <div>
+            <h1>Repair Operations</h1>
 
-    <title>Repair Operations</title>
+            <p>
+                Create, monitor, and update Nocturnix repair tickets.
+            </p>
+        </div>
+    </header>
 
-    <link rel="stylesheet" href="../../assets/css/variables.css" />
-    <link rel="stylesheet" href="../../assets/css/style.css" />
-    <link rel="stylesheet" href="repair-operations.css" />
-  </head>
 
-  <body>
-    <main class="workspace">
-      <h1>Repair Intake</h1>
+    <section class="repair-intake">
 
-      <p>Create a new repair ticket.</p>
+        <div class="repair-section-header">
+            <div>
+                <h2>New Repair Intake</h2>
 
-      <form class="repair-form">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Customer Name</label>
-            <input type="text" placeholder="John Smith" />
-          </div>
-
-          <div class="form-group">
-            <label>Phone Number</label>
-            <input type="tel" placeholder="(555) 555-5555" />
-          </div>
-
-          <div class="form-group">
-            <label>Email</label>
-            <input type="email" placeholder="customer@email.com" />
-          </div>
-
-          <div class="form-group">
-            <label>Manufacturer</label>
-            <select>
-              <option>Apple</option>
-              <option>Samsung</option>
-              <option>Google</option>
-              <option>Motorola</option>
-              <option>OnePlus</option>
-              <option>Other</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Model</label>
-            <input type="text" />
-          </div>
-
-          <div class="form-group">
-            <label>IMEI / Serial Number</label>
-            <input type="text" />
-          </div>
-
-          <div class="form-group">
-            <label>Repair Status</label>
-
-            <select>
-              <option>New Intake</option>
-
-              <option>Diagnosing</option>
-
-              <option>Waiting on Parts</option>
-
-              <option>Repairing</option>
-
-              <option>Ready for Pickup</option>
-
-              <option>Completed</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Estimated Cost</label>
-
-            <input type="number" />
-          </div>
-
-          <div class="form-group full-width">
-            <label>Problem Description</label>
-
-            <textarea rows="5"></textarea>
-          </div>
-
-          <div class="form-group full-width">
-            <label>Technician Notes</label>
-
-            <textarea rows="5"></textarea>
-          </div>
+                <p>
+                    Select or create the customer, device,
+                    service, and pricing information.
+                </p>
+            </div>
         </div>
 
-        <button class="save-button">Save Repair</button>
-      </form>
-    </main>
-    <script src="js/repair-operations.js"></script>
-  </body>
-</html>
+
+        <form
+            class="repair-form"
+            id="repairIntakeForm"
+        >
+
+            <fieldset class="repair-form-section">
+
+                <legend>
+                    Customer
+                </legend>
+
+
+                <div class="customer-search-section">
+
+                    <div class="form-group">
+
+                        <label for="repairCustomerSearch">
+                            Find Existing Customer
+                        </label>
+
+                        <input
+                            type="search"
+                            id="repairCustomerSearch"
+                            autocomplete="off"
+                            placeholder="Search name, email, or phone"
+                        >
+
+                        <small>
+                            Search existing customers before
+                            creating a new customer.
+                        </small>
+
+                    </div>
+
+
+                    <div
+                        id="repairCustomerResults"
+                        class="customer-search-results"
+                        hidden
+                    ></div>
+
+
+                    <div
+                        id="selectedCustomerPanel"
+                        class="selected-customer-panel"
+                        hidden
+                    >
+
+                        <div>
+
+                            <strong>
+                                Existing Customer Selected
+                            </strong>
+
+                            <div id="selectedCustomerName"></div>
+
+                            <div id="selectedCustomerContact"></div>
+
+                            <div id="selectedCustomerId"></div>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            id="clearSelectedCustomer"
+                            class="secondary-button"
+                        >
+                            Use Different Customer
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="repair-form-grid">
+
+                    <div class="form-group">
+
+                        <label for="repairCustomerName">
+                            Customer Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="repairCustomerName"
+                            name="customer_name"
+                            autocomplete="name"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="repairPhone">
+                            Phone Number
+                        </label>
+
+                        <input
+                            type="tel"
+                            id="repairPhone"
+                            name="mobile_phone"
+                            autocomplete="tel"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="repairEmail">
+                            Email
+                        </label>
+
+                        <input
+                            type="email"
+                            id="repairEmail"
+                            name="email"
+                            autocomplete="email"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <input
+                    type="hidden"
+                    id="repairSelectedCustomerId"
+                    value=""
+                >
+
+            </fieldset>
+
+
+            <fieldset class="repair-form-section">
+
+                <legend>
+                    Device
+                </legend>
+
+
+                <section
+                    id="existingCustomerDeviceSection"
+                    class="existing-customer-device-section"
+                    hidden
+                >
+
+                    <div class="form-group">
+
+                        <label for="existingCustomerDevice">
+                            Existing Customer Device
+                        </label>
+
+                        <select
+                            id="existingCustomerDevice"
+                            disabled
+                        >
+                            <option value="">
+                                No existing device selected
+                            </option>
+                        </select>
+
+                    </div>
+
+
+                    <div class="device-mode-actions">
+
+                        <button
+                            type="button"
+                            id="useExistingDeviceButton"
+                            class="secondary-button"
+                            disabled
+                        >
+                            Use Existing Device
+                        </button>
+
+                        <button
+                            type="button"
+                            id="addNewDeviceButton"
+                            class="secondary-button"
+                        >
+                            Add New Device
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="selectedExistingDevicePanel"
+                        class="selected-customer-panel"
+                        hidden
+                    >
+
+                        <div>
+
+                            <strong>
+                                Existing Device Selected
+                            </strong>
+
+                            <div id="selectedExistingDeviceName"></div>
+
+                            <div id="selectedExistingDeviceDetails"></div>
+
+                            <div id="selectedExistingDeviceId"></div>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            id="clearExistingDeviceButton"
+                            class="secondary-button"
+                        >
+                            Change Device
+                        </button>
+
+                    </div>
+
+                </section>
+
+
+                <section
+                    id="newDeviceSection"
+                    class="new-device-section"
+                >
+
+                    <div class="repair-form-grid">
+
+                        <div class="form-group">
+
+                            <label for="repairManufacturer">
+                                Manufacturer
+                            </label>
+
+                            <select
+                                id="repairManufacturer"
+                                name="manufacturer_id"
+                                required
+                            >
+                                <option value="">
+                                    Loading manufacturers...
+                                </option>
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="repairDevice">
+                                Device Model
+                            </label>
+
+                            <select
+                                id="repairDevice"
+                                name="catalog_device_id"
+                                required
+                                disabled
+                            >
+                                <option value="">
+                                    Select manufacturer first
+                                </option>
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="repairSerialNumber">
+                                IMEI / Serial Number
+                            </label>
+
+                            <input
+                                type="text"
+                                id="repairSerialNumber"
+                                name="serial_number"
+                                autocomplete="off"
+                            >
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <input
+                    type="hidden"
+                    id="repairSelectedExistingDeviceId"
+                    value=""
+                >
+
+            </fieldset>
+
+
+            <fieldset class="repair-form-section">
+
+                <legend>
+                    Service
+                </legend>
+
+
+                <div class="repair-form-grid">
+
+                    <div class="form-group">
+
+                        <label for="repairService">
+                            Repair Service
+                        </label>
+
+                        <select
+                            id="repairService"
+                            name="service_id"
+                            required
+                            disabled
+                        >
+                            <option value="">
+                                Select device first
+                            </option>
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="repairStatus">
+                            Repair Status
+                        </label>
+
+                        <select
+                            id="repairStatus"
+                            name="repair_status"
+                            required
+                        >
+                            <option value="New Intake">
+                                New Intake
+                            </option>
+
+                            <option value="Diagnostic">
+                                Diagnostic
+                            </option>
+
+                            <option value="Awaiting Approval">
+                                Awaiting Approval
+                            </option>
+
+                            <option value="Awaiting Parts">
+                                Awaiting Parts
+                            </option>
+
+                            <option value="In Progress">
+                                In Progress
+                            </option>
+
+                            <option value="Ready for Pickup">
+                                Ready for Pickup
+                            </option>
+
+                            <option value="Completed">
+                                Completed
+                            </option>
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <section
+                    id="repairPricing"
+                    class="repair-pricing"
+                    hidden
+                >
+
+                    <h3>
+                        Catalog Pricing
+                    </h3>
+
+
+                    <div class="repair-pricing-grid">
+
+                        <div class="repair-price-item">
+
+                            <span class="repair-price-label">
+                                Retail Price
+                            </span>
+
+                            <strong id="repairRetailPrice">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <div class="repair-price-item">
+
+                            <span class="repair-price-label">
+                                Part Cost
+                            </span>
+
+                            <strong id="repairPartCost">
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <div class="repair-price-item">
+
+                            <span class="repair-price-label">
+                                Pricing Status
+                            </span>
+
+                            <strong id="repairPricingStatus">
+                                —
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <p id="repairPricingNotice"></p>
+
+                </section>
+
+            </fieldset>
+
+
+            <fieldset class="repair-form-section">
+
+                <legend>
+                    Repair Details
+                </legend>
+
+
+                <div class="form-group">
+
+                    <label for="repairProblemDescription">
+                        Problem Description
+                    </label>
+
+                    <textarea
+                        id="repairProblemDescription"
+                        name="problem_description"
+                        rows="4"
+                        required
+                    ></textarea>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="repairTechnicianNotes">
+                        Technician Notes
+                    </label>
+
+                    <textarea
+                        id="repairTechnicianNotes"
+                        name="technician_notes"
+                        rows="4"
+                    ></textarea>
+
+                </div>
+
+            </fieldset>
+
+
+            <div class="repair-form-actions">
+
+                <button
+                    type="reset"
+                    class="secondary-button"
+                    id="resetRepairButton"
+                >
+                    Clear
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="save-button"
+                    id="saveRepairButton"
+                >
+                    Save Repair
+                </button>
+
+            </div>
+
+
+            <section
+                id="repairDetailsPanel"
+                class="repair-details-panel"
+                hidden
+            >
+
+                <div class="repair-section-header">
+
+                    <div>
+
+                        <h2>
+                            Repair Details
+                        </h2>
+
+                        <p id="repairDetailsTicketId"></p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="repair-form-grid">
+
+                    <div class="form-group">
+
+                        <label for="repairDetailsStatus">
+                            Status
+                        </label>
+
+                        <select id="repairDetailsStatus">
+
+                            <option value="New Intake">
+                                New Intake
+                            </option>
+
+                            <option value="Diagnostic">
+                                Diagnostic
+                            </option>
+
+                            <option value="Awaiting Approval">
+                                Awaiting Approval
+                            </option>
+
+                            <option value="Awaiting Parts">
+                                Awaiting Parts
+                            </option>
+
+                            <option value="In Progress">
+                                In Progress
+                            </option>
+
+                            <option value="Ready for Pickup">
+                                Ready for Pickup
+                            </option>
+
+                            <option value="Completed">
+                                Completed
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="repairDetailsTechnician">
+                            Technician
+                        </label>
+
+                        <input
+                            type="text"
+                            id="repairDetailsTechnician"
+                        >
+
+                    </div>
+
+                    <div class="form-group">
+                        <label for="repairDetailsPriority">
+                            Priority
+                        </label>
+
+                        <select id="repairDetailsPriority">
+                            <option value="Low">Low</option>
+                            <option value="Normal">Normal</option>
+                            <option value="High">High</option>
+                            <option value="Urgent">Urgent</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="repairDetailsDueDate">
+                            Due Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="repairDetailsDueDate"
+                        >
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="repairDetailsFinalCost">
+                            Final Cost
+                        </label>
+
+                        <input
+                            type="number"
+                            id="repairDetailsFinalCost"
+                            step="0.01"
+                            min="0"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="repairDetailsNotes">
+                        Technician Notes
+                    </label>
+
+                    <textarea
+                        id="repairDetailsNotes"
+                        rows="5"
+                    ></textarea>
+
+                </div>
+
+
+                <section class="repair-timeline-section">
+
+                    <h3>
+                        Repair Timeline
+                    </h3>
+
+                    <div
+                        id="repairTimeline"
+                        class="repair-timeline"
+                    >
+                        <p>
+                            Select a repair to view its activity history.
+                        </p>
+                    </div>
+
+                </section>
+
+
+                <div class="repair-form-actions">
+
+                    <button
+                        type="button"
+                        id="closeRepairDetailsButton"
+                        class="secondary-button"
+                    >
+                        Close
+                    </button>
+
+
+                    <button
+                        type="button"
+                        id="saveRepairDetailsButton"
+                        class="save-button"
+                    >
+                        Save Changes
+                    </button>
+
+                </div>
+
+            </section>
+
+        </form>
+
+    </section>
+
+    <section class="repair-queue-filters">
+
+                <div class="form-group">
+                    <label for="repairQueueSearch">
+                        Search Repairs
+                    </label>
+
+                    <input
+                        type="search"
+                        id="repairQueueSearch"
+                        placeholder="Search ticket, customer, device..."
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="repairQueueStatusFilter">
+                        Status
+                    </label>
+
+                    <select id="repairQueueStatusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="New Intake">New Intake</option>
+                        <option value="Diagnostic">Diagnostic</option>
+                        <option value="Awaiting Approval">Awaiting Approval</option>
+                        <option value="Awaiting Parts">Awaiting Parts</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Ready for Pickup">Ready for Pickup</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="repairQueuePriorityFilter">
+                        Priority
+                    </label>
+
+                    <select id="repairQueuePriorityFilter">
+                        <option value="">All Priorities</option>
+                        <option value="Urgent">Urgent</option>
+                        <option value="High">High</option>
+                        <option value="Normal">Normal</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+
+                <label class="repair-filter-check">
+                    <input
+                        type="checkbox"
+                        id="repairQueueOverdueOnly"
+                    >
+                    Overdue Only
+                </label>
+
+    </section>
+
+    <section class="repair-queue">
+
+        <div class="repair-section-header">
+
+            <div>
+
+                <h2>
+                    Repair Queue
+                </h2>
+
+                <p>
+                    Active and historical repair tickets.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="repairQueue"
+            class="repair-queue-content"
+        >
+            <p>
+                Loading repair queue...
+            </p>
+        </div>
+
+    </section>
+
+</section>

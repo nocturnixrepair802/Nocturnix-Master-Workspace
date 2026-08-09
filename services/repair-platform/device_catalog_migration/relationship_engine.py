@@ -9,7 +9,7 @@ from openpyxl.workbook.workbook import Workbook
 
 from .audit import DuplicateIssue, EntityRecord, SourceTable, ValidationIssue
 from .config import ENTITY_SPECS
-from .normalization import boolish, normalize_text, valid_id
+from .normalization import normalize_text, valid_id
 from .table_reader import row_values
 
 
