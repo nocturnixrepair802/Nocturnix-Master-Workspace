@@ -1,0 +1,133 @@
+[
+  {
+    "fields": [],
+    "id": "1249",
+    "field_id": 1,
+    "settings": {
+      "themes": {
+        "wpformsTheme": "default",
+        "isCustomTheme": "",
+        "themeName": "",
+        "fieldSize": "medium",
+        "fieldBorderStyle": "solid",
+        "fieldBorderSize": "1",
+        "fieldBorderRadius": "3",
+        "fieldBackgroundColor": "#ffffff",
+        "fieldBorderColor": "rgba(0, 0, 0, 0.25)",
+        "fieldTextColor": "rgba(0, 0, 0, 0.7)",
+        "labelSize": "medium",
+        "labelColor": "rgba(0, 0, 0, 0.85)",
+        "labelSublabelColor": "rgba(0, 0, 0, 0.55)",
+        "labelErrorColor": "#d63637",
+        "buttonSize": "medium",
+        "buttonBorderStyle": "none",
+        "buttonBorderSize": "1",
+        "buttonBorderRadius": "3",
+        "buttonBackgroundColor": "#066aab",
+        "buttonBorderColor": "#066aab",
+        "buttonTextColor": "#ffffff",
+        "containerPadding": "0",
+        "containerBorderStyle": "none",
+        "containerBorderWidth": "1",
+        "containerBorderRadius": "3",
+        "containerBorderColor": "#000000",
+        "containerShadowSize": "none",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "backgroundSize": "cover",
+        "backgroundUrl": "url()",
+        "fieldMenuColor": "#ffffff",
+        "pageBreakColor": "#066aab",
+        "customCss": "",
+        "copyPasteJsonValue": "{\"themeName\":\"\",\"isCustomTheme\":\"\",\"wpformsTheme\":\"default\",\"customCss\":\"\",\"containerPadding\":\"0\",\"containerBorderStyle\":\"none\",\"containerBorderWidth\":\"1\",\"containerBorderRadius\":\"3\",\"containerShadowSize\":\"none\",\"containerBorderColor\":\"#000000\",\"fieldSize\":\"medium\",\"fieldBorderStyle\":\"solid\",\"fieldBorderRadius\":\"3\",\"fieldBorderSize\":\"1\",\"fieldBackgroundColor\":\"#ffffff\",\"fieldBorderColor\":\"rgba(0, 0, 0, 0.25)\",\"fieldTextColor\":\"rgba(0, 0, 0, 0.7)\",\"fieldMenuColor\":\"#ffffff\",\"pageBreakColor\":\"#066aab\",\"labelSize\":\"medium\",\"labelColor\":\"rgba(0, 0, 0, 0.85)\",\"labelSublabelColor\":\"rgba(0, 0, 0, 0.55)\",\"labelErrorColor\":\"#d63637\",\"buttonSize\":\"medium\",\"buttonBorderStyle\":\"none\",\"buttonBorderSize\":\"1\",\"buttonBorderRadius\":\"3\",\"buttonBackgroundColor\":\"#066aab\",\"buttonBorderColor\":\"#066aab\",\"buttonTextColor\":\"#ffffff\",\"backgroundColor\":\"rgba(0, 0, 0, 0)\",\"backgroundPosition\":\"center center\",\"backgroundUrl\":\"url()\",\"backgroundRepeat\":\"no-repeat\",\"backgroundSize\":\"cover\",\"backgroundSizeMode\":\"cover\",\"backgroundWidth\":\"100\",\"backgroundHeight\":\"100\",\"backgroundImage\":\"none\"}"
+      },
+      "form_title": "Customer - Pickup & Shipping Release",
+      "form_desc": "Customer signature\r\n\r\nTracking number\r\n\r\nCarrier\r\n\r\nPickup date\r\n\r\nDelivery confirmation\r\n\r\nWarranty reminder",
+      "form_tags": [
+        "Completed",
+        "Customer",
+        "FedEx",
+        "Pickup",
+        "Shipping",
+        "UPS",
+        "USPS"
+      ],
+      "submit_text": "Submit",
+      "submit_text_processing": "Sending...",
+      "form_class": "",
+      "submit_class": "",
+      "ajax_submit": "1",
+      "purge_entries_days": "365",
+      "notification_enable": "1",
+      "notifications": {
+        "1": {
+          "enable": "1",
+          "notification_name": "Default Notification",
+          "email": "{admin_email}",
+          "subject": "New Entry: Blank Form",
+          "sender_name": "Nocturnix Mobile Repair",
+          "sender_address": "owner@nocturnixrepair.com",
+          "replyto": "",
+          "message": "{all_fields}",
+          "template": "",
+          "file_upload_attachment_fields": [],
+          "entry_csv_attachment_entry_information": [],
+          "entry_csv_attachment_file_name": "entry-details"
+        }
+      },
+      "confirmations": {
+        "1": {
+          "name": "Default Confirmation",
+          "type": "message",
+          "message": "<p>Thanks for contacting us! We will be in touch with you shortly.<\/p>",
+          "message_scroll": "1",
+          "page": "",
+          "page_url_parameters": "",
+          "redirect": "",
+          "message_entry_preview_style": "basic"
+        }
+      },
+      "antispam_v3": "1",
+      "store_spam_entries": "1",
+      "anti_spam": {
+        "time_limit": {
+          "enable": "1",
+          "duration": "2"
+        },
+        "filtering_store_spam": "1",
+        "country_filter": {
+          "action": "allow",
+          "country_codes": [],
+          "message": "Sorry, this form does not accept submissions from your country."
+        },
+        "keyword_filter": {
+          "message": "Sorry, your message can't be submitted because it contains prohibited words."
+        }
+      }
+    },
+    "search_terms": "",
+    "providers": {
+      "constant-contact-v3": []
+    },
+    "payments": {
+      "square": {
+        "payment_description": "",
+        "buyer_email": "",
+        "billing_name": "",
+        "billing_address": "",
+        "recurring": [
+          {
+            "name": "Plan Name #1",
+            "phase_cadence": "yearly",
+            "customer_email": "",
+            "customer_name": "",
+            "customer_address": ""
+          }
+        ]
+      }
+    },
+    "meta": {
+      "template": "blank"
+    }
+  }
+]

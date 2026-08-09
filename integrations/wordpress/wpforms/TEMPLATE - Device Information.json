@@ -1,0 +1,5335 @@
+[
+  {
+    "fields": {
+      "10": {
+        "id": "10",
+        "type": "select",
+        "label": "Computer Storage ",
+        "choices": {
+          "7": {
+            "label": "128 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "256 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "512 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "1 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "2 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "4 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "13": {
+            "label": "8 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "14": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "4": {
+        "id": "4",
+        "type": "select",
+        "label": "Device Type ",
+        "choices": {
+          "4": {
+            "label": "Smartphone",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Tablet",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Laptop",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Desktop",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Gaming Console",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Smartwatch",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "5": {
+        "id": "5",
+        "type": "select",
+        "label": "Manufacturer ",
+        "choices": {
+          "18": {
+            "label": "Apple",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "19": {
+            "label": "Samsung",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "20": {
+            "label": "Google",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "21": {
+            "label": "Motorola",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "22": {
+            "label": "OnePlus",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "23": {
+            "label": "Nothing",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "24": {
+            "label": "Xiaomi",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "25": {
+            "label": "Redmi",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "26": {
+            "label": "POCO",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "27": {
+            "label": "Huawei",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "28": {
+            "label": "Honor",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "29": {
+            "label": "Sony",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "30": {
+            "label": "LG",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "31": {
+            "label": "Nokia",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "32": {
+            "label": "ASUS (ROG Phone)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "33": {
+            "label": "ZTE",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "34": {
+            "label": "TCL",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "35": {
+            "label": "CAT",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "36": {
+            "label": "BLU",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "37": {
+            "label": "Kyocera",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "38": {
+            "label": "Fairphone",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "39": {
+            "label": "BlackBerry",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "40": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "",
+              "operator": "==",
+              "value": ""
+            }
+          ]
+        ]
+      },
+      "179": {
+        "label": "Layout",
+        "name": "Layout",
+        "description": "",
+        "label_hide": "1",
+        "size": "large",
+        "preset": "50-50",
+        "display": "rows",
+        "columns": [
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              15,
+              17,
+              19,
+              24,
+              25,
+              27,
+              30
+            ]
+          },
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              16,
+              18,
+              20,
+              23,
+              26,
+              29,
+              28
+            ]
+          }
+        ],
+        "id": "179",
+        "type": "layout"
+      },
+      "15": {
+        "id": "15",
+        "type": "select",
+        "label": "Apple iPhone Models ",
+        "choices": {
+          "4": {
+            "label": "iPhone 16 Pro Max",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "iPhone 16 Pro",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "iPhone 16 Plus",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "iPhone 16",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "51": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "iPhone 15 Pro Max",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "iPhone 15 Pro",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "iPhone 15 Plus",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "iPhone 15",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "52": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "14": {
+            "label": "iPhone 14 Pro Max",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "15": {
+            "label": "iPhone 14 Pro",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "16": {
+            "label": "iPhone 14 Plus",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "17": {
+            "label": "iPhone 14",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "53": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "19": {
+            "label": "iPhone 13 Pro Max",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "20": {
+            "label": "iPhone 13 Pro",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "21": {
+            "label": "iPhone 13",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "22": {
+            "label": "iPhone 13 Mini",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "23": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "24": {
+            "label": "iPhone 12 Pro Max",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "25": {
+            "label": "iPhone 12 Pro",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "26": {
+            "label": "iPhone 12",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "27": {
+            "label": "iPhone 12 Mini",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "28": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "29": {
+            "label": "iPhone 11 Pro Max",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "30": {
+            "label": "iPhone 11 Pro",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "31": {
+            "label": "iPhone 11",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "32": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "33": {
+            "label": "iPhone XS Max",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "34": {
+            "label": "iPhone XS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "35": {
+            "label": "iPhone XR",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "37": {
+            "label": "iPhone X",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "38": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "39": {
+            "label": "iPhone 8 Plus",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "40": {
+            "label": "iPhone 8",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "41": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "42": {
+            "label": "iPhone 7 Plus",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "43": {
+            "label": "iPhone 7",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "44": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "45": {
+            "label": "iPhone SE (3rd Generation)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "46": {
+            "label": "iPhone SE (2nd Generation)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "47": {
+            "label": "iPhone SE (1st Generation)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "48": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "49": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "18"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "17": {
+        "id": "17",
+        "type": "select",
+        "label": "Google Pixel Models",
+        "choices": {
+          "4": {
+            "label": "Pixel 9 Pro XL",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Pixel 9 Pro",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Pixel 9",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Pixel 9a",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Pixel 8 Pro",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "Pixel 8",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "Pixel 8a",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "13": {
+            "label": "Pixel 7 Pro",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "14": {
+            "label": "Pixel 7",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "15": {
+            "label": "Pixel 7a",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "16": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "17": {
+            "label": "Pixel 6 Pro",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "18": {
+            "label": "Pixel 6",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "19": {
+            "label": "Pixel 6a",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "20": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "21": {
+            "label": "Pixel Fold",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "22": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "23": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "20"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "19": {
+        "id": "19",
+        "type": "select",
+        "label": "OnePlus",
+        "choices": {
+          "4": {
+            "label": "OnePlus 13",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "OnePlus 12",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "OnePlus 11",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Nord Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Open",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "22"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "24": {
+        "id": "24",
+        "type": "select",
+        "label": "Redmi ",
+        "choices": {
+          "4": {
+            "label": "Note Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "K Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "A Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "25"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "25": {
+        "id": "25",
+        "type": "select",
+        "label": "POCO ",
+        "choices": {
+          "4": {
+            "label": "F Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "X Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "M Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "C Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "26"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "27": {
+        "id": "27",
+        "type": "select",
+        "label": "Honor",
+        "choices": {
+          "4": {
+            "label": "Magic Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Honor Number Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "X Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "28"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "30": {
+        "id": "30",
+        "type": "select",
+        "label": "Nokia ",
+        "choices": {
+          "4": {
+            "label": "XR Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "G Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "X Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "31"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "16": {
+        "id": "16",
+        "type": "select",
+        "label": "Samsung Galaxy Models ",
+        "choices": {
+          "4": {
+            "label": "Galaxy S25 Ultra",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Galaxy S25+",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Galaxy S25",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Galaxy S24 Ultra",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Galaxy S24+",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "Galaxy S24",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "Galaxy S23 Ultra",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "13": {
+            "label": "Galaxy S23+",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "14": {
+            "label": "Galaxy S23",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "15": {
+            "label": "Galaxy S23 FE",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "16": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "17": {
+            "label": "Galaxy S22 Ultra",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "18": {
+            "label": "Galaxy S22+",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "19": {
+            "label": "Galaxy S22",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "20": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "21": {
+            "label": "Galaxy S21 Ultra",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "22": {
+            "label": "Galaxy S21+",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "23": {
+            "label": "Galaxy S21",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "24": {
+            "label": "Galaxy S21 FE",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "25": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "26": {
+            "label": "Galaxy Note 20 Ultra",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "27": {
+            "label": "Galaxy Note 20",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "28": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "29": {
+            "label": "Galaxy Z Fold Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "30": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "31": {
+            "label": "Galaxy Z Flip Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "32": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "33": {
+            "label": "Galaxy A Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "34": {
+            "label": "------------------",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "37": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "19"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "18": {
+        "id": "18",
+        "type": "select",
+        "label": "Motorola",
+        "choices": {
+          "4": {
+            "label": "Moto G Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Moto Edge Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Moto Razr Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Moto One Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "21"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "20": {
+        "id": "20",
+        "type": "select",
+        "label": "Nothing",
+        "choices": {
+          "4": {
+            "label": "Phone (3)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Phone (2)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Phone (2a)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Phone (1)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "23"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "23": {
+        "id": "23",
+        "type": "select",
+        "label": "Xiaomi ",
+        "choices": {
+          "4": {
+            "label": "Xiaomi 15 Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Xiaomi 14 Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Mi Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "24"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "26": {
+        "id": "26",
+        "type": "select",
+        "label": "Huawei ",
+        "choices": {
+          "4": {
+            "label": "P Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Mate Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Nova Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "27"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "29": {
+        "id": "29",
+        "type": "select",
+        "label": "LG",
+        "choices": {
+          "4": {
+            "label": "V Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "G Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Wing",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Velvet",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "30"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "28": {
+        "id": "28",
+        "type": "select",
+        "label": "Sony",
+        "choices": {
+          "4": {
+            "label": "Xperia 1 Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Xperia 5 Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Xperia 10 Series",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "hide",
+        "conditionals": [
+          [
+            {
+              "field": "5",
+              "operator": "!=",
+              "value": "29"
+            }
+          ],
+          [
+            {
+              "field": "5",
+              "operator": "e"
+            }
+          ]
+        ]
+      },
+      "41": {
+        "label": "Smartphones &amp; Tablet ",
+        "name": "Layout",
+        "description": "",
+        "label_hide": "",
+        "size": "large",
+        "preset": "50-50",
+        "display": "rows",
+        "columns": [
+          {
+            "width_preset": "50",
+            "fields": [
+              43,
+              178,
+              177,
+              147,
+              148,
+              149,
+              150
+            ]
+          },
+          {
+            "width_preset": "50",
+            "fields": [
+              47,
+              49,
+              50,
+              51,
+              52,
+              53,
+              54
+            ]
+          }
+        ],
+        "id": "41",
+        "type": "layout",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "4"
+            }
+          ],
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "5"
+            }
+          ]
+        ]
+      },
+      "43": {
+        "id": "43",
+        "type": "select",
+        "label": "Phone Carrier ",
+        "choices": {
+          "2": {
+            "label": "AT&T",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Verizon",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "T-Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "US Cellular",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Xfinity Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Spectrum Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Google Fi",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Cricket Wireless",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "Metro by T-Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "Straight Talk",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "Mint Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "13": {
+            "label": "Consumer Cellular",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "14": {
+            "label": "Boost Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "15": {
+            "label": "TracFone",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "16": {
+            "label": "Visible",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "17": {
+            "label": "US Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "18": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "19": {
+            "label": "Unlocked \/ No Carrier",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "178": {
+        "id": "178",
+        "type": "select",
+        "label": "Phone Storage ",
+        "choices": {
+          "4": {
+            "label": "16 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "32 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "64 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "128 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "256 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "512 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "1 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "2 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "177": {
+        "id": "177",
+        "type": "select",
+        "label": "Device Color",
+        "choices": {
+          "1": {
+            "label": "First Choice",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "Black",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "White",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Silver",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Gray",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Blue",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Green",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "Red",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "Pink",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "Purple",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "13": {
+            "label": "Gold",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "14": {
+            "label": "Rose Gold",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "15": {
+            "label": "Titanium",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "16": {
+            "label": "Natural Titanium",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "17": {
+            "label": "Desert Titanium",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "18": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "19": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "147": {
+        "id": "147",
+        "type": "text",
+        "label": "Serial Number ",
+        "description": "Enter the device serial number if known.",
+        "size": "medium",
+        "placeholder": "Example: C39XXXXXXXX",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "148": {
+        "id": "148",
+        "type": "text",
+        "label": "IMEI",
+        "description": "Enter the IMEI if available.",
+        "size": "medium",
+        "placeholder": "15-digit IMEI",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "149": {
+        "id": "149",
+        "type": "text",
+        "label": "Service Tag \/ Asset Tag ",
+        "description": "Enter the manufacturer's service tag or your organization's asset tag if available.",
+        "size": "medium",
+        "placeholder": "",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "150": {
+        "id": "150",
+        "type": "select",
+        "label": "Purchase Date",
+        "choices": {
+          "4": {
+            "label": "Less than 1 Year",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "1\u20132 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "2\u20134 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "4\u20136 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "More than 6 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "47": {
+        "id": "47",
+        "type": "radio",
+        "label": "Powers On?",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unable to Test \/ Screens Not Working",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "49": {
+        "id": "49",
+        "type": "radio",
+        "label": "Touchscreen Responding?",
+        "choices": {
+          "4": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Unable to Test",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "50": {
+        "id": "50",
+        "type": "radio",
+        "label": "Touch ID Working?",
+        "choices": {
+          "4": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Unable to Test",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Not Applicable",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "51": {
+        "id": "51",
+        "type": "radio",
+        "label": "Face ID Working?",
+        "choices": {
+          "4": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Unable to Test",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "52": {
+        "id": "52",
+        "type": "radio",
+        "label": "Cellular Service Issue? ",
+        "choices": {
+          "4": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Unable to Test",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Not Applicable",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "53": {
+        "id": "53",
+        "type": "radio",
+        "label": "Water Damage? ",
+        "choices": {
+          "4": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Unsure",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "54": {
+        "id": "54",
+        "type": "radio",
+        "label": "Passcode Available?",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "57": {
+        "label": "Laptops &amp; Desktop ",
+        "name": "Layout",
+        "description": "Windows",
+        "label_hide": "",
+        "size": "large",
+        "preset": "50-50",
+        "display": "rows",
+        "columns": [
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              59,
+              60,
+              61,
+              62,
+              63,
+              154
+            ]
+          },
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              65,
+              66,
+              67,
+              68,
+              152,
+              155
+            ]
+          }
+        ],
+        "id": "57",
+        "type": "layout",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": {
+          "1": [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "7"
+            },
+            {
+              "field": "28",
+              "operator": "!=",
+              "value": "4"
+            }
+          ],
+          "2": [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "6"
+            },
+            {
+              "field": "27",
+              "operator": "!=",
+              "value": "4"
+            }
+          ]
+        }
+      },
+      "59": {
+        "id": "59",
+        "type": "select",
+        "label": "Operating System",
+        "choices": {
+          "3": {
+            "label": "Windows 11",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "Windows 10",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Windows 8.1",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Windows 8",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Windows 7",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "15": {
+            "label": "ChromeOS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "16": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "60": {
+        "id": "60",
+        "type": "checkbox",
+        "label": "Storage Type ",
+        "choices": {
+          "1": {
+            "label": "HDD",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "SSD",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "NVMe SSD",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "choice_limit": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "61": {
+        "id": "61",
+        "type": "select",
+        "label": "Storage Size ",
+        "choices": {
+          "7": {
+            "label": "128 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "256 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "512 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "1 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "2 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "4 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "13": {
+            "label": "8 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "62": {
+        "id": "62",
+        "type": "select",
+        "label": "Data Backup Needed? ",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "63": {
+        "id": "63",
+        "type": "select",
+        "label": "Administrator Password Available? ",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "154": {
+        "id": "154",
+        "type": "text",
+        "label": "Service Tag \/ Asset Tag ",
+        "description": "Enter the manufacturer's service tag or your organization's asset tag if available.",
+        "size": "medium",
+        "placeholder": "",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "65": {
+        "id": "65",
+        "type": "select",
+        "label": "Ram Size ",
+        "choices": {
+          "1": {
+            "label": "8 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "16 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "32 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "66": {
+        "id": "66",
+        "type": "radio",
+        "label": "Powers On? ",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unable to Test",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "67": {
+        "id": "67",
+        "type": "radio",
+        "label": "Liquid Damage?",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unsure",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "68": {
+        "id": "68",
+        "type": "radio",
+        "label": "BitLocker Enabled? ",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Not Sure",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "152": {
+        "id": "152",
+        "type": "text",
+        "label": "Serial Number",
+        "description": "Enter the device serial number if known.",
+        "size": "medium",
+        "placeholder": "Example: C39XXXXXXXX",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "155": {
+        "id": "155",
+        "type": "select",
+        "label": "Purchase Date ",
+        "choices": {
+          "4": {
+            "label": "Less than 1 Year",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "1\u20132 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "2\u20134 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "4\u20136 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "More than 6 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "71": {
+        "label": "Laptops &amp; Desktop",
+        "name": "Layout",
+        "description": "Linux",
+        "label_hide": "",
+        "size": "large",
+        "preset": "50-50",
+        "display": "rows",
+        "columns": [
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              73,
+              74,
+              75,
+              76,
+              77,
+              157,
+              158,
+              159,
+              160
+            ]
+          },
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              79,
+              80,
+              81,
+              82
+            ]
+          }
+        ],
+        "id": "71",
+        "type": "layout",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": {
+          "1": [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "7"
+            },
+            {
+              "field": "28",
+              "operator": "==",
+              "value": "4"
+            }
+          ],
+          "2": [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "6"
+            },
+            {
+              "field": "27",
+              "operator": "==",
+              "value": "4"
+            }
+          ]
+        }
+      },
+      "73": {
+        "id": "73",
+        "type": "select",
+        "label": "Operating System ",
+        "choices": {
+          "18": {
+            "label": "Linux",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "17": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "74": {
+        "id": "74",
+        "type": "checkbox",
+        "label": "Storage Type (copy)",
+        "choices": {
+          "1": {
+            "label": "HDD",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "SSD",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "NVMe SSD",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "choice_limit": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "75": {
+        "id": "75",
+        "type": "select",
+        "label": "Storage Size (copy)",
+        "choices": {
+          "7": {
+            "label": "128 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "256 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "512 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "1 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "2 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "4 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "13": {
+            "label": "8 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "76": {
+        "id": "76",
+        "type": "select",
+        "label": "Data Backup Needed? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "77": {
+        "id": "77",
+        "type": "select",
+        "label": "Administrator Password Available? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "157": {
+        "id": "157",
+        "type": "text",
+        "label": "Serial Number (copy) (copy)",
+        "description": "Enter the device serial number if known.",
+        "size": "medium",
+        "placeholder": "Example: C39XXXXXXXX",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "158": {
+        "id": "158",
+        "type": "text",
+        "label": "IMEI (copy) (copy)",
+        "description": "Enter the IMEI if available.",
+        "size": "medium",
+        "placeholder": "15-digit IMEI",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "4"
+            }
+          ],
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "5"
+            }
+          ],
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "4"
+            }
+          ]
+        ]
+      },
+      "159": {
+        "id": "159",
+        "type": "text",
+        "label": "Service Tag \/ Asset Tag (copy) (copy)",
+        "description": "Enter the manufacturer's service tag or your organization's asset tag if available.",
+        "size": "medium",
+        "placeholder": "",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "160": {
+        "id": "160",
+        "type": "select",
+        "label": "Purchase Date (copy) (copy)",
+        "choices": {
+          "4": {
+            "label": "Less than 1 Year",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "1\u20132 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "2\u20134 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "4\u20136 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "More than 6 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "79": {
+        "id": "79",
+        "type": "select",
+        "label": "Ram Size (copy)",
+        "choices": {
+          "1": {
+            "label": "8 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "16 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "32 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "80": {
+        "id": "80",
+        "type": "radio",
+        "label": "Powers On? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unable to Test",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "81": {
+        "id": "81",
+        "type": "radio",
+        "label": "Liquid Damage? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unsure",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "82": {
+        "id": "82",
+        "type": "radio",
+        "label": "BitLocker Enabled? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Not Sure",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "85": {
+        "label": "Laptops &amp; Desktop  (copy)",
+        "name": "Layout",
+        "description": "Apple Products",
+        "label_hide": "",
+        "size": "large",
+        "preset": "50-50",
+        "display": "rows",
+        "columns": [
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              87,
+              88,
+              89,
+              90,
+              91,
+              162,
+              163,
+              164,
+              165
+            ]
+          },
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              93,
+              94,
+              95,
+              96
+            ]
+          }
+        ],
+        "id": "85",
+        "type": "layout",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": {
+          "0": [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "6"
+            },
+            {
+              "field": "27",
+              "operator": "==",
+              "value": "4"
+            }
+          ],
+          "2": [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "7"
+            },
+            {
+              "field": "28",
+              "operator": "==",
+              "value": "4"
+            }
+          ]
+        }
+      },
+      "87": {
+        "id": "87",
+        "type": "select",
+        "label": "Operating System (copy)",
+        "choices": {
+          "3": {
+            "label": "macOS Sequoia",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "macOS Sonoma",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "macOS Ventura",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "macOS Monterey",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Older macOS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "88": {
+        "id": "88",
+        "type": "checkbox",
+        "label": "Storage Type (copy)",
+        "choices": {
+          "1": {
+            "label": "HDD",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "SSD",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "NVMe SSD",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "choice_limit": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "89": {
+        "id": "89",
+        "type": "select",
+        "label": "Storage Size (copy)",
+        "choices": {
+          "7": {
+            "label": "128 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "256 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "512 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "1 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "2 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "4 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "13": {
+            "label": "8 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "90": {
+        "id": "90",
+        "type": "select",
+        "label": "Data Backup Needed? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "91": {
+        "id": "91",
+        "type": "select",
+        "label": "Administrator Password Available? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "162": {
+        "id": "162",
+        "type": "text",
+        "label": "Serial Number (copy) (copy)",
+        "description": "Enter the device serial number if known.",
+        "size": "medium",
+        "placeholder": "Example: C39XXXXXXXX",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "163": {
+        "id": "163",
+        "type": "text",
+        "label": "IMEI (copy) (copy)",
+        "description": "Enter the IMEI if available.",
+        "size": "medium",
+        "placeholder": "15-digit IMEI",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "4"
+            }
+          ],
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "5"
+            }
+          ],
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "4"
+            }
+          ]
+        ]
+      },
+      "164": {
+        "id": "164",
+        "type": "text",
+        "label": "Service Tag \/ Asset Tag (copy) (copy)",
+        "description": "Enter the manufacturer's service tag or your organization's asset tag if available.",
+        "size": "medium",
+        "placeholder": "",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "165": {
+        "id": "165",
+        "type": "select",
+        "label": "Purchase Date (copy) (copy)",
+        "choices": {
+          "4": {
+            "label": "Less than 1 Year",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "1\u20132 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "2\u20134 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "4\u20136 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "More than 6 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "93": {
+        "id": "93",
+        "type": "select",
+        "label": "Ram Size (copy)",
+        "choices": {
+          "1": {
+            "label": "8 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "16 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "32 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "94": {
+        "id": "94",
+        "type": "radio",
+        "label": "Powers On? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unable to Test",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "95": {
+        "id": "95",
+        "type": "radio",
+        "label": "Liquid Damage? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unsure",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "96": {
+        "id": "96",
+        "type": "radio",
+        "label": "BitLocker Enabled? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Not Sure",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "113": {
+        "label": "Gaming Console  (copy)",
+        "name": "Layout",
+        "description": "",
+        "label_hide": "",
+        "size": "large",
+        "preset": "50-50",
+        "display": "rows",
+        "columns": [
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              115,
+              116,
+              117,
+              118,
+              167,
+              168,
+              169,
+              170
+            ]
+          },
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              120,
+              121,
+              122,
+              123
+            ]
+          }
+        ],
+        "id": "113",
+        "type": "layout",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "4"
+            }
+          ]
+        ]
+      },
+      "115": {
+        "id": "115",
+        "type": "radio",
+        "label": "Powers On?  (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unable to Test",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "116": {
+        "id": "116",
+        "type": "radio",
+        "label": "Reads Discs? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unable to Test \/ No Power",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "117": {
+        "id": "117",
+        "type": "radio",
+        "label": "Fan Noise? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "Unsure \/ No Power",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "118": {
+        "id": "118",
+        "type": "radio",
+        "label": "Modified \/ Jailbroken? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "Unsure",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "167": {
+        "id": "167",
+        "type": "text",
+        "label": "Serial Number (copy) (copy)",
+        "description": "Enter the device serial number if known.",
+        "size": "medium",
+        "placeholder": "Example: C39XXXXXXXX",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "168": {
+        "id": "168",
+        "type": "text",
+        "label": "IMEI (copy) (copy)",
+        "description": "Enter the IMEI if available.",
+        "size": "medium",
+        "placeholder": "15-digit IMEI",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "4"
+            }
+          ],
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "5"
+            }
+          ],
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "4"
+            }
+          ]
+        ]
+      },
+      "169": {
+        "id": "169",
+        "type": "text",
+        "label": "Service Tag \/ Asset Tag (copy) (copy)",
+        "description": "Enter the manufacturer's service tag or your organization's asset tag if available.",
+        "size": "medium",
+        "placeholder": "",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "170": {
+        "id": "170",
+        "type": "select",
+        "label": "Purchase Date (copy) (copy)",
+        "choices": {
+          "4": {
+            "label": "Less than 1 Year",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "1\u20132 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "2\u20134 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "4\u20136 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "More than 6 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "120": {
+        "id": "120",
+        "type": "radio",
+        "label": "HDMI Output Working? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unable to Test",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "121": {
+        "id": "121",
+        "type": "radio",
+        "label": "Overheating (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "Unsure \/ No Power",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "122": {
+        "id": "122",
+        "type": "radio",
+        "label": "Storage Upgrade Installed? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unsure",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "123": {
+        "id": "123",
+        "type": "radio",
+        "label": "Controller Included? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "126": {
+        "label": "Smartwatch (copy)",
+        "name": "Layout",
+        "description": "",
+        "label_hide": "",
+        "size": "large",
+        "preset": "50-50",
+        "display": "rows",
+        "columns": [
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              128,
+              129,
+              130,
+              131,
+              132
+            ]
+          },
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              134,
+              135,
+              136,
+              137,
+              138,
+              172,
+              173,
+              174,
+              175
+            ]
+          }
+        ],
+        "id": "126",
+        "type": "layout",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "4"
+            }
+          ]
+        ]
+      },
+      "128": {
+        "id": "128",
+        "type": "select",
+        "label": "Phone Carrier (copy) (copy)",
+        "choices": {
+          "1": {
+            "label": "ATT",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "129": {
+        "id": "129",
+        "type": "text",
+        "label": "Device Color (copy) (copy)",
+        "description": "",
+        "required": "1",
+        "size": "medium",
+        "placeholder": "",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "130": {
+        "id": "130",
+        "type": "number",
+        "label": "IMEI # (copy) (copy)",
+        "description": "",
+        "size": "medium",
+        "placeholder": "",
+        "min": "",
+        "max": "",
+        "default_value": "",
+        "css": ""
+      },
+      "131": {
+        "id": "131",
+        "type": "radio",
+        "label": "Powers On? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unable to Test",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "inline",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "132": {
+        "id": "132",
+        "type": "radio",
+        "label": "Touchscreen Working? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "Unsure \/ Unable to Test",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "134": {
+        "id": "134",
+        "type": "radio",
+        "label": "GPS Working? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "Unsure \/ Unable to Test",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "135": {
+        "id": "135",
+        "type": "radio",
+        "label": "Battery Issue (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "Unsure \/ No Power",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "136": {
+        "id": "136",
+        "type": "radio",
+        "label": "Water Damage? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "Unsure",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "137": {
+        "id": "137",
+        "type": "radio",
+        "label": "Crown\/Bezzle\/Button Working? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "Unsure \/ Not Applicable",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "138": {
+        "id": "138",
+        "type": "radio",
+        "label": "Charger Included? (copy)",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "172": {
+        "id": "172",
+        "type": "text",
+        "label": "Serial Number (copy) (copy)",
+        "description": "Enter the device serial number if known.",
+        "size": "medium",
+        "placeholder": "Example: C39XXXXXXXX",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "173": {
+        "id": "173",
+        "type": "text",
+        "label": "IMEI (copy) (copy)",
+        "description": "Enter the IMEI if available.",
+        "size": "medium",
+        "placeholder": "15-digit IMEI",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "4"
+            }
+          ],
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "5"
+            }
+          ],
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "4"
+            }
+          ]
+        ]
+      },
+      "174": {
+        "id": "174",
+        "type": "text",
+        "label": "Service Tag \/ Asset Tag (copy) (copy)",
+        "description": "Enter the manufacturer's service tag or your organization's asset tag if available.",
+        "size": "medium",
+        "placeholder": "",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "175": {
+        "id": "175",
+        "type": "select",
+        "label": "Purchase Date (copy) (copy)",
+        "choices": {
+          "4": {
+            "label": "Less than 1 Year",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "1\u20132 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "2\u20134 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "4\u20136 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "More than 6 Years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "141": {
+        "label": "Other Devices (copy)",
+        "name": "Layout",
+        "description": "",
+        "label_hide": "",
+        "size": "large",
+        "preset": "100",
+        "display": "rows",
+        "columns": [
+          {
+            "width_preset": "100",
+            "fields": [
+              143,
+              144
+            ]
+          }
+        ],
+        "id": "141",
+        "type": "layout",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "24",
+              "operator": "==",
+              "value": "4"
+            }
+          ]
+        ]
+      },
+      "143": {
+        "id": "143",
+        "type": "text",
+        "label": "Description (copy)",
+        "description": "",
+        "required": "1",
+        "size": "large",
+        "placeholder": "Description of Device",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "144": {
+        "id": "144",
+        "type": "textarea",
+        "label": "Additional Notes (copy)",
+        "description": "",
+        "size": "medium",
+        "placeholder": "",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "css": ""
+      }
+    },
+    "id": "1321",
+    "field_id": 180,
+    "settings": {
+      "themes": {
+        "wpformsTheme": "default",
+        "isCustomTheme": "",
+        "themeName": "",
+        "fieldSize": "medium",
+        "fieldBorderStyle": "solid",
+        "fieldBorderSize": "1",
+        "fieldBorderRadius": "3",
+        "fieldBackgroundColor": "#ffffff",
+        "fieldBorderColor": "rgba(0, 0, 0, 0.25)",
+        "fieldTextColor": "rgba(0, 0, 0, 0.7)",
+        "labelSize": "medium",
+        "labelColor": "rgba(0, 0, 0, 0.85)",
+        "labelSublabelColor": "rgba(0, 0, 0, 0.55)",
+        "labelErrorColor": "#d63637",
+        "buttonSize": "medium",
+        "buttonBorderStyle": "none",
+        "buttonBorderSize": "1",
+        "buttonBorderRadius": "3",
+        "buttonBackgroundColor": "#066aab",
+        "buttonBorderColor": "#066aab",
+        "buttonTextColor": "#ffffff",
+        "containerPadding": "0",
+        "containerBorderStyle": "none",
+        "containerBorderWidth": "1",
+        "containerBorderRadius": "3",
+        "containerBorderColor": "#000000",
+        "containerShadowSize": "none",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "backgroundSize": "cover",
+        "backgroundUrl": "url()",
+        "fieldMenuColor": "#ffffff",
+        "pageBreakColor": "#066aab",
+        "customCss": "",
+        "copyPasteJsonValue": "{\"themeName\":\"\",\"isCustomTheme\":\"\",\"wpformsTheme\":\"default\",\"customCss\":\"\",\"containerPadding\":\"0\",\"containerBorderStyle\":\"none\",\"containerBorderWidth\":\"1\",\"containerBorderRadius\":\"3\",\"containerShadowSize\":\"none\",\"containerBorderColor\":\"#000000\",\"fieldSize\":\"medium\",\"fieldBorderStyle\":\"solid\",\"fieldBorderRadius\":\"3\",\"fieldBorderSize\":\"1\",\"fieldBackgroundColor\":\"#ffffff\",\"fieldBorderColor\":\"rgba(0, 0, 0, 0.25)\",\"fieldTextColor\":\"rgba(0, 0, 0, 0.7)\",\"fieldMenuColor\":\"#ffffff\",\"pageBreakColor\":\"#066aab\",\"labelSize\":\"medium\",\"labelColor\":\"rgba(0, 0, 0, 0.85)\",\"labelSublabelColor\":\"rgba(0, 0, 0, 0.55)\",\"labelErrorColor\":\"#d63637\",\"buttonSize\":\"medium\",\"buttonBorderStyle\":\"none\",\"buttonBorderSize\":\"1\",\"buttonBorderRadius\":\"3\",\"buttonBackgroundColor\":\"#066aab\",\"buttonBorderColor\":\"#066aab\",\"buttonTextColor\":\"#ffffff\",\"backgroundColor\":\"rgba(0, 0, 0, 0)\",\"backgroundPosition\":\"center center\",\"backgroundUrl\":\"url()\",\"backgroundRepeat\":\"no-repeat\",\"backgroundSize\":\"cover\",\"backgroundSizeMode\":\"cover\",\"backgroundWidth\":\"100\",\"backgroundHeight\":\"100\",\"backgroundImage\":\"none\"}"
+      },
+      "form_title": "TEMPLATE - Device Information",
+      "form_desc": "Section 3: Please provide information about the device requiring service. This information helps us identify your device, verify compatibility with replacement parts, prepare an accurate repair estimate, and maintain accurate repair records.",
+      "form_tags": [
+        "Template"
+      ],
+      "submit_text": "Submit",
+      "submit_text_processing": "Sending...",
+      "form_class": "",
+      "submit_class": "",
+      "ajax_submit": "1",
+      "purge_entries_days": "365",
+      "notification_enable": "1",
+      "notifications": {
+        "1": {
+          "enable": "1",
+          "notification_name": "Default Notification",
+          "email": "{admin_email}",
+          "subject": "New Entry: TEMPLATE - Device Information",
+          "sender_name": "Nocturnix Mobile Repair",
+          "sender_address": "owner@nocturnixrepair.com",
+          "replyto": "",
+          "message": "{all_fields}",
+          "template": "",
+          "file_upload_attachment_fields": [],
+          "entry_csv_attachment_entry_information": [],
+          "entry_csv_attachment_file_name": "entry-details"
+        }
+      },
+      "confirmations": {
+        "1": {
+          "name": "Default Confirmation",
+          "type": "message",
+          "message": "<p>Thanks for contacting us! We will be in touch with you shortly.<\/p>",
+          "message_scroll": "1",
+          "page": "",
+          "page_url_parameters": "",
+          "redirect": "",
+          "message_entry_preview_style": "basic"
+        }
+      },
+      "antispam_v3": "1",
+      "store_spam_entries": "1",
+      "anti_spam": {
+        "time_limit": {
+          "enable": "1",
+          "duration": "2"
+        },
+        "filtering_store_spam": "1",
+        "country_filter": {
+          "action": "allow",
+          "country_codes": [],
+          "message": "Sorry, this form does not accept submissions from your country."
+        },
+        "keyword_filter": {
+          "message": "Sorry, your message can't be submitted because it contains prohibited words."
+        }
+      },
+      "conversational_forms_title": "TEMPLATE - Device Diagnostics",
+      "conversational_forms_page_slug": "template-device-diagnostics",
+      "form_pages_title": "Blank Form",
+      "form_pages_page_slug": "template-device-diagnostics"
+    },
+    "search_terms": "",
+    "providers": {
+      "constant-contact-v3": []
+    },
+    "payments": {
+      "square": {
+        "payment_description": "",
+        "buyer_email": "",
+        "billing_name": "",
+        "billing_address": "",
+        "recurring": [
+          {
+            "name": "Plan Name #1",
+            "phase_cadence": "yearly",
+            "customer_email": "",
+            "customer_name": "",
+            "customer_address": ""
+          }
+        ]
+      }
+    },
+    "meta": {
+      "template": "blank",
+      "category": "all",
+      "subcategory": "all"
+    }
+  }
+]

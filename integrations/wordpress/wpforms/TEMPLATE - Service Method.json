@@ -1,0 +1,1583 @@
+[
+  {
+    "fields": {
+      "2": {
+        "id": "2",
+        "type": "divider",
+        "label": "Shipping Preferences (copy)",
+        "description": "Please tell us how you would like your repaired device returned after service is complete. These preferences help us prepare your return shipment and ensure delivery meets your expectations.",
+        "label_disable": "1",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "",
+              "operator": "=="
+            }
+          ]
+        ]
+      },
+      "3": {
+        "id": "3",
+        "type": "select",
+        "label": "Preferred Return Shipping Carrier (copy)",
+        "choices": {
+          "4": {
+            "label": "USPS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "UPS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "FedEx",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Best Available Carrier",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "No Preference",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "",
+              "operator": "=="
+            }
+          ]
+        ]
+      },
+      "4": {
+        "id": "4",
+        "type": "select",
+        "label": "Preferred Return Shipping Speed (copy)",
+        "choices": {
+          "4": {
+            "label": "Standard Ground",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Priority",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Expedited",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Overnight",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Best Value",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "",
+              "operator": "=="
+            }
+          ]
+        ]
+      },
+      "5": {
+        "id": "5",
+        "type": "radio",
+        "label": "Require Signature Upon Delivery (copy)",
+        "choices": {
+          "1": {
+            "default": "1",
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "",
+              "operator": "=="
+            }
+          ]
+        ]
+      },
+      "6": {
+        "id": "6",
+        "type": "select",
+        "label": "Shipping Insurance (copy)",
+        "choices": {
+          "4": {
+            "label": "Standard Carrier Coverage",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Repair Value",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Replacement Value",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "No Additional Insurance",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "",
+              "operator": "=="
+            }
+          ]
+        ]
+      },
+      "7": {
+        "id": "7",
+        "type": "radio",
+        "label": "Is your return shipping address the same as your mailing address? (copy)",
+        "choices": {
+          "1": {
+            "default": "1",
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "",
+              "operator": "=="
+            }
+          ]
+        ]
+      },
+      "9": {
+        "label": "Shipping Address (copy)",
+        "name": "Layout",
+        "description": "",
+        "label_hide": "1",
+        "size": "large",
+        "preset": "50-50",
+        "display": "rows",
+        "columns": [
+          {
+            "width_preset": "100",
+            "fields": [
+              12
+            ]
+          }
+        ],
+        "id": "9",
+        "type": "layout",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          {
+            "1": {
+              "field": "",
+              "operator": "=="
+            }
+          }
+        ]
+      },
+      "11": {
+        "id": "11",
+        "type": "select",
+        "label": "Country  (copy)",
+        "choices": {
+          "1": {
+            "label": "United States",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "Canada",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "Mexico",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "modern",
+        "size": "large",
+        "placeholder": "United States",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "12": {
+        "id": "12",
+        "type": "text",
+        "label": "Street Address Line 1   (copy)",
+        "description": "",
+        "size": "large",
+        "placeholder": "123 Main Street",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": "",
+        "required": "1"
+      },
+      "10": {
+        "label": "US Shipping Address  (copy)",
+        "name": "Layout",
+        "description": "",
+        "label_hide": "1",
+        "size": "large",
+        "preset": "50-50",
+        "display": "rows",
+        "columns": [
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              12
+            ]
+          },
+          {
+            "width_custom": "",
+            "width_preset": "50",
+            "fields": [
+              15
+            ]
+          }
+        ],
+        "id": "10",
+        "type": "layout",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          {
+            "2": {
+              "field": "",
+              "operator": "=="
+            }
+          }
+        ]
+      },
+      "13": {
+        "id": "13",
+        "type": "select",
+        "label": "State \/ U.S. Territory (copy)",
+        "choices": {
+          "83": {
+            "label": "----STATE----",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "4": {
+            "label": "Alabama - AL",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Alaska - AK",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Arizona - AZ",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Arkansas - AR",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "California - CA",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Colorado - CO",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "Connecticut - CT",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "Delaware - DE",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "Florida - FL",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "13": {
+            "label": "Georgia - GA",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "14": {
+            "label": "Hawaii - HI",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "15": {
+            "label": "Idaho - ID",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "16": {
+            "label": "Illinois - IL",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "17": {
+            "label": "Indiana - IN",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "18": {
+            "label": "Iowa - IA",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "19": {
+            "label": "Kansas - KS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "20": {
+            "label": "Kentucky - KY",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "21": {
+            "label": "Louisiana - LA",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "22": {
+            "label": "Maine - ME",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "23": {
+            "label": "Maryland - MD",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "24": {
+            "label": "Massachusetts - MA",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "25": {
+            "label": "Michigan - MI",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "26": {
+            "label": "Minnesota - MN",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "27": {
+            "label": "Mississippi - MS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "28": {
+            "label": "Missouri - MO",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "29": {
+            "label": "Montana - MT",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "30": {
+            "label": "Nebraska - NE",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "31": {
+            "label": "Nevada - NV",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "32": {
+            "label": "New Hampshire - NH",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "33": {
+            "label": "New Jersey - NJ",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "34": {
+            "label": "New Mexico - NM",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "35": {
+            "label": "New York - NY",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "36": {
+            "label": "North Carolina - NC",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "37": {
+            "label": "North Dakota - ND",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "38": {
+            "label": "Ohio - OH",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "39": {
+            "label": "Oklahoma - OK",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "40": {
+            "label": "Oregon - OR",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "41": {
+            "label": "Pennsylvania - PA",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "42": {
+            "label": "Rhode Island - RI",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "43": {
+            "label": "South Carolina - SC",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "44": {
+            "label": "South Dakota - SD",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "45": {
+            "label": "Tennessee - TN",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "46": {
+            "label": "Texas - TX",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "47": {
+            "label": "Utah - UT",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "48": {
+            "label": "Vermont - VT",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "49": {
+            "label": "Virginia - VA",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "50": {
+            "label": "Washington - WA",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "51": {
+            "label": "West Virginia - WV",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "52": {
+            "label": "Wisconsin - WI",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "53": {
+            "label": "Wyoming - WY",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "54": {
+            "label": "----U.S. TERRITORIES----",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "55": {
+            "label": "American Samoa - AS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "56": {
+            "label": "Guam - GU",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "57": {
+            "label": "Northern Mariana Islands - MP",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "58": {
+            "label": "Puerto Rico - PR",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "59": {
+            "label": "U.S. Virgin Islands - VI",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "60": {
+            "label": "Baker Island - UM",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "61": {
+            "label": "Howland Island - UM",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "62": {
+            "label": "Jarvis Island - UM",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "63": {
+            "label": "Johnston Atoll - UM",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "64": {
+            "label": "Kingman Reef - UM",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "65": {
+            "label": "Midway Atoll - UM",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "66": {
+            "label": "Navassa Island - UM",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "117": {
+            "label": "Palmyra Atoll - UM",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "118": {
+            "label": "Wake Island - UM",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "modern",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "14": {
+        "id": "14",
+        "type": "text",
+        "label": "City (copy)",
+        "description": "",
+        "required": "1",
+        "size": "medium",
+        "placeholder": "e.g., Rutland",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "15": {
+        "id": "15",
+        "type": "number",
+        "columns-json": "[{\"width_custom\":\"\",\"width_preset\":\"50\",\"fields\":[17]},{\"width_custom\":\"\",\"width_preset\":\"50\",\"fields\":[]}]",
+        "label": "Postal Code (copy)",
+        "preset": "50-50",
+        "display": "rows",
+        "description": "",
+        "label_hide": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          {
+            "2": {
+              "field": "",
+              "operator": "=="
+            }
+          }
+        ],
+        "required": "1",
+        "size": "medium",
+        "placeholder": "e.g., 05701",
+        "min": "",
+        "max": "",
+        "default_value": "",
+        "css": ""
+      },
+      "20": {
+        "id": "20",
+        "type": "number",
+        "columns-json": "[{\"width_custom\":\"\",\"width_preset\":\"50\",\"fields\":[22]},{\"width_custom\":\"\",\"width_preset\":\"50\",\"fields\":[]}]",
+        "label": "Postal Code (copy)",
+        "preset": "50-50",
+        "display": "rows",
+        "description": "",
+        "label_hide": "1",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          {
+            "2": {
+              "field": "",
+              "operator": "=="
+            }
+          }
+        ],
+        "required": "1",
+        "size": "medium",
+        "placeholder": "e.g., K1A 0A6",
+        "min": "",
+        "max": "",
+        "default_value": "",
+        "css": ""
+      },
+      "22": {
+        "id": "22",
+        "type": "text",
+        "label": "Street Address Line 2 (copy)",
+        "description": "",
+        "size": "medium",
+        "placeholder": "Apartment, Suite, Unit, Building (Optional)",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "17": {
+        "id": "17",
+        "type": "text",
+        "label": "Street Address Line 2  (copy)",
+        "description": "",
+        "size": "medium",
+        "placeholder": "Apartment, Suite, Unit, Building (Optional)",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "18": {
+        "id": "18",
+        "type": "select",
+        "label": "State \/ Province (copy)",
+        "choices": {
+          "69": {
+            "label": "----CANADA PROVINCES\/TERRITORIES----",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "70": {
+            "label": "Alberta - AB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "71": {
+            "label": "British Columbia - BC",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "72": {
+            "label": "Manitoba - MB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "73": {
+            "label": "New Brunswick - NB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "74": {
+            "label": "Newfoundland and Labrador - NL",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "75": {
+            "label": "Nova Scotia - NS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "76": {
+            "label": "Ontario - ON",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "77": {
+            "label": "Prince Edward Island - PE",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "78": {
+            "label": "Quebec - QC",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "79": {
+            "label": "Saskatchewan - SK",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "80": {
+            "label": "Northwest Territories - NT",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "81": {
+            "label": "Nunavut - NU",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "82": {
+            "label": "Yukon - YT",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "modern",
+        "size": "medium",
+        "placeholder": "e.g., Ontario (ON)",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "19": {
+        "id": "19",
+        "type": "text",
+        "label": "City (copy)",
+        "description": "",
+        "required": "1",
+        "size": "medium",
+        "placeholder": "e.g., Toronto",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "26": {
+        "id": "26",
+        "type": "radio",
+        "label": "Return Packaging Preference (copy)",
+        "choices": {
+          "4": {
+            "label": "Standard Protective Packaging",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Return Using Original Packaging (if available)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "No Preference",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "",
+              "operator": "=="
+            }
+          ]
+        ]
+      },
+      "27": {
+        "id": "27",
+        "type": "checkbox",
+        "label": "Recieve Shipping Notifications By (copy)",
+        "choices": {
+          "4": {
+            "label": "Email",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Text Message",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Both Email and Text",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "input_columns": "",
+        "choice_limit": "",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "",
+              "operator": "=="
+            }
+          ]
+        ]
+      },
+      "25": {
+        "id": "25",
+        "type": "number",
+        "label": "Postal Code (copy) (copy)",
+        "description": "",
+        "size": "medium",
+        "placeholder": "e.g., 44100",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "css": "",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "",
+              "operator": "=="
+            }
+          ]
+        ],
+        "required": "1",
+        "min": "",
+        "max": ""
+      },
+      "23": {
+        "id": "23",
+        "type": "select",
+        "label": "State  (copy)",
+        "choices": {
+          "4": {
+            "label": "Aguascalientes - AGS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Baja California - BC",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Baja California Sur - BCS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Campeche - CAMP",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Chiapas - CHIS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Chihuahua - CHIH",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "Coahuila - COAH",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "Colima - COL",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "Durango - DGO",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "13": {
+            "label": "Guanajuato - GTO",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "14": {
+            "label": "Guerrero - GRO",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "15": {
+            "label": "Hidalgo - HGO",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "16": {
+            "label": "Jalisco - JAL",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "17": {
+            "label": "Mexico City - CDMX",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "18": {
+            "label": "M\u00e9xico (State of Mexico) - MEX",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "19": {
+            "label": "Michoac\u00e1n - MICH",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "20": {
+            "label": "Morelos - MOR",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "21": {
+            "label": "Nayarit - NAY",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "22": {
+            "label": "Nuevo Le\u00f3n - NL",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "23": {
+            "label": "Oaxaca - OAX",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "24": {
+            "label": "Puebla - PUE",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "25": {
+            "label": "Quer\u00e9taro - QRO",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "26": {
+            "label": "Quintana Roo - QROO",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "27": {
+            "label": "San Luis Potos\u00ed - SLP",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "28": {
+            "label": "Sinaloa - SIN",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "29": {
+            "label": "Sonora - SON",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "30": {
+            "label": "Tabasco - TAB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "31": {
+            "label": "Tamaulipas - TAMPS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "32": {
+            "label": "Tlaxcala - TLAX",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "33": {
+            "label": "Veracruz - VER",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "34": {
+            "label": "Yucat\u00e1n - YUC",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "35": {
+            "label": "Zacatecas - ZAC",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "modern",
+        "size": "medium",
+        "placeholder": "e.g., Jalisco (JAL)",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "24": {
+        "id": "24",
+        "type": "text",
+        "label": "City \/ Municipality  (copy)",
+        "description": "",
+        "required": "1",
+        "size": "medium",
+        "placeholder": "Guadalajara",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      }
+    },
+    "id": "1316",
+    "field_id": 28,
+    "settings": {
+      "themes": {
+        "wpformsTheme": "default",
+        "isCustomTheme": "",
+        "themeName": "",
+        "fieldSize": "medium",
+        "fieldBorderStyle": "solid",
+        "fieldBorderSize": "1",
+        "fieldBorderRadius": "3",
+        "fieldBackgroundColor": "#ffffff",
+        "fieldBorderColor": "rgba(0, 0, 0, 0.25)",
+        "fieldTextColor": "rgba(0, 0, 0, 0.7)",
+        "labelSize": "medium",
+        "labelColor": "rgba(0, 0, 0, 0.85)",
+        "labelSublabelColor": "rgba(0, 0, 0, 0.55)",
+        "labelErrorColor": "#d63637",
+        "buttonSize": "medium",
+        "buttonBorderStyle": "none",
+        "buttonBorderSize": "1",
+        "buttonBorderRadius": "3",
+        "buttonBackgroundColor": "#066aab",
+        "buttonBorderColor": "#066aab",
+        "buttonTextColor": "#ffffff",
+        "containerPadding": "0",
+        "containerBorderStyle": "none",
+        "containerBorderWidth": "1",
+        "containerBorderRadius": "3",
+        "containerBorderColor": "#000000",
+        "containerShadowSize": "none",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "backgroundSize": "cover",
+        "backgroundUrl": "url()",
+        "fieldMenuColor": "#ffffff",
+        "pageBreakColor": "#066aab",
+        "customCss": "",
+        "copyPasteJsonValue": "{\"themeName\":\"\",\"isCustomTheme\":\"\",\"wpformsTheme\":\"default\",\"customCss\":\"\",\"containerPadding\":\"0\",\"containerBorderStyle\":\"none\",\"containerBorderWidth\":\"1\",\"containerBorderRadius\":\"3\",\"containerShadowSize\":\"none\",\"containerBorderColor\":\"#000000\",\"fieldSize\":\"medium\",\"fieldBorderStyle\":\"solid\",\"fieldBorderRadius\":\"3\",\"fieldBorderSize\":\"1\",\"fieldBackgroundColor\":\"#ffffff\",\"fieldBorderColor\":\"rgba(0, 0, 0, 0.25)\",\"fieldTextColor\":\"rgba(0, 0, 0, 0.7)\",\"fieldMenuColor\":\"#ffffff\",\"pageBreakColor\":\"#066aab\",\"labelSize\":\"medium\",\"labelColor\":\"rgba(0, 0, 0, 0.85)\",\"labelSublabelColor\":\"rgba(0, 0, 0, 0.55)\",\"labelErrorColor\":\"#d63637\",\"buttonSize\":\"medium\",\"buttonBorderStyle\":\"none\",\"buttonBorderSize\":\"1\",\"buttonBorderRadius\":\"3\",\"buttonBackgroundColor\":\"#066aab\",\"buttonBorderColor\":\"#066aab\",\"buttonTextColor\":\"#ffffff\",\"backgroundColor\":\"rgba(0, 0, 0, 0)\",\"backgroundPosition\":\"center center\",\"backgroundUrl\":\"url()\",\"backgroundRepeat\":\"no-repeat\",\"backgroundSize\":\"cover\",\"backgroundSizeMode\":\"cover\",\"backgroundWidth\":\"100\",\"backgroundHeight\":\"100\",\"backgroundImage\":\"none\"}"
+      },
+      "form_title": "TEMPLATE - Service Method",
+      "form_desc": "SECTION 2",
+      "submit_text": "Submit",
+      "submit_text_processing": "Sending...",
+      "form_class": "",
+      "submit_class": "",
+      "ajax_submit": "1",
+      "purge_entries_days": "365",
+      "notification_enable": "1",
+      "notifications": {
+        "1": {
+          "enable": "1",
+          "notification_name": "Default Notification",
+          "email": "{admin_email}",
+          "subject": "New Entry: Blank Form",
+          "sender_name": "Nocturnix Mobile Repair",
+          "sender_address": "owner@nocturnixrepair.com",
+          "replyto": "",
+          "message": "{all_fields}",
+          "template": "",
+          "file_upload_attachment_fields": [],
+          "entry_csv_attachment_entry_information": [],
+          "entry_csv_attachment_file_name": "entry-details"
+        }
+      },
+      "confirmations": {
+        "1": {
+          "name": "Default Confirmation",
+          "type": "message",
+          "message": "<p>Thanks for contacting us! We will be in touch with you shortly.<\/p>",
+          "message_scroll": "1",
+          "page": "",
+          "page_url_parameters": "",
+          "redirect": "",
+          "message_entry_preview_style": "basic"
+        }
+      },
+      "antispam_v3": "1",
+      "store_spam_entries": "1",
+      "anti_spam": {
+        "time_limit": {
+          "enable": "1",
+          "duration": "2"
+        },
+        "filtering_store_spam": "1",
+        "country_filter": {
+          "action": "allow",
+          "country_codes": [],
+          "message": "Sorry, this form does not accept submissions from your country."
+        },
+        "keyword_filter": {
+          "message": "Sorry, your message can't be submitted because it contains prohibited words."
+        }
+      },
+      "form_tags": [
+        "Template"
+      ]
+    },
+    "search_terms": "",
+    "providers": {
+      "constant-contact-v3": []
+    },
+    "payments": {
+      "square": {
+        "payment_description": "",
+        "buyer_email": "",
+        "billing_name": "",
+        "billing_address": "",
+        "recurring": [
+          {
+            "name": "Plan Name #1",
+            "phase_cadence": "yearly",
+            "customer_email": "",
+            "customer_name": "",
+            "customer_address": ""
+          }
+        ]
+      }
+    },
+    "meta": {
+      "template": "blank"
+    }
+  }
+]

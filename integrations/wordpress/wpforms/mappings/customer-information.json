@@ -1,0 +1,39 @@
+{
+  "form_id": "1311",
+  "form_title": "TEMPLATE - Customer Information",
+  "version": 1,
+  "fields": {
+    "185": {
+      "wpforms_label": "Name",
+      "nocturnix_field": "customer_name"
+    },
+    "269": {
+      "wpforms_label": "Company Name",
+      "nocturnix_field": "business_name"
+    },
+    "187": {
+      "wpforms_label": "Primary Phone",
+      "nocturnix_field": "mobile_phone"
+    },
+    "270": {
+      "wpforms_label": "Secondary Phone",
+      "nocturnix_field": "secondary_phone"
+    },
+    "186": {
+      "wpforms_label": "Email",
+      "nocturnix_field": "email"
+    },
+    "188": {
+      "wpforms_label": "Preferred Contact Method",
+      "nocturnix_field": "preferred_contact"
+    },
+    "230": {
+      "wpforms_label": "Best Time to Contact",
+      "nocturnix_field": "best_contact_time"
+    },
+    "273": {
+      "wpforms_label": "Repair Service Method",
+      "nocturnix_field": "service_method"
+    }
+  }
+}
