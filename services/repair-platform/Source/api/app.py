@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
+from secrets import compare_digest
 from typing import Any
 
 from fastapi import (
     FastAPI,
+    Header,
     HTTPException,
     Query,
 )
@@ -64,6 +67,10 @@ WPFORMS_MAPPINGS_DIRECTORY = (
     / "mappings"
 )
 
+WPFORMS_WEBHOOK_SECRET = os.getenv(
+    "NOCTURNIX_WPFORMS_WEBHOOK_SECRET",
+    "",
+)
 
 # ======================================================
 # Application State
@@ -819,6 +826,33 @@ def create_device(
     return device_response(record)
 
 
+def verify_wpforms_webhook_secret(
+    supplied_secret: str | None,
+) -> None:
+    configured_secret = WPFORMS_WEBHOOK_SECRET.strip()
+
+    if not configured_secret:
+        raise HTTPException(
+            status_code=503,
+            detail=("WPForms webhook authentication is not configured."),
+        )
+
+    if not supplied_secret:
+        raise HTTPException(
+            status_code=401,
+            detail=("WPForms webhook secret is required."),
+        )
+
+    if not compare_digest(
+        supplied_secret,
+        configured_secret,
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail=("Invalid WPForms webhook secret."),
+        )
+
+
 # ======================================================
 # WPForms Mapping
 # ======================================================
@@ -850,8 +884,13 @@ def map_wpforms_submission(
 )
 def create_wpforms_intake(
     payload: WPFormsIntakeRequest,
+    webhook_secret: str | None = Header(
+        default=None,
+        alias="X-Nocturnix-Webhook-Secret",
+    ),
 ) -> WPFormsIntakeResponse:
     try:
+        verify_wpforms_webhook_secret(webhook_secret)
         database = get_database()
 
         form_id = payload.form_id.strip()
