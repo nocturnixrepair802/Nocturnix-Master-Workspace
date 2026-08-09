@@ -1,0 +1,3 @@
+"""
+Nocturnix external integration adapters.
+"""

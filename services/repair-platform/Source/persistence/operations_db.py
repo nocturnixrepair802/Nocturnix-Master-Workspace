@@ -38,6 +38,63 @@ class OperationsDatabase:
 
         return connection
 
+    def get_wpforms_submission(
+        self,
+        form_id: str,
+        entry_id: str,
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM wpforms_submissions
+                WHERE wpforms_form_id = ?
+                  AND wpforms_entry_id = ?
+                """,
+                (
+                    form_id,
+                    entry_id,
+                ),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def create_wpforms_submission(
+        self,
+        record: dict[str, Any],
+    ) -> dict[str, Any]:
+        with self.connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO wpforms_submissions (
+                    submission_id,
+                    wpforms_form_id,
+                    wpforms_entry_id,
+                    customer_id,
+                    device_id,
+                    repair_id,
+                    checkin_id,
+                    received_at
+                )
+                VALUES (
+                    :submission_id,
+                    :wpforms_form_id,
+                    :wpforms_entry_id,
+                    :customer_id,
+                    :device_id,
+                    :repair_id,
+                    :checkin_id,
+                    :received_at
+                )
+                """,
+                record,
+            )
+
+        return record.copy()
+
     def initialize(
         self,
     ) -> None:
@@ -153,6 +210,100 @@ class OperationsDatabase:
                     idx_repair_tickets_intake_date
                     ON repair_tickets(intake_date);
 
+                CREATE TABLE IF NOT EXISTS repair_checkins (
+                    checkin_id TEXT PRIMARY KEY,
+
+                    repair_id TEXT NOT NULL,
+                    customer_id TEXT NOT NULL,
+                    device_id TEXT NOT NULL,
+
+                    technician TEXT NOT NULL DEFAULT '',
+
+                    checkin_timestamp TEXT NOT NULL,
+
+                    powers_on TEXT NOT NULL DEFAULT '',
+                    battery_percentage INTEGER,
+                    screen_condition TEXT NOT NULL DEFAULT '',
+                    frame_condition TEXT NOT NULL DEFAULT '',
+                    back_glass_condition TEXT NOT NULL DEFAULT '',
+                    charging_port_condition TEXT NOT NULL DEFAULT '',
+                    camera_condition TEXT NOT NULL DEFAULT '',
+                    speaker_condition TEXT NOT NULL DEFAULT '',
+                    microphone_condition TEXT NOT NULL DEFAULT '',
+                    face_id_touch_id TEXT NOT NULL DEFAULT '',
+                    liquid_damage TEXT NOT NULL DEFAULT '',
+                    existing_damage TEXT NOT NULL DEFAULT '',
+                    accessories_received TEXT NOT NULL DEFAULT '',
+                    device_passcode TEXT NOT NULL DEFAULT '',
+                    passcode_available TEXT NOT NULL DEFAULT '',
+                    intake_notes TEXT NOT NULL DEFAULT '',
+
+                  FOREIGN KEY (repair_id)
+                      REFERENCES repair_tickets(ticket_id)
+                      ON DELETE CASCADE,
+
+                  FOREIGN KEY (customer_id)
+                      REFERENCES customers(customer_id)
+                      ON DELETE CASCADE,
+
+                  FOREIGN KEY (device_id)
+                      REFERENCES customer_devices(device_id)
+                      ON DELETE CASCADE
+              );
+
+              CREATE INDEX IF NOT EXISTS
+                      idx_repair_checkins_repair
+                      ON repair_checkins(repair_id);
+
+              CREATE INDEX IF NOT EXISTS
+                      idx_repair_checkins_customer
+                      ON repair_checkins(customer_id);
+
+              CREATE INDEX IF NOT EXISTS
+                      idx_repair_checkins_device
+                      ON repair_checkins(device_id);
+
+              CREATE TABLE IF NOT EXISTS wpforms_submissions (
+                  submission_id TEXT PRIMARY KEY,
+
+                  wpforms_form_id TEXT NOT NULL,
+                  wpforms_entry_id TEXT NOT NULL,
+
+                  customer_id TEXT NOT NULL,
+                  device_id TEXT NOT NULL,
+                  repair_id TEXT NOT NULL,
+                  checkin_id TEXT NOT NULL,
+
+                  received_at TEXT NOT NULL,
+
+                  UNIQUE (
+                      wpforms_form_id,
+                      wpforms_entry_id
+                  ),
+
+                  FOREIGN KEY (customer_id)
+                      REFERENCES customers(customer_id),
+
+                  FOREIGN KEY (device_id)
+                      REFERENCES customer_devices(device_id),
+
+                  FOREIGN KEY (repair_id)
+                      REFERENCES repair_tickets(ticket_id),
+
+                  FOREIGN KEY (checkin_id)
+                      REFERENCES repair_checkins(checkin_id)
+              );
+
+              CREATE INDEX IF NOT EXISTS
+                  idx_wpforms_submissions_form_entry
+                  ON wpforms_submissions(
+                      wpforms_form_id,
+                      wpforms_entry_id
+                  );
+
+              CREATE INDEX IF NOT EXISTS
+                  idx_wpforms_submissions_repair
+                  ON wpforms_submissions(repair_id);
 
                 CREATE TABLE IF NOT EXISTS repair_events (
                     event_id TEXT PRIMARY KEY,
@@ -270,7 +421,9 @@ class OperationsDatabase:
             ("customers", "customer_id"),
             ("customer_devices", "device_id"),
             ("repair_tickets", "ticket_id"),
+            ("repair_checkins", "checkin_id"),
             ("repair_events", "event_id"),
+            ("wpforms_submissions", "submission_id"),
         }
 
         if (table, column) not in allowed_targets:
@@ -700,6 +853,161 @@ class OperationsDatabase:
                 return None
 
         return self.get_repair(ticket_id)
+
+    def create_repair_checkin(
+        self,
+        record: dict[str, Any],
+    ) -> dict[str, Any]:
+        with self.connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO repair_checkins (
+                    checkin_id,
+                    repair_id,
+                    customer_id,
+                    device_id,
+                    technician,
+                    checkin_timestamp,
+                    powers_on,
+                    battery_percentage,
+                    screen_condition,
+                    frame_condition,
+                    back_glass_condition,
+                    charging_port_condition,
+                    camera_condition,
+                    speaker_condition,
+                    microphone_condition,
+                    face_id_touch_id,
+                    liquid_damage,
+                    existing_damage,
+                    accessories_received,
+                    device_passcode,
+                    passcode_available,
+                    intake_notes
+                )
+                VALUES (
+                    :checkin_id,
+                    :repair_id,
+                    :customer_id,
+                    :device_id,
+                    :technician,
+                    :checkin_timestamp,
+                    :powers_on,
+                    :battery_percentage,
+                    :screen_condition,
+                    :frame_condition,
+                    :back_glass_condition,
+                    :charging_port_condition,
+                    :camera_condition,
+                    :speaker_condition,
+                    :microphone_condition,
+                    :face_id_touch_id,
+                    :liquid_damage,
+                    :existing_damage,
+                    :accessories_received,
+                    :device_passcode,
+                    :passcode_available,
+                    :intake_notes
+                )
+                """,
+                record,
+            )
+
+        return record.copy()
+
+    def get_repair_checkin(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM repair_checkins
+                WHERE repair_id = ?
+                ORDER BY checkin_timestamp DESC,
+                        checkin_id DESC
+                LIMIT 1
+                """,
+                (repair_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def get_repair_checkin_by_id(
+        self,
+        checkin_id: str,
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM repair_checkins
+                WHERE checkin_id = ?
+                """,
+                (checkin_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def update_repair_checkin(
+        self,
+        checkin_id: str,
+        updates: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        allowed_columns = {
+            "technician",
+            "powers_on",
+            "battery_percentage",
+            "screen_condition",
+            "frame_condition",
+            "back_glass_condition",
+            "charging_port_condition",
+            "camera_condition",
+            "speaker_condition",
+            "microphone_condition",
+            "face_id_touch_id",
+            "liquid_damage",
+            "existing_damage",
+            "accessories_received",
+            "device_passcode",
+            "passcode_available",
+            "intake_notes",
+        }
+
+        filtered_updates = {
+            key: value for key, value in updates.items() if key in allowed_columns
+        }
+
+        if not filtered_updates:
+            return self.get_repair_checkin_by_id(checkin_id)
+
+        assignments = ", ".join(f"{column} = ?" for column in filtered_updates)
+
+        parameters = list(filtered_updates.values())
+
+        parameters.append(checkin_id)
+
+        with self.connect() as connection:
+            cursor = connection.execute(
+                f"""
+                UPDATE repair_checkins
+                SET {assignments}
+                WHERE checkin_id = ?
+                """,
+                parameters,
+            )
+
+            if cursor.rowcount == 0:
+                return None
+
+        return self.get_repair_checkin_by_id(checkin_id)
 
     def create_repair_event(
         self,
