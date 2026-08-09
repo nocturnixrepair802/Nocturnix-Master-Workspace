@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -107,6 +109,76 @@ class RepairEventResponse(BaseModel):
     created_by: str = "Ryan Brown"
 
 
+# ======================================================
+# Repair Check-In
+# ======================================================
+
+
+class RepairCheckinCreateRequest(BaseModel):
+    powers_on: str = ""
+    battery_percentage: int | None = None
+    screen_condition: str = ""
+    frame_condition: str = ""
+    back_glass_condition: str = ""
+    charging_port_condition: str = ""
+    camera_condition: str = ""
+    speaker_condition: str = ""
+    microphone_condition: str = ""
+    face_id_touch_id: str = ""
+    liquid_damage: str = ""
+    existing_damage: str = ""
+    accessories_received: str = ""
+    device_passcode: str = ""
+    passcode_available: str = ""
+    intake_notes: str = ""
+
+
+class RepairCheckinUpdateRequest(BaseModel):
+    powers_on: str | None = None
+    battery_percentage: int | None = None
+    screen_condition: str | None = None
+    frame_condition: str | None = None
+    back_glass_condition: str | None = None
+    charging_port_condition: str | None = None
+    camera_condition: str | None = None
+    speaker_condition: str | None = None
+    microphone_condition: str | None = None
+    face_id_touch_id: str | None = None
+    liquid_damage: str | None = None
+    existing_damage: str | None = None
+    accessories_received: str | None = None
+    device_passcode: str | None = None
+    passcode_available: str | None = None
+    intake_notes: str | None = None
+
+
+class RepairCheckinResponse(BaseModel):
+    id: str
+    repair_id: str
+    customer_id: str
+    device_id: str
+
+    technician: str = "Ryan Brown"
+    checkin_timestamp: str = ""
+
+    powers_on: str = ""
+    battery_percentage: int | None = None
+    screen_condition: str = ""
+    frame_condition: str = ""
+    back_glass_condition: str = ""
+    charging_port_condition: str = ""
+    camera_condition: str = ""
+    speaker_condition: str = ""
+    microphone_condition: str = ""
+    face_id_touch_id: str = ""
+    liquid_damage: str = ""
+    existing_damage: str = ""
+    accessories_received: str = ""
+    device_passcode: str = ""
+    passcode_available: str = ""
+    intake_notes: str = ""
+
+
 class DashboardResponse(BaseModel):
     customers: int
     devices: int
@@ -161,3 +233,17 @@ class CatalogHealthResponse(BaseModel):
 
 class CatalogSchemaResponse(BaseModel):
     tables: dict[str, list[str]]
+
+
+class WPFormsIntakeRequest(BaseModel):
+    form_id: str
+    entry_id: str
+    fields: dict[str, Any]
+
+
+class WPFormsIntakeResponse(BaseModel):
+    customer_id: str
+    device_id: str
+    repair_id: str
+    checkin_id: str
+    duplicate: bool = False
