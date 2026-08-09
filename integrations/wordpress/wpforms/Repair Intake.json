@@ -1,0 +1,1476 @@
+[
+  {
+    "fields": {
+      "1": {
+        "id": "1",
+        "type": "name",
+        "label": "Name",
+        "format": "first-last",
+        "description": "Enter your full legal name.",
+        "required": "1",
+        "size": "large",
+        "simple_placeholder": "",
+        "simple_default": "",
+        "first_placeholder": "",
+        "first_default": "",
+        "middle_placeholder": "",
+        "middle_default": "",
+        "last_placeholder": "",
+        "last_default": "",
+        "css": ""
+      },
+      "2": {
+        "id": "2",
+        "type": "email",
+        "label": "Email",
+        "description": "We'll use this to send your repair confirmation and updates.",
+        "required": "1",
+        "size": "large",
+        "placeholder": "",
+        "confirmation_placeholder": "",
+        "default_value": "",
+        "filter_type": "",
+        "allowlist": "",
+        "denylist": "",
+        "css": ""
+      },
+      "56": {
+        "id": "56",
+        "type": "radio",
+        "label": "Repair Service Method",
+        "choices": {
+          "4": {
+            "label": "Local Drop-Off \/ Meet-Up",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Mail-In Repair",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Business \/ Commercial Repair",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Not Sure Yet",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "57": {
+        "id": "57",
+        "type": "text",
+        "label": "Local Drop-Off",
+        "description": "",
+        "required": "1",
+        "size": "medium",
+        "placeholder": "City, State, Zip Code",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "56",
+              "operator": "==",
+              "value": "4"
+            }
+          ]
+        ]
+      },
+      "59": {
+        "id": "59",
+        "type": "radio",
+        "label": "Return Address Same as Mailing Address?",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "Is your Return Shipping Address the same as your current Full Mailing Address?",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "56",
+              "operator": "==",
+              "value": "5"
+            }
+          ]
+        ]
+      },
+      "31": {
+        "id": "31",
+        "type": "address",
+        "label": "Mailing Address",
+        "scheme": "us",
+        "description": "",
+        "required": "1",
+        "size": "large",
+        "address1_placeholder": "",
+        "address1_default": "",
+        "address2_placeholder": "",
+        "address2_default": "",
+        "city_placeholder": "",
+        "city_default": "",
+        "state_placeholder": "",
+        "state_default": "",
+        "postal_placeholder": "",
+        "postal_default": "",
+        "country_placeholder": "",
+        "country_default": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": {
+          "1": {
+            "1": {
+              "field": "56",
+              "operator": "==",
+              "value": "5"
+            }
+          }
+        }
+      },
+      "58": {
+        "id": "58",
+        "type": "address",
+        "label": "Return Shipping Address ",
+        "scheme": "us",
+        "description": "",
+        "required": "1",
+        "size": "large",
+        "address1_placeholder": "",
+        "address1_default": "",
+        "address2_placeholder": "",
+        "address2_default": "",
+        "city_placeholder": "",
+        "city_default": "",
+        "state_placeholder": "",
+        "state_default": "",
+        "postal_placeholder": "",
+        "postal_default": "",
+        "country_placeholder": "",
+        "country_default": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": {
+          "1": {
+            "1": {
+              "field": "59",
+              "operator": "==",
+              "value": "2"
+            }
+          }
+        }
+      },
+      "60": {
+        "id": "60",
+        "type": "text",
+        "label": "If your not sure, How would you like to receive services?",
+        "description": "",
+        "required": "1",
+        "size": "medium",
+        "placeholder": "",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "56",
+              "operator": "==",
+              "value": "6"
+            }
+          ]
+        ]
+      },
+      "61": {
+        "id": "61",
+        "type": "radio",
+        "label": "Contact me to discuss how to receive services",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "Please Select Preferred Contact Method below",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "56",
+              "operator": "==",
+              "value": "6"
+            }
+          ]
+        ]
+      },
+      "4": {
+        "id": "4",
+        "type": "phone",
+        "label": "Phone",
+        "format": "smart",
+        "description": "Enter the best phone number where we can reach you.",
+        "required": "1",
+        "size": "large",
+        "placeholder": "",
+        "default_value": "",
+        "css": ""
+      },
+      "8": {
+        "id": "8",
+        "type": "radio",
+        "label": "Preferred Contact Method",
+        "choices": {
+          "1": {
+            "label": "Phone Call",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "Text Message",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Email",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "Select how you would like us to contact you.",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "37": {
+        "id": "37",
+        "type": "select",
+        "label": "Best Time to Contact",
+        "choices": {
+          "4": {
+            "label": "Morning (8 AM \u2013 12 PM)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Afternoon (12 PM \u2013 5 PM)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Evening (5 PM \u2013 8 PM)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Anytime",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "Optional: Let us know the best time to reach you regarding your repair.",
+        "style": "modern",
+        "size": "medium",
+        "placeholder": "Select if you have a preferred contact time",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "5": {
+        "id": "5",
+        "type": "divider",
+        "label": "Device Information",
+        "description": "Please provide information about the device you would like us to service. The more details you provide, the faster we can evaluate your repair request.",
+        "label_disable": "1",
+        "css": ""
+      },
+      "9": {
+        "id": "9",
+        "type": "select",
+        "label": "Manufacturer",
+        "choices": {
+          "4": {
+            "label": "Apple",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Samsung",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Google",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Motorola",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "OnePlus",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "LG",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "13": {
+            "label": "Sony",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "Nokia",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "TCL",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "ASUS",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "15": {
+            "label": "Microsoft Surface",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "14": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "Select the manufacturer of your device.",
+        "required": "1",
+        "style": "modern",
+        "size": "large",
+        "placeholder": "-- Select Manufacturer --",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "10": {
+        "id": "10",
+        "type": "text",
+        "label": "Device Model",
+        "description": "Enter your device model (for example: iPhone 14 Pro Max or Galaxy S24 Ultra).",
+        "required": "1",
+        "size": "large",
+        "placeholder": "Example: iPhone 14 Pro Max",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "11": {
+        "id": "11",
+        "type": "select",
+        "label": "Carrier",
+        "choices": {
+          "14": {
+            "label": "AT&T",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "15": {
+            "label": "Verizon",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "16": {
+            "label": "T-Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "17": {
+            "label": "Boost Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "18": {
+            "label": "Cricket",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "19": {
+            "label": "US Cellular",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "20": {
+            "label": "Consumer Cellular",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "21": {
+            "label": "Google Fi",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "22": {
+            "label": "Xfinity Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "23": {
+            "label": "Spectrum Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "24": {
+            "label": "Straight Talk",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "25": {
+            "label": "Metro by T-Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "26": {
+            "label": "Mint Mobile",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "27": {
+            "label": "Unlocked",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "28": {
+            "label": "Other",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "Select your wireless carrier or choose Unlocked",
+        "style": "modern",
+        "size": "large",
+        "placeholder": "-- Select Carrier --",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "12": {
+        "id": "12",
+        "type": "text",
+        "label": "Device Color",
+        "description": "Optional: Helps us identify your device during service.",
+        "size": "large",
+        "placeholder": "Example: Black, Blue, Silver",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "32": {
+        "id": "32",
+        "type": "select",
+        "label": "Storage SIze",
+        "choices": {
+          "4": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "16 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "32 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "64 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "128 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "256 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "512 GB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "1 TB",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "Select your device storage capacity if known.",
+        "style": "modern",
+        "size": "large",
+        "placeholder": "Unknown",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "14": {
+        "id": "14",
+        "type": "text",
+        "label": "IMEI",
+        "description": "Optional: Enter your device IMEI if available.",
+        "size": "large",
+        "placeholder": "15-digit IMEI",
+        "limit_enabled": "1",
+        "limit_count": "15",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "15": {
+        "id": "15",
+        "type": "text",
+        "label": "Serial Number",
+        "description": "Optional: Enter your device serial number if available.",
+        "size": "large",
+        "placeholder": "Device Serial Number",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "input_mask": "",
+        "css": ""
+      },
+      "62": {
+        "id": "62",
+        "type": "select",
+        "label": "Approximate Purchase Date",
+        "choices": {
+          "4": {
+            "label": "Less than 1 year",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "1\u20132 years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "2\u20134 years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "More than 4 years",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "This helps estimate battery age and parts availability.",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "63": {
+        "id": "63",
+        "type": "select",
+        "label": "Warranty Status",
+        "choices": {
+          "4": {
+            "label": "Manufacturer Warranty",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "AppleCare+",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Samsung Care+",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Carrier Protection",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Third-Party Warranty",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Out of Warranty",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "Unknown",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "",
+        "required": "1",
+        "style": "classic",
+        "size": "medium",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "38": {
+        "id": "38",
+        "type": "radio",
+        "label": "Will you be providing your device passcode?",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "I'll Provide at Drop-Off",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "Providing the passcode can help us complete testing after the repair. You may also provide it in person when dropping off the device.",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "39": {
+        "id": "39",
+        "type": "password",
+        "label": "Device Passcode",
+        "description": "Optional. Leave blank if you prefer to provide the passcode when you drop off your device.",
+        "password-strength-level": "3",
+        "size": "large",
+        "placeholder": "Enter passcode (optional)",
+        "confirmation_placeholder": "",
+        "default_value": "",
+        "css": "",
+        "conditional_logic": "1",
+        "conditional_type": "show",
+        "conditionals": [
+          [
+            {
+              "field": "38",
+              "operator": "==",
+              "value": "1"
+            }
+          ]
+        ]
+      },
+      "19": {
+        "id": "19",
+        "type": "divider",
+        "label": "Device Condition",
+        "description": "Help us understand the current condition of your device before bringing it in for service.",
+        "label_disable": "1",
+        "css": ""
+      },
+      "40": {
+        "id": "40",
+        "type": "radio",
+        "label": "Does the device power on?",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Intermittently",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "Can the device currently power on?",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "41": {
+        "id": "41",
+        "type": "radio",
+        "label": "Touchscreen Works",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Partially",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "Does the touchscreen respond normally?",
+        "required": "1",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "42": {
+        "id": "42",
+        "type": "radio",
+        "label": "Face ID \/ Fingerprint Works",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Not Applicable",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "Does biometric authentication currently function?",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "43": {
+        "id": "43",
+        "type": "radio",
+        "label": "Has the device been repaired before?",
+        "choices": {
+          "1": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unsure",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "other_size": "medium",
+        "other_placeholder": "",
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "Has this device been repaired by another repair shop or manufacturer?",
+        "input_columns": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "45": {
+        "id": "45",
+        "type": "select",
+        "label": "Water Exposure",
+        "choices": {
+          "1": {
+            "label": "No",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "2": {
+            "label": "Yes",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "3": {
+            "label": "Unsure",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "description": "Has the device been exposed to water or other liquids?",
+        "required": "1",
+        "style": "modern",
+        "size": "large",
+        "placeholder": "--- Select Choice ---",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "17": {
+        "id": "17",
+        "type": "divider",
+        "label": "Repair Needed",
+        "description": "Tell us what issues you're experiencing with your device and what type of repair you believe is needed.",
+        "label_disable": "1",
+        "css": ""
+      },
+      "18": {
+        "id": "18",
+        "type": "checkbox",
+        "label": "Repair Needed",
+        "choices": {
+          "4": {
+            "label": "Screen Replacement",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "5": {
+            "label": "Battery Replacement",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "6": {
+            "label": "Charging Port Repair",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "16": {
+            "label": "Charging Issues",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "7": {
+            "label": "Rear Glass Replacement",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "8": {
+            "label": "Camera Repair",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "19": {
+            "label": "Camera Lens Replacement",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "24": {
+            "label": "Audio Issue \/ No Sound",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "9": {
+            "label": "Speaker Repair",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "23": {
+            "label": "Earpiece Repair",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "10": {
+            "label": "Microphone Repair",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "11": {
+            "label": "Button Repair",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "20": {
+            "label": "Back Housing \/ Frame",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "12": {
+            "label": "Water Damage",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "21": {
+            "label": "Battery Swelling",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "13": {
+            "label": "Software Issue",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "17": {
+            "label": "Data Recovery",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "14": {
+            "label": "Diagnostic",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          },
+          "22": {
+            "label": "Other (Please Describe Below)",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "Select all repair services that you believe your device may need. If you're unsure, choose \"Diagnostic\" or describe the issue below.",
+        "required": "1",
+        "input_columns": "",
+        "choice_limit": "",
+        "dynamic_choices": "",
+        "css": ""
+      },
+      "25": {
+        "id": "25",
+        "type": "textarea",
+        "label": "Describe the Problem",
+        "description": "",
+        "size": "large",
+        "placeholder": "Please describe the issue you're experiencing, when it started, what may have caused it, and anything you've already tried to resolve it.",
+        "limit_count": "1",
+        "limit_mode": "characters",
+        "default_value": "",
+        "css": ""
+      },
+      "26": {
+        "id": "26",
+        "type": "divider",
+        "label": "Upload Photos",
+        "description": "Uploading clear photos of your device helps us better understand the damage and may allow us to provide a more accurate estimate before your appointment.",
+        "label_disable": "1",
+        "css": ""
+      },
+      "27": {
+        "id": "27",
+        "type": "file-upload",
+        "label": "Device Photos",
+        "description": "Upload clear photos of the front, back, and any damaged areas of your device. You may upload up to 10 photos.",
+        "extensions": "jpg,jpeg,png,heic",
+        "max_size": "10",
+        "max_file_number": "10",
+        "style": "modern",
+        "css": "",
+        "is_restricted": "1",
+        "user_restrictions": "logged",
+        "user_roles_restrictions": "[\"administrator\"]",
+        "user_names_restrictions": "",
+        "camera_enabled": "1",
+        "camera_format": "photo",
+        "camera_aspect_ratio": "original",
+        "camera_ratio_width": "4",
+        "camera_ratio_height": "3",
+        "camera_time_limit_minutes": "1",
+        "camera_time_limit_seconds": "30"
+      },
+      "55": {
+        "id": "55",
+        "type": "divider",
+        "label": "Repair Authorization",
+        "description": "Please review the information below before submitting your repair request. The following terms explain your authorization for service, diagnostic procedures, communication, and data responsibilities.",
+        "label_disable": "1",
+        "css": ""
+      },
+      "49": {
+        "id": "49",
+        "type": "html",
+        "name": "",
+        "code": "<p>Please review the information below before submitting your repair request. By submitting this form, you acknowledge and agree to the following:<\/p>\r\n\r\n<ol>\r\n    <li>\r\n        <strong>Ownership Authorization<\/strong><br>\r\n        You certify that you are the owner of the device or have authorization to request repair service on its behalf.\r\n    <\/li>\r\n\r\n    <br>\r\n\r\n    <li>\r\n        <strong>Diagnostic Authorization<\/strong><br>\r\n        You authorize <strong>Nocturnix Mobile Repair<\/strong> to inspect, diagnose, and evaluate the reported issue with your device.\r\n    <\/li>\r\n\r\n    <br>\r\n\r\n    <li>\r\n        <strong>Repair Estimate<\/strong><br>\r\n        Submitting this form is a request for repair only and does not guarantee service, parts availability, successful repair completion, or a final repair estimate.\r\n    <\/li>\r\n\r\n    <br>\r\n\r\n    <li>\r\n        <strong>Additional Repairs<\/strong><br>\r\n        If additional issues are discovered during diagnosis, no additional repairs or charges will be performed without your approval.\r\n    <\/li>\r\n\r\n    <br>\r\n\r\n    <li>\r\n        <strong>Communication Authorization<\/strong><br>\r\n        You authorize <strong>Nocturnix Mobile Repair<\/strong> to contact you by phone, text message, or email regarding your repair request, repair status, estimates, scheduling, warranty service, and completion of your repair.\r\n    <\/li>\r\n\r\n    <br>\r\n\r\n    <li>\r\n        <strong>Data Responsibility<\/strong><br>\r\n        You are responsible for creating a complete backup of any important data before submitting your device for repair. While every reasonable precaution is taken during service, <strong>Nocturnix Mobile Repair<\/strong> cannot guarantee the preservation of personal data during diagnostic or repair procedures. Customers acknowledge that data loss may occur due to device condition, hardware failure, or necessary repair procedures.\r\n    <\/li>\r\n<\/ol>\r\n\r\n<hr>\r\n\r\n<p><strong>Please check the box below to acknowledge that you have read, understood, and agree to the Repair Authorization above.<\/strong><\/p>",
+        "label_disable": "1",
+        "css": ""
+      },
+      "51": {
+        "id": "51",
+        "type": "checkbox",
+        "label": "Customer Acknowledgement",
+        "choices": {
+          "1": {
+            "label": "I have read, understood, and agree to the Repair Authorization above.",
+            "value": "",
+            "image": "",
+            "icon": "face-smile",
+            "icon_style": "regular"
+          }
+        },
+        "choices_images_style": "modern",
+        "choices_icons_color": "#066aab",
+        "choices_icons_size": "large",
+        "choices_icons_style": "default",
+        "description": "",
+        "required": "1",
+        "input_columns": "",
+        "choice_limit": "",
+        "dynamic_choices": "",
+        "css": ""
+      }
+    },
+    "id": "1162",
+    "field_id": 64,
+    "search_terms": "",
+    "settings": {
+      "themes": {
+        "wpformsTheme": "default",
+        "isCustomTheme": "",
+        "themeName": "",
+        "fieldSize": "medium",
+        "fieldBorderStyle": "solid",
+        "fieldBorderSize": "1",
+        "fieldBorderRadius": "3",
+        "fieldBackgroundColor": "#ffffff",
+        "fieldBorderColor": "rgba(0, 0, 0, 0.25)",
+        "fieldTextColor": "rgba(0, 0, 0, 0.7)",
+        "labelSize": "medium",
+        "labelColor": "rgba(0, 0, 0, 0.85)",
+        "labelSublabelColor": "rgba(0, 0, 0, 0.55)",
+        "labelErrorColor": "#d63637",
+        "buttonSize": "medium",
+        "buttonBorderStyle": "none",
+        "buttonBorderSize": "1",
+        "buttonBorderRadius": "3",
+        "buttonBackgroundColor": "#066aab",
+        "buttonBorderColor": "#066aab",
+        "buttonTextColor": "#ffffff",
+        "containerPadding": "0",
+        "containerBorderStyle": "none",
+        "containerBorderWidth": "1",
+        "containerBorderRadius": "3",
+        "containerBorderColor": "#000000",
+        "containerShadowSize": "none",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "backgroundSize": "cover",
+        "backgroundUrl": "url()",
+        "fieldMenuColor": "#ffffff",
+        "pageBreakColor": "#066aab",
+        "customCss": "",
+        "copyPasteJsonValue": "{\"themeName\":\"\",\"isCustomTheme\":\"\",\"wpformsTheme\":\"default\",\"customCss\":\"\",\"containerPadding\":\"0\",\"containerBorderStyle\":\"none\",\"containerBorderWidth\":\"1\",\"containerBorderRadius\":\"3\",\"containerShadowSize\":\"none\",\"containerBorderColor\":\"#000000\",\"fieldSize\":\"medium\",\"fieldBorderStyle\":\"solid\",\"fieldBorderRadius\":\"3\",\"fieldBorderSize\":\"1\",\"fieldBackgroundColor\":\"#ffffff\",\"fieldBorderColor\":\"rgba(0, 0, 0, 0.25)\",\"fieldTextColor\":\"rgba(0, 0, 0, 0.7)\",\"fieldMenuColor\":\"#ffffff\",\"pageBreakColor\":\"#066aab\",\"labelSize\":\"medium\",\"labelColor\":\"rgba(0, 0, 0, 0.85)\",\"labelSublabelColor\":\"rgba(0, 0, 0, 0.55)\",\"labelErrorColor\":\"#d63637\",\"buttonSize\":\"medium\",\"buttonBorderStyle\":\"none\",\"buttonBorderSize\":\"1\",\"buttonBorderRadius\":\"3\",\"buttonBackgroundColor\":\"#066aab\",\"buttonBorderColor\":\"#066aab\",\"buttonTextColor\":\"#ffffff\",\"backgroundColor\":\"rgba(0, 0, 0, 0)\",\"backgroundPosition\":\"center center\",\"backgroundUrl\":\"url()\",\"backgroundRepeat\":\"no-repeat\",\"backgroundSize\":\"cover\",\"backgroundSizeMode\":\"cover\",\"backgroundWidth\":\"100\",\"backgroundHeight\":\"100\",\"backgroundImage\":\"none\"}"
+      },
+      "form_title": "Customer - Repair Intake",
+      "form_desc": "Official Repair Ticket Request.\r\n\r\nCustomer info\r\n\r\nDevice info\r\n\r\nManufacturer\r\n\r\nModel\r\n\r\nRepair type\r\n\r\nDevice questions\r\n\r\nPhotos\r\n\r\nTerms\r\n\r\nSubmit\r\n\r\nThis becomes the official repair ticket request",
+      "form_tags": [
+        "Customer",
+        "Intake",
+        "Mail-In",
+        "Primary",
+        "Repair Request",
+        "Website"
+      ],
+      "submit_text": "Submit Repair Request",
+      "submit_text_processing": "Please wait while we submit your repair request...",
+      "form_class": "",
+      "submit_class": "",
+      "ajax_submit": "1",
+      "purge_entries_days": "365",
+      "notification_enable": "1",
+      "notifications": {
+        "2": {
+          "enable": "1",
+          "notification_name": "Customer Confirmation",
+          "email": "{field_id=\"2\"}",
+          "subject": "We've Received Your Repair Request",
+          "sender_name": "Nocturnix Mobile Repair",
+          "sender_address": "owner@nocturnixrepair.com",
+          "replyto": "owner@nocturnixrepair.com",
+          "message": "Hello,\r\n\r\nThank you for choosing **Nocturnix Mobile Repair**.\r\n\r\nWe have successfully received your repair request and appreciate the opportunity to assist you.\r\n\r\n### What Happens Next?\r\n\r\nOur team will carefully review the information and photos you submitted to better understand your device and the repair it may require.\r\n\r\nOnce your request has been reviewed, we will contact you using your preferred contact method to:\r\n\r\n\u2022 Answer any questions about your repair\r\n\u2022 Discuss the reported issue\r\n\u2022 Provide an estimate when applicable\r\n\u2022 Explain available repair options\r\n\u2022 Schedule an appointment if you choose to proceed\r\n\r\n**Typical Response Time**\r\n\r\nWe strive to review all repair requests as quickly as possible. Most requests receive a response within one business day during normal business hours.\r\n\r\nPlease note that submitting a repair request does not guarantee repair services, parts availability, or a final repair estimate.\r\n\r\nIf you need immediate assistance before we contact you, feel free to call or text us at **(802) 449-2171**.\r\n\r\nThank you for choosing Nocturnix Mobile Repair. We look forward to helping you get your device back in working order.\r\n\r\nSincerely,\r\n\r\n**Nocturnix Mobile Repair**\r\nMobile Repairs That Never Sleeps",
+          "template": "modern",
+          "file_upload_attachment_fields": [],
+          "entry_csv_attachment_entry_information": [],
+          "entry_csv_attachment_file_name": "entry-details"
+        },
+        "1": {
+          "enable": "1",
+          "notification_name": "Administrator Notification",
+          "email": "{admin_email}",
+          "subject": "New Repair Request - {field_id=\"Name\"}",
+          "sender_name": "Nocturnix Mobile Repair",
+          "sender_address": "owner@nocturnixrepair.com",
+          "replyto": "{field_id=\"Email\"}",
+          "message": "{all_fields}",
+          "template": "",
+          "file_upload_attachment_fields": [],
+          "entry_csv_attachment_entry_information": [],
+          "entry_csv_attachment_file_name": "entry-details"
+        }
+      },
+      "confirmations": {
+        "1": {
+          "name": "Repair Request Successfully Submitted",
+          "type": "message",
+          "message": "<h1>Repair Request Successfully Submitted<\/h1>\r\n<p>Thank you for choosing <strong>Nocturnix Mobile Repair<\/strong>.<\/p>\r\n<p>Your repair request has been successfully submitted and is now being reviewed by our team.<\/p>\r\n<h3>What happens next?<\/h3>\r\n<ul>\r\n<li>\r\n<p>We will review the information and photos you provided.<\/p>\r\n<\/li>\r\n<li>\r\n<p>If additional information is needed, we will contact you using your preferred contact method.<\/p>\r\n<\/li>\r\n<li>\r\n<p>If your device appears repairable, we will discuss the next steps, estimated pricing, parts availability, and scheduling.<\/p>\r\n<\/li>\r\n<\/ul>\r\n<p><strong>Please note:<\/strong> Submitting this form is a request for repair and does not guarantee repair services or a final estimate.<\/p>\r\n<p>We appreciate the opportunity to earn your business and look forward to assisting you.<\/p>\r\n<p><strong>Nocturnix Mobile Repair<\/strong><br \/>Professional Mobile Device Repair<\/p>\r\n<p class=\"PDq2pG_selectionAnchorContainer\" data-start=\"2143\" data-end=\"2169\">Need immediate assistance?<\/p>\r\n<p data-start=\"2171\" data-end=\"2203\">Call or Text:<br \/><strong data-start=\"2185\" data-end=\"2203\">(802) 449-2171<\/strong><\/p>\r\n<p data-start=\"2205\" data-end=\"2207\">or<\/p>\r\n<p data-start=\"2209\" data-end=\"2228\">Visit our <a href=\"https:\/\/nocturnixrepair.com\/faq\/\">FAQ<\/a> page<\/p>",
+          "message_scroll": "1",
+          "page": "",
+          "page_url_parameters": "",
+          "redirect": "",
+          "message_entry_preview_style": "basic"
+        }
+      },
+      "antispam_v3": "1",
+      "store_spam_entries": "1",
+      "anti_spam": {
+        "time_limit": {
+          "enable": "1",
+          "duration": "2"
+        },
+        "filtering_store_spam": "1",
+        "country_filter": {
+          "action": "allow",
+          "country_codes": [],
+          "message": "Sorry, this form does not accept submissions from your country."
+        },
+        "keyword_filter": {
+          "message": "Sorry, your message can't be submitted because it contains prohibited words."
+        }
+      }
+    },
+    "providers": {
+      "constant-contact-v3": []
+    },
+    "payments": {
+      "square": {
+        "payment_description": "",
+        "buyer_email": "",
+        "billing_name": "",
+        "billing_address": "",
+        "recurring": [
+          {
+            "name": "Plan Name #1",
+            "phase_cadence": "yearly",
+            "customer_email": "",
+            "customer_name": "",
+            "customer_address": ""
+          }
+        ]
+      }
+    },
+    "meta": {
+      "template": "simple-contact-form-template"
+    }
+  }
+]

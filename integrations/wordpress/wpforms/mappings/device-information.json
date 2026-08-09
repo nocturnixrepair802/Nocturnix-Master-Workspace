@@ -1,0 +1,67 @@
+{
+  "form_id": "1321",
+  "form_title": "TEMPLATE - Device Information",
+  "version": 1,
+  "fields": {
+    "4": {
+      "wpforms_label": "Device Type",
+      "nocturnix_field": "device_type"
+    },
+    "5": {
+      "wpforms_label": "Manufacturer",
+      "nocturnix_field": "manufacturer"
+    },
+    "147": {
+      "wpforms_label": "Serial Number",
+      "nocturnix_field": "serial_number"
+    },
+    "148": {
+      "wpforms_label": "IMEI",
+      "nocturnix_field": "imei"
+    },
+    "149": {
+      "wpforms_label": "Service Tag / Asset Tag",
+      "nocturnix_field": "asset_tag"
+    },
+    "178": {
+      "wpforms_label": "Phone Storage",
+      "nocturnix_field": "storage"
+    },
+    "177": {
+      "wpforms_label": "Device Color",
+      "nocturnix_field": "color"
+    },
+    "43": {
+      "wpforms_label": "Phone Carrier",
+      "nocturnix_field": "carrier"
+    },
+    "47": {
+      "wpforms_label": "Powers On?",
+      "nocturnix_field": "powers_on"
+    },
+    "49": {
+      "wpforms_label": "Touchscreen Responding?",
+      "nocturnix_field": "touchscreen_status"
+    },
+    "50": {
+      "wpforms_label": "Touch ID Working?",
+      "nocturnix_field": "touch_id_status"
+    },
+    "51": {
+      "wpforms_label": "Face ID Working?",
+      "nocturnix_field": "face_id_status"
+    },
+    "52": {
+      "wpforms_label": "Cellular Service Issue?",
+      "nocturnix_field": "cellular_issue"
+    },
+    "53": {
+      "wpforms_label": "Water Damage?",
+      "nocturnix_field": "liquid_damage"
+    },
+    "54": {
+      "wpforms_label": "Passcode Available?",
+      "nocturnix_field": "passcode_available"
+    }
+  }
+}
