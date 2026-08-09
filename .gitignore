@@ -12,3 +12,8 @@ Backups/*.zip
 __pycache__/
 .pytest_cache/
 .pyright/
+
+# Local operational databases
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm

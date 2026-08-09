@@ -344,15 +344,17 @@ function navigate(pathname) {
   const normalized =
     normalizePath(pathname);
 
+  const targetHash =
+    `#${normalized}`;
+
   if (
-    window.location.pathname !==
-    normalized
+    window.location.hash !==
+    targetHash
   ) {
-    window.history.pushState(
-      {},
-      "",
-      normalized
-    );
+    window.location.hash =
+      targetHash;
+
+    return;
   }
 
   loadModule(
@@ -387,7 +389,6 @@ function handleNavigation(event) {
   );
 }
 
-
 function initializeRouter() {
   document.addEventListener(
     "click",
@@ -395,35 +396,46 @@ function initializeRouter() {
   );
 
   window.addEventListener(
-    "popstate",
+    "hashchange",
     () => {
+      const hashPath =
+        window.location.hash
+          .replace(/^#/, "");
+
+      const path =
+        normalizePath(
+          hashPath
+        );
+
       loadModule(
-        window.location.pathname
+        path
       );
     }
   );
 
+  const hashPath =
+    window.location.hash
+      .replace(/^#/, "");
+
   let initialPath =
     normalizePath(
-      window.location.pathname
+      hashPath
     );
 
   if (!routes[initialPath]) {
     initialPath =
       defaultRoute;
 
-    window.history.replaceState(
-      {},
-      "",
-      initialPath
-    );
+    window.location.hash =
+      `#${initialPath}`;
+
+    return;
   }
 
   loadModule(
     initialPath
   );
 }
-
 
 document.addEventListener(
   "DOMContentLoaded",

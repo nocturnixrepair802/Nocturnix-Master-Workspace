@@ -91,3 +91,69 @@
   cursor: wait;
   opacity: 0.65;
 }
+
+/* =====================================================
+   Customer Search
+===================================================== */
+
+.customer-search-section {
+    margin-bottom: 1.5rem;
+}
+
+.customer-search-results {
+    margin-top: 0.75rem;
+    border: 1px solid var(--border-color, #d7d7d7);
+    border-radius: 8px;
+    overflow: hidden;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.customer-search-result {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 0;
+    border-bottom: 1px solid var(--border-color, #d7d7d7);
+    text-align: left;
+    cursor: pointer;
+    background: transparent;
+}
+
+.customer-search-result:last-child {
+    border-bottom: 0;
+}
+
+.customer-search-result:hover {
+    background: rgba(127, 127, 127, 0.08);
+}
+
+.customer-search-result strong {
+    margin-bottom: 0.2rem;
+}
+
+.customer-search-result span,
+.customer-search-result small {
+    opacity: 0.75;
+}
+
+.customer-search-message {
+    padding: 1rem;
+}
+
+.selected-customer-panel {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color, #d7d7d7);
+    border-radius: 8px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.selected-customer-panel[hidden] {
+    display: none;
+}

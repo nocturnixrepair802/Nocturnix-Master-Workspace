@@ -1,177 +1,155 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import (
+    UTC,
+    datetime,
+)
 from typing import Any
-
-import pandas as pd
 
 from api.schemas import (
     CustomerCreateRequest,
     CustomerDeviceCreateRequest,
     RepairCreateRequest,
 )
-from app import Application
+from persistence.operations_db import (
+    OperationsDatabase,
+)
 
 
-def _next_numeric_id(
-    table: pd.DataFrame,
-    column: str,
-    *,
-    start: int,
-) -> int:
-    if table.empty or column not in table.columns:
-        return start
-
-    raw_values = table.loc[:, column]
-
-    if isinstance(raw_values, pd.DataFrame):
-        raw_values = raw_values.iloc[:, 0]
-
-    source = pd.Series(
-        raw_values,
-        index=table.index,
-        dtype="object",
-    )
-
-    numeric = pd.to_numeric(
-        source,
-        errors="coerce",
-    )
-
-    numeric_series = pd.Series(
-        numeric,
-        index=source.index,
-        dtype="float64",
-    ).dropna()
-
-    if numeric_series.empty:
-        return start
-
-    maximum = float(numeric_series.max())
-
-    return int(maximum) + 1
+def utc_now() -> str:
+    return datetime.now(UTC).isoformat()
 
 
 class RepairApiOperations:
     def __init__(
         self,
-        application: Application,
+        database: OperationsDatabase,
     ) -> None:
-        self.application = application
+        self.database = database
 
     def create_customer(
         self,
         request: CustomerCreateRequest,
     ) -> dict[str, Any]:
-        repository = self.application.repositories.customers
-
-        customer_id = _next_numeric_id(
-            repository.table,
-            "Customer ID",
-            start=1000,
+        customer_id = self.database.next_id(
+            table="customers",
+            column="customer_id",
+            prefix="CUS",
+            width=6,
         )
 
-        now = datetime.now()
+        now = utc_now()
 
         record: dict[str, Any] = {
-            "Customer ID": customer_id,
-            "Customer Type": request.customer_type,
-            "First Name": request.first_name,
-            "Last Name": request.last_name,
-            "Business Name": request.business_name,
-            "Email": request.email,
-            "Mobile Phone": request.mobile_phone,
-            "Home Phone": "",
-            "Work Phone": "",
-            "Preferred Contact": "Mobile Phone",
-            "Billing Address": "",
-            "Shipping Address": "",
-            "Tax Exempt": False,
-            "Active": True,
-            "Date Created": now,
-            "Last Modified": now,
-            "Notes": request.notes,
+            "customer_id": customer_id,
+            "customer_type": request.customer_type,
+            "first_name": request.first_name,
+            "last_name": request.last_name,
+            "business_name": request.business_name,
+            "email": request.email,
+            "mobile_phone": request.mobile_phone,
+            "home_phone": "",
+            "work_phone": "",
+            "preferred_contact": "Mobile Phone",
+            "billing_address": "",
+            "shipping_address": "",
+            "tax_exempt": 0,
+            "active": 1,
+            "date_created": now,
+            "last_modified": now,
+            "notes": request.notes,
         }
 
-        repository.append(record)
-
-        return record
+        return self.database.create_customer(record)
 
     def create_customer_device(
         self,
         request: CustomerDeviceCreateRequest,
     ) -> dict[str, Any]:
-        customer = self.application.services.customers.get(request.customer_id)
+        customer_id = str(request.customer_id)
+
+        customer = self.database.get_customer(customer_id)
 
         if customer is None:
-            raise LookupError(f"Customer {request.customer_id!r} does not exist.")
+            raise LookupError(f"Customer {customer_id!r} does not exist.")
 
-        repository = self.application.repositories.customer_devices
-
-        device_id = _next_numeric_id(
-            repository.table,
-            "Device ID",
-            start=1000,
+        device_id = self.database.next_id(
+            table=("customer_devices"),
+            column="device_id",
+            prefix="CDEV",
+            width=6,
         )
 
         record: dict[str, Any] = {
-            "Device ID": device_id,
-            "Customer ID": request.customer_id,
-            "Device Type": request.device_type,
-            "Manufacturer": request.manufacturer,
-            "Model": request.model,
-            "Serial Number": request.serial_number,
-            "IMEI / Serial Number": request.serial_number,
-            "Notes": request.notes,
+            "device_id": device_id,
+            "customer_id": customer_id,
+            "catalog_device_id": request.catalog_device_id,
+            "manufacturer": request.manufacturer,
+            "device_family": request.device_type,
+            "device_model": request.model,
+            "serial_number": request.serial_number,
+            "imei_service_tag": request.serial_number,
+            "color": "",
+            "storage": "",
+            "carrier": "",
+            "purchase_date": None,
+            "warranty_expiration": None,
+            "active": 1,
+            "notes": request.notes,
         }
 
-        repository.append(record)
-
-        return record
+        return self.database.create_customer_device(record)
 
     def create_repair(
         self,
         request: RepairCreateRequest,
     ) -> dict[str, Any]:
-        customer = self.application.services.customers.get(request.customer_id)
+        customer_id = str(request.customer_id)
+
+        device_id = str(request.device_id)
+
+        customer = self.database.get_customer(customer_id)
 
         if customer is None:
-            raise LookupError(f"Customer {request.customer_id!r} does not exist.")
+            raise LookupError(f"Customer {customer_id!r} does not exist.")
 
-        device = self.application.services.customer_devices.get(request.device_id)
+        device = self.database.get_customer_device(device_id)
 
         if device is None:
-            raise LookupError(f"Device {request.device_id!r} does not exist.")
+            raise LookupError(f"Device {device_id!r} does not exist.")
 
-        device_customer_id = device.get("Customer ID")
-
-        if device_customer_id != request.customer_id:
+        if str(device["customer_id"]) != customer_id:
             raise ValueError(
                 "The selected device does not belong to the selected customer."
             )
 
-        repository = self.application.repositories.repairs
-
-        ticket_id = _next_numeric_id(
-            repository.table,
-            "Ticket ID",
-            start=1000,
+        ticket_id = self.database.next_id(
+            table="repair_tickets",
+            column="ticket_id",
+            prefix="RPR",
+            width=6,
         )
 
-        now = datetime.now()
+        now = utc_now()
 
         record: dict[str, Any] = {
-            "Ticket ID": ticket_id,
-            "Customer ID": request.customer_id,
-            "Device ID": request.device_id,
-            "Repair Status": request.repair_status,
-            "Problem Description": (request.problem_description),
-            "Technician Notes": (request.technician_notes),
-            "Estimated Cost": (request.estimated_cost),
-            "Date Created": now,
-            "Last Modified": now,
+            "ticket_id": ticket_id,
+            "customer_id": customer_id,
+            "device_id": device_id,
+            "repair_status": request.repair_status,
+            "intake_date": now,
+            "technician": "Ryan Brown",
+            "priority": "Normal",
+            "due_date": "",
+            "problem_description": request.problem_description,
+            "diagnosis": "",
+            "estimated_cost": request.estimated_cost,
+            "final_cost": None,
+            "date_completed": None,
+            "date_picked_up": None,
+            "warranty": 0,
+            "notes": request.technician_notes,
+            "last_modified": now,
         }
 
-        repository.append(record)
-
-        return record
+        return self.database.create_repair(record)
