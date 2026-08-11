@@ -37,6 +37,18 @@ class SquarePayment:
 
 
 @dataclass(frozen=True)
+class SquareRefund:
+    refund_id: str
+    payment_id: str
+    status: str
+    amount: float
+    currency: str
+    reason: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True)
 class SquareTerminalCheckout:
     checkout_id: str
     status: str
@@ -350,7 +362,6 @@ class SquareService:
 
         return self._terminal_checkout_from_square(checkout)
 
-
     # ---------------------------------------------------------
     # TERMINAL RESULT HELPERS
     # ---------------------------------------------------------
@@ -483,4 +494,80 @@ class SquareService:
             currency=self._money_currency(amount_money),
             receipt_url=str(payment.receipt_url or ""),
             source_type=("Card" if payment.card_details is not None else ""),
+        )
+    # ---------------------------------------------------------
+    # REFUNDS
+    # ---------------------------------------------------------
+
+    def refund_payment(
+        self,
+        *,
+        payment_id: str,
+        amount: float,
+        reason: str = "",
+    ) -> SquareRefund:
+        payment_id = str(payment_id).strip()
+
+        if not payment_id:
+            raise ValueError("Square payment ID is required.")
+
+        cents = self._amount_to_cents(amount)
+
+        refund_reason = reason.strip() or "Nocturnix repair payment refund"
+
+        response = self.client.refunds.refund_payment(
+            idempotency_key=str(uuid.uuid4()),
+            amount_money={
+                "amount": cents,
+                "currency": "USD",
+            },
+            payment_id=payment_id,
+            reason=refund_reason,
+        )
+
+        refund = response.refund
+
+        if refund is None:
+            raise RuntimeError("Square did not return a refund.")
+
+        amount_money = refund.amount_money
+
+        return SquareRefund(
+            refund_id=str(refund.id or ""),
+            payment_id=str(refund.payment_id or ""),
+            status=str(refund.status or ""),
+            amount=self._money_to_float(amount_money),
+            currency=self._money_currency(amount_money),
+            reason=str(refund.reason or ""),
+            created_at=str(refund.created_at or ""),
+            updated_at=str(refund.updated_at or ""),
+        )
+
+    def get_refund(
+        self,
+        refund_id: str,
+    ) -> SquareRefund:
+        refund_id = str(refund_id).strip()
+
+        if not refund_id:
+            raise ValueError("Square refund ID is required.")
+
+        response = self.client.refunds.get(refund_id=refund_id)
+
+        refund = response.refund
+
+        if refund is None:
+            raise RuntimeError("Square did not return the requested refund.")
+
+        amount_money = refund.amount_money
+
+        return SquareRefund(
+            refund_id=str(refund.id or ""),
+            payment_id=str(refund.payment_id or ""),
+            status=str(refund.status or ""),
+            amount=self._money_to_float(amount_money),
+            currency=self._money_currency(amount_money),
+            reason=str(refund.reason or ""),
+            created_at=str(refund.created_at or ""),
+            updated_at=str(refund.updated_at or ""),
         )
