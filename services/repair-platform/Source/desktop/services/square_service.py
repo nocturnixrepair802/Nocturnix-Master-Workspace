@@ -5,6 +5,7 @@ import uuid
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 from square import Square
@@ -13,6 +14,7 @@ from square.environment import SquareEnvironment
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 load_dotenv(PROJECT_ROOT / ".env")
+
 
 @dataclass(frozen=True)
 class SquareLocation:
@@ -34,6 +36,20 @@ class SquarePayment:
     source_type: str
 
 
+@dataclass(frozen=True)
+class SquareTerminalCheckout:
+    checkout_id: str
+    status: str
+    amount: float
+    currency: str
+    device_id: str
+    payment_ids: list[str]
+    reference_id: str
+    created_at: str
+    updated_at: str
+    cancel_reason: str
+
+
 class SquareService:
     SANDBOX_CARD_SOURCE_ID = "cnon:card-nonce-ok"
 
@@ -53,6 +69,11 @@ class SquareService:
             "",
         ).strip()
 
+        self.terminal_device_id = os.getenv(
+            "SQUARE_TERMINAL_DEVICE_ID",
+            "",
+        ).strip()
+
         if not self.access_token:
             raise RuntimeError("SQUARE_ACCESS_TOKEN is not configured.")
 
@@ -68,7 +89,9 @@ class SquareService:
     # LOCATION
     # ---------------------------------------------------------
 
-    def list_locations(self) -> list[SquareLocation]:
+    def list_locations(
+        self,
+    ) -> list[SquareLocation]:
         response = self.client.locations.list()
 
         locations: list[SquareLocation] = []
@@ -86,7 +109,9 @@ class SquareService:
 
         return locations
 
-    def verify_connection(self) -> SquareLocation:
+    def verify_connection(
+        self,
+    ) -> SquareLocation:
         locations = self.list_locations()
 
         if not locations:
@@ -125,8 +150,49 @@ class SquareService:
 
         return cents
 
+    @staticmethod
+    def _money_to_float(
+        money: object,
+    ) -> float:
+        if money is None:
+            return 0.0
+
+        amount = getattr(
+            money,
+            "amount",
+            0,
+        )
+
+        try:
+            cents = int(amount or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+        return round(
+            cents / 100,
+            2,
+        )
+
+    @staticmethod
+    def _money_currency(
+        money: object,
+    ) -> str:
+        if money is None:
+            return "USD"
+
+        currency = getattr(
+            money,
+            "currency",
+            None,
+        )
+
+        if currency is None:
+            return "USD"
+
+        return str(currency)
+
     # ---------------------------------------------------------
-    # SANDBOX PAYMENT
+    # SANDBOX DIRECT PAYMENT
     # ---------------------------------------------------------
 
     def create_sandbox_card_payment(
@@ -172,11 +238,9 @@ class SquareService:
         if amount_money is not None and amount_money.currency is not None:
             returned_currency = str(amount_money.currency)
 
-        card_details = payment.card_details
-
         source_type = ""
 
-        if card_details is not None:
+        if payment.card_details is not None:
             source_type = "Card"
 
         return SquarePayment(
@@ -190,4 +254,233 @@ class SquareService:
             currency=returned_currency,
             receipt_url=str(payment.receipt_url or ""),
             source_type=source_type,
+        )
+
+    # ---------------------------------------------------------
+    # TERMINAL CONFIGURATION
+    # ---------------------------------------------------------
+
+    def require_terminal_device_id(
+        self,
+    ) -> str:
+        if not self.terminal_device_id:
+            raise RuntimeError("SQUARE_TERMINAL_DEVICE_ID is not configured.")
+
+        return self.terminal_device_id
+
+    # ---------------------------------------------------------
+    # TERMINAL CHECKOUT
+    # ---------------------------------------------------------
+
+    def create_terminal_checkout(
+        self,
+        *,
+        amount: float,
+        repair_id: str,
+        note: str = "",
+        device_id: str = "",
+    ) -> SquareTerminalCheckout:
+        cents = self._amount_to_cents(amount)
+
+        selected_device_id = device_id.strip() or self.require_terminal_device_id()
+
+        checkout_note = note.strip() or f"Nocturnix repair {repair_id}"
+
+        idempotency_key = str(uuid.uuid4())
+
+        response = self.client.terminal.checkouts.create(
+            idempotency_key=idempotency_key,
+            checkout={
+                "amount_money": {
+                    "amount": cents,
+                    "currency": "USD",
+                },
+                "device_options": {
+                    "device_id": selected_device_id,
+                },
+                "reference_id": repair_id,
+                "note": checkout_note,
+            },
+        )
+
+        checkout = response.checkout
+
+        if checkout is None:
+            raise RuntimeError("Square did not return a Terminal checkout.")
+
+        return self._terminal_checkout_from_square(checkout)
+
+    def get_terminal_checkout(
+        self,
+        checkout_id: str,
+    ) -> SquareTerminalCheckout:
+        checkout_id = str(checkout_id).strip()
+
+        if not checkout_id:
+            raise ValueError("Terminal checkout ID is required.")
+
+        response = self.client.terminal.checkouts.get(checkout_id=checkout_id)
+
+        checkout = response.checkout
+
+        if checkout is None:
+            raise RuntimeError(
+                "Square did not return the requested " "Terminal checkout."
+            )
+
+        return self._terminal_checkout_from_square(checkout)
+
+    def cancel_terminal_checkout(
+        self,
+        checkout_id: str,
+    ) -> SquareTerminalCheckout:
+        checkout_id = str(checkout_id).strip()
+
+        if not checkout_id:
+            raise ValueError("Terminal checkout ID is required.")
+
+        response = self.client.terminal.checkouts.cancel(checkout_id=checkout_id)
+
+        checkout = response.checkout
+
+        if checkout is None:
+            raise RuntimeError(
+                "Square did not return the cancelled " "Terminal checkout."
+            )
+
+        return self._terminal_checkout_from_square(checkout)
+
+
+    # ---------------------------------------------------------
+    # TERMINAL RESULT HELPERS
+    # ---------------------------------------------------------
+
+    def _terminal_checkout_from_square(
+        self,
+        checkout: Any,
+    ) -> SquareTerminalCheckout:
+        amount_money = getattr(
+            checkout,
+            "amount_money",
+            None,
+        )
+
+        device_options = getattr(
+            checkout,
+            "device_options",
+            None,
+        )
+
+        device_id = ""
+
+        if device_options is not None:
+            device_id = str(
+                getattr(
+                    device_options,
+                    "device_id",
+                    "",
+                )
+                or ""
+            )
+
+        payment_ids_raw = getattr(
+            checkout,
+            "payment_ids",
+            None,
+        )
+
+        payment_ids: list[str] = []
+
+        if payment_ids_raw:
+            payment_ids = [
+                str(payment_id) for payment_id in payment_ids_raw if payment_id
+            ]
+
+        cancel_reason = str(
+            getattr(
+                checkout,
+                "cancel_reason",
+                "",
+            )
+            or ""
+        )
+
+        return SquareTerminalCheckout(
+            checkout_id=str(
+                getattr(
+                    checkout,
+                    "id",
+                    "",
+                )
+                or ""
+            ),
+            status=str(
+                getattr(
+                    checkout,
+                    "status",
+                    "",
+                )
+                or ""
+            ),
+            amount=self._money_to_float(amount_money),
+            currency=self._money_currency(amount_money),
+            device_id=device_id,
+            payment_ids=payment_ids,
+            reference_id=str(
+                getattr(
+                    checkout,
+                    "reference_id",
+                    "",
+                )
+                or ""
+            ),
+            created_at=str(
+                getattr(
+                    checkout,
+                    "created_at",
+                    "",
+                )
+                or ""
+            ),
+            updated_at=str(
+                getattr(
+                    checkout,
+                    "updated_at",
+                    "",
+                )
+                or ""
+            ),
+            cancel_reason=cancel_reason,
+        )
+
+    # ---------------------------------------------------------
+    # PAYMENT LOOKUP
+    # ---------------------------------------------------------
+
+    def get_payment(
+        self,
+        payment_id: str,
+    ) -> SquarePayment:
+        payment_id = str(payment_id).strip()
+
+        if not payment_id:
+            raise ValueError("Square payment ID is required.")
+
+        response = self.client.payments.get(payment_id=payment_id)
+
+        payment = response.payment
+
+        if payment is None:
+            raise RuntimeError("Square did not return the requested payment.")
+
+        amount_money = payment.amount_money
+
+        return SquarePayment(
+            payment_id=str(payment.id or ""),
+            order_id=str(payment.order_id or ""),
+            status=str(payment.status or ""),
+            amount=self._money_to_float(amount_money),
+            currency=self._money_currency(amount_money),
+            receipt_url=str(payment.receipt_url or ""),
+            source_type=("Card" if payment.card_details is not None else ""),
         )

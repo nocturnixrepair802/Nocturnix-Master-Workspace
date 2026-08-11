@@ -370,7 +370,7 @@ class RepairDetailsPanel(QWidget):
         self.cash_payment_button = QPushButton("Record Cash Payment")
         self.cash_payment_button.clicked.connect(self._record_cash_payment)
 
-        self.square_payment_button = QPushButton("Take Payment with Square")
+        self.square_payment_button = QPushButton("Take Payment with Square Terminal")
         self.square_payment_button.clicked.connect(self._take_square_payment)
 
         payment_actions.addWidget(self.cash_payment_button)
@@ -979,8 +979,8 @@ class RepairDetailsPanel(QWidget):
 
         amount, accepted = QInputDialog.getDouble(
             self,
-            "Square Sandbox Payment",
-            "Sandbox payment amount:",
+            "Square Terminal Payment",
+            "Terminal payment amount:",
             min(
                 balance_due,
                 1.00,
@@ -995,15 +995,15 @@ class RepairDetailsPanel(QWidget):
 
         answer = QMessageBox.question(
             self,
-            "Confirm Square Sandbox Payment",
+            "Confirm Square Terminal Payment",
             (
-                f"Create a Square Sandbox card payment "
-                f"for {self._currency(amount)}?\n\n"
+                f"Send {self._currency(amount)} "
+                "to the Square Terminal?\n\n"
                 f"Repair: {self.ticket_id}\n"
                 f"Current balance: "
                 f"{self._currency(balance_due)}\n\n"
-                "This uses Square's Sandbox test card source. "
-                "No real card will be charged."
+                "This is using the configured "
+                "Square Sandbox Terminal device."
             ),
             (QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No),
             QMessageBox.StandardButton.No,
@@ -1015,63 +1015,174 @@ class RepairDetailsPanel(QWidget):
         try:
             square_service = SquareService()
 
-            square_payment = square_service.create_sandbox_card_payment(
+            checkout = square_service.create_terminal_checkout(
                 amount=amount,
                 repair_id=self.ticket_id,
-            )
-
-            square_status = square_payment.status.strip().upper()
-
-            if square_status != "COMPLETED":
-                QMessageBox.warning(
-                    self,
-                    "Square Payment Not Completed",
-                    (
-                        "Square created the Sandbox payment, "
-                        "but its status is not COMPLETED.\n\n"
-                        f"Square Payment ID: "
-                        f"{square_payment.payment_id}\n"
-                        f"Status: "
-                        f"{square_payment.status}\n\n"
-                        "The payment was not recorded as a "
-                        "completed local repair payment."
-                    ),
-                )
-                return
-
-            payment = self.payment_service.record_square_payment(
-                self.ticket_id,
-                amount=square_payment.amount,
-                square_payment_id=(square_payment.payment_id),
-                square_order_id=(square_payment.order_id),
-                square_receipt_url=(square_payment.receipt_url),
-                payment_status="Completed",
-                reference_number=(square_payment.payment_id),
-                notes=("Square Sandbox card payment."),
             )
 
         except Exception as exc:
             QMessageBox.critical(
                 self,
-                "Square Payment Failed",
+                "Square Terminal Checkout Failed",
+                str(exc),
+            )
+            return
+
+        checkout_id = checkout.checkout_id
+
+        if not checkout_id:
+            QMessageBox.critical(
+                self,
+                "Square Terminal Checkout Failed",
+                ("Square created a Terminal checkout " "without returning a checkout ID."),
+            )
+            return
+
+        QMessageBox.information(
+            self,
+            "Square Terminal Checkout Created",
+            (
+                "The Terminal checkout was created.\n\n"
+                f"Checkout ID: {checkout_id}\n"
+                f"Status: {checkout.status}\n"
+                f"Amount: {self._currency(checkout.amount)}\n\n"
+                "The application will now check the "
+                "Terminal checkout status."
+            ),
+        )
+
+        try:
+            checkout = square_service.get_terminal_checkout(checkout_id)
+
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Square Terminal Status Failed",
+                str(exc),
+            )
+            return
+
+        checkout_status = checkout.status.strip().upper()
+
+        if checkout_status not in {
+            "COMPLETED",
+            "CANCELED",
+            "CANCELLED",
+            "FAILED",
+        }:
+            QMessageBox.information(
+                self,
+                "Square Terminal Waiting",
+                (
+                    "The Terminal checkout has not "
+                    "completed yet.\n\n"
+                    f"Checkout ID: {checkout.checkout_id}\n"
+                    f"Status: {checkout.status}\n\n"
+                    "Complete the payment on the simulated "
+                    "Square Terminal, then run the payment "
+                    "again after we add automatic polling."
+                ),
+            )
+            return
+
+        if checkout_status in {
+            "CANCELED",
+            "CANCELLED",
+            "FAILED",
+        }:
+            QMessageBox.warning(
+                self,
+                "Square Terminal Payment Not Completed",
+                (
+                    "The Terminal checkout did not complete.\n\n"
+                    f"Checkout ID: {checkout.checkout_id}\n"
+                    f"Status: {checkout.status}\n"
+                    f"Reason: {checkout.cancel_reason or 'Not provided'}"
+                ),
+            )
+            return
+
+        if not checkout.payment_ids:
+            QMessageBox.warning(
+                self,
+                "Square Payment Missing",
+                (
+                    "The Terminal checkout completed, "
+                    "but Square did not return a payment ID.\n\n"
+                    f"Checkout ID: {checkout.checkout_id}"
+                ),
+            )
+            return
+
+        square_payment_id = checkout.payment_ids[0]
+
+        try:
+            square_payment = square_service.get_payment(square_payment_id)
+
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Square Payment Lookup Failed",
+                str(exc),
+            )
+            return
+
+        square_status = square_payment.status.strip().upper()
+
+        if square_status != "COMPLETED":
+            QMessageBox.warning(
+                self,
+                "Square Payment Not Completed",
+                (
+                    "The Terminal checkout completed, "
+                    "but the resulting Square payment "
+                    "is not COMPLETED.\n\n"
+                    f"Square Payment ID: "
+                    f"{square_payment.payment_id}\n"
+                    f"Status: "
+                    f"{square_payment.status}"
+                ),
+            )
+            return
+
+        try:
+            payment = self.payment_service.record_square_payment(
+                self.ticket_id,
+                amount=square_payment.amount,
+                square_payment_id=(square_payment.payment_id),
+                square_order_id=(square_payment.order_id),
+                square_terminal_checkout_id=(checkout.checkout_id),
+                square_receipt_url=(square_payment.receipt_url),
+                payment_status="Completed",
+                reference_number=(square_payment.payment_id),
+                notes=("Square Terminal Sandbox payment."),
+            )
+
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Payment Recording Failed",
                 str(exc),
             )
             return
 
         QMessageBox.information(
             self,
-            "Square Sandbox Payment Complete",
+            "Square Terminal Payment Complete",
             (
                 f"{payment['payment_id']} "
                 "was recorded successfully.\n\n"
                 f"Amount: "
                 f"{self._currency(square_payment.amount)}\n"
+                f"Checkout ID: "
+                f"{checkout.checkout_id}\n"
                 f"Square Payment ID: "
                 f"{square_payment.payment_id}"
             ),
         )
 
         self.load_repair(self.ticket_id)
+
     def _update_payment_buttons(
         self,
     ) -> None:
