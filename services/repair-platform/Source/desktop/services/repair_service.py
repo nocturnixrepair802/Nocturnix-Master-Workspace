@@ -1399,12 +1399,18 @@ class RepairService:
         ticket_id: str,
         values: dict[str, Any],
     ) -> dict[str, Any]:
-        current = self.get_repair(ticket_id)
+        current = self.get_repair(
+            ticket_id
+        )
 
         if current is None:
-            raise ValueError(f"Repair not found: " f"{ticket_id}")
+            raise ValueError(
+                f"Repair not found: {ticket_id}"
+            )
 
-        old_status = str(current["repair_status"])
+        old_status = str(
+            current["repair_status"]
+        )
 
         repair_status = str(
             values.get(
@@ -1458,28 +1464,146 @@ class RepairService:
             or ""
         ).strip()
 
-        warranty = 1 if values.get("warranty") else 0
+        warranty = (
+            1
+            if values.get(
+                "warranty"
+            )
+            else 0
+        )
 
-        estimated_cost = self._optional_float(values.get("estimated_cost"))
+        estimated_cost = self._optional_float(
+            values.get(
+                "estimated_cost"
+            )
+        )
 
-        final_cost = self._optional_float(values.get("final_cost"))
+        final_cost = self._optional_float(
+            values.get(
+                "final_cost"
+            )
+        )
 
         if not problem_description:
-            raise ValueError("Problem Description is required.")
+            raise ValueError(
+                "Problem Description is required."
+            )
 
         if not technician:
-            raise ValueError("Technician is required.")
+            raise ValueError(
+                "Technician is required."
+            )
 
-        now = datetime.now(UTC).isoformat()
+        if (
+            repair_status == "Picked Up"
+            and not warranty
+            and final_cost is None
+        ):
+            raise ValueError(
+                "Final Cost is required before "
+                "a non-warranty repair can be "
+                "marked Picked Up."
+            )
 
-        status_event_id: str | None = None
+        now = datetime.now(
+            UTC
+        ).isoformat()
 
-        if repair_status != old_status:
-            status_event_id = self._next_event_id()
+        date_completed = (
+            current["date_completed"]
+        )
+
+        date_picked_up = (
+            current["date_picked_up"]
+        )
+
+        completion_statuses = {
+            "Repair Complete",
+            "Ready for Pickup",
+            "Completed",
+            "Picked Up",
+        }
+
+        if (
+            repair_status
+            in completion_statuses
+            and not date_completed
+        ):
+            date_completed = now
+
+        if (
+            repair_status == "Picked Up"
+            and not date_picked_up
+        ):
+            date_picked_up = now
+
+        status_changed = (
+            repair_status != old_status
+        )
+
+        just_completed = (
+            old_status
+            not in completion_statuses
+            and repair_status
+            in completion_statuses
+        )
+
+        just_ready_for_pickup = (
+            old_status
+            != "Ready for Pickup"
+            and repair_status
+            == "Ready for Pickup"
+        )
+
+        just_picked_up = (
+            old_status
+            != "Picked Up"
+            and repair_status
+            == "Picked Up"
+        )
 
         self.create_write_backup()
 
         with self.connect() as connection:
+            event_rows = connection.execute(
+                """
+                SELECT event_id
+                FROM repair_events
+                """
+            ).fetchall()
+
+            highest_event_number = 0
+
+            for row in event_rows:
+                event_id = str(
+                    row["event_id"]
+                )
+
+                match = re.fullmatch(
+                    r"EVT(\d{6})",
+                    event_id,
+                )
+
+                if match is None:
+                    continue
+
+                highest_event_number = max(
+                    highest_event_number,
+                    int(
+                        match.group(1)
+                    ),
+                )
+
+            def next_event_id() -> str:
+                nonlocal highest_event_number
+
+                highest_event_number += 1
+
+                return (
+                    f"EVT"
+                    f"{highest_event_number:06d}"
+                )
+
             connection.execute(
                 """
                 UPDATE repair_tickets
@@ -1492,6 +1616,8 @@ class RepairService:
                     diagnosis = ?,
                     estimated_cost = ?,
                     final_cost = ?,
+                    date_completed = ?,
+                    date_picked_up = ?,
                     warranty = ?,
                     notes = ?,
                     last_modified = ?
@@ -1506,6 +1632,8 @@ class RepairService:
                     diagnosis,
                     estimated_cost,
                     final_cost,
+                    date_completed,
+                    date_picked_up,
                     warranty,
                     notes,
                     now,
@@ -1513,24 +1641,84 @@ class RepairService:
                 ),
             )
 
-            if status_event_id is not None:
+            if status_changed:
                 self._insert_repair_event(
                     connection,
-                    event_id=status_event_id,
+                    event_id=next_event_id(),
                     repair_id=ticket_id,
-                    event_type=("repair_status_changed"),
+                    event_type=(
+                        "repair_status_changed"
+                    ),
                     old_value=old_status,
                     new_value=repair_status,
-                    notes=("Repair status changed " "from desktop application."),
+                    notes=(
+                        "Repair status changed "
+                        "from desktop application."
+                    ),
+                    created_by=technician,
+                )
+
+            if just_completed:
+                self._insert_repair_event(
+                    connection,
+                    event_id=next_event_id(),
+                    repair_id=ticket_id,
+                    event_type=(
+                        "repair_completed"
+                    ),
+                    old_value=old_status,
+                    new_value=repair_status,
+                    notes=(
+                        "Repair lifecycle reached "
+                        "a completed state."
+                    ),
+                    created_by=technician,
+                )
+
+            if just_ready_for_pickup:
+                self._insert_repair_event(
+                    connection,
+                    event_id=next_event_id(),
+                    repair_id=ticket_id,
+                    event_type=(
+                        "repair_ready_for_pickup"
+                    ),
+                    old_value=old_status,
+                    new_value=repair_status,
+                    notes=(
+                        "Repair marked ready "
+                        "for customer pickup."
+                    ),
+                    created_by=technician,
+                )
+
+            if just_picked_up:
+                self._insert_repair_event(
+                    connection,
+                    event_id=next_event_id(),
+                    repair_id=ticket_id,
+                    event_type=(
+                        "repair_picked_up"
+                    ),
+                    old_value=old_status,
+                    new_value=repair_status,
+                    notes=(
+                        "Repair marked as picked up."
+                    ),
                     created_by=technician,
                 )
 
             connection.commit()
 
-        updated = self.get_repair(ticket_id)
+        updated = self.get_repair(
+            ticket_id
+        )
 
         if updated is None:
-            raise RuntimeError("Repair was updated but " "could not be reloaded.")
+            raise RuntimeError(
+                "Repair was updated but "
+                "could not be reloaded."
+            )
 
         return updated
 
