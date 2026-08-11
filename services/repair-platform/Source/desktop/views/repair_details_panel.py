@@ -4,7 +4,7 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QPageLayout, QPageSize, QTextDocument
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter
 from PySide6.QtWidgets import (
@@ -57,6 +57,15 @@ class RepairDetailsPanel(QWidget):
         self.current_repair: dict[str, Any] | None = None
         self.current_events: list[dict[str, Any]] = []
         self.current_payments: list[dict[str, Any]] = []
+
+        self.square_terminal_service: SquareService | None = None
+        self.square_terminal_checkout_id: str | None = None
+        self.square_terminal_poll_count = 0
+        self.square_terminal_max_polls = 30
+
+        self.square_terminal_timer = QTimer(self)
+        self.square_terminal_timer.setInterval(2000)
+        self.square_terminal_timer.timeout.connect(self._poll_terminal_checkout)
 
         self._build_ui()
         self.clear()
@@ -952,14 +961,29 @@ class RepairDetailsPanel(QWidget):
 
         self.load_repair(self.ticket_id)
 
-
     def _take_square_payment(
         self,
     ) -> None:
+        print("DEBUG: Square Terminal button clicked")
+
         if self.ticket_id is None:
+            print("DEBUG: ticket_id is None")
             return
 
-        summary = self.payment_service.payment_summary(self.ticket_id)
+        if self.square_terminal_timer.isActive():
+            QMessageBox.information(
+                self,
+                "Terminal Payment In Progress",
+                (
+                    "A Square Terminal payment is already "
+                    "being processed."
+                ),
+            )
+            return
+
+        summary = self.payment_service.payment_summary(
+            self.ticket_id
+        )
 
         balance_due = float(
             summary.get(
@@ -973,7 +997,10 @@ class RepairDetailsPanel(QWidget):
             QMessageBox.information(
                 self,
                 "No Balance Due",
-                ("This repair currently has " "no outstanding balance."),
+                (
+                    "This repair currently has "
+                    "no outstanding balance."
+                ),
             )
             return
 
@@ -1001,23 +1028,41 @@ class RepairDetailsPanel(QWidget):
                 "to the Square Terminal?\n\n"
                 f"Repair: {self.ticket_id}\n"
                 f"Current balance: "
-                f"{self._currency(balance_due)}\n\n"
-                "This is using the configured "
-                "Square Sandbox Terminal device."
+                f"{self._currency(balance_due)}"
             ),
-            (QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No),
+            (
+                QMessageBox.StandardButton.Yes
+                | QMessageBox.StandardButton.No
+            ),
             QMessageBox.StandardButton.No,
         )
 
-        if answer != QMessageBox.StandardButton.Yes:
+        if (
+            answer
+            != QMessageBox.StandardButton.Yes
+        ):
             return
 
         try:
+            print(
+                "DEBUG: creating Square Terminal checkout",
+                self.ticket_id,
+                amount,
+            )
+
             square_service = SquareService()
 
-            checkout = square_service.create_terminal_checkout(
-                amount=amount,
-                repair_id=self.ticket_id,
+            checkout = (
+                square_service.create_terminal_checkout(
+                    amount=amount,
+                    repair_id=self.ticket_id,
+                )
+            )
+
+            print(
+                "DEBUG: checkout created",
+                checkout.checkout_id,
+                checkout.status,
             )
 
         except Exception as exc:
@@ -1028,33 +1073,61 @@ class RepairDetailsPanel(QWidget):
             )
             return
 
-        checkout_id = checkout.checkout_id
-
-        if not checkout_id:
+        if not checkout.checkout_id:
             QMessageBox.critical(
                 self,
                 "Square Terminal Checkout Failed",
-                ("Square created a Terminal checkout " "without returning a checkout ID."),
+                (
+                    "Square created a Terminal checkout "
+                    "without returning a checkout ID."
+                ),
             )
             return
 
-        QMessageBox.information(
-            self,
-            "Square Terminal Checkout Created",
-            (
-                "The Terminal checkout was created.\n\n"
-                f"Checkout ID: {checkout_id}\n"
-                f"Status: {checkout.status}\n"
-                f"Amount: {self._currency(checkout.amount)}\n\n"
-                "The application will now check the "
-                "Terminal checkout status."
-            ),
+        self.square_terminal_service = square_service
+        self.square_terminal_checkout_id = (
+            checkout.checkout_id
+        )
+        self.square_terminal_poll_count = 0
+
+        self.square_payment_button.setEnabled(False)
+        self.square_payment_button.setText(
+            "Waiting for Square Terminal..."
         )
 
+        print("DEBUG: starting Terminal polling timer")
+
+        self.square_terminal_timer.start()
+
+    def _poll_terminal_checkout(
+        self,
+    ) -> None:
+        print(
+            "DEBUG: polling Terminal",
+            self.square_terminal_checkout_id,
+            self.square_terminal_poll_count,
+        )
+
+        if (
+            self.square_terminal_service is None
+            or self.square_terminal_checkout_id is None
+        ):
+            self._stop_terminal_polling()
+            return
+
+        self.square_terminal_poll_count += 1
+
         try:
-            checkout = square_service.get_terminal_checkout(checkout_id)
+            checkout = (
+                self.square_terminal_service
+                .get_terminal_checkout(
+                    self.square_terminal_checkout_id
+                )
+            )
 
         except Exception as exc:
+            self._stop_terminal_polling()
+
             QMessageBox.critical(
                 self,
                 "Square Terminal Status Failed",
@@ -1062,34 +1135,28 @@ class RepairDetailsPanel(QWidget):
             )
             return
 
-        checkout_status = checkout.status.strip().upper()
+        status = checkout.status.strip().upper()
 
-        if checkout_status not in {
-            "COMPLETED",
-            "CANCELED",
-            "CANCELLED",
-            "FAILED",
-        }:
-            QMessageBox.information(
-                self,
-                "Square Terminal Waiting",
-                (
-                    "The Terminal checkout has not "
-                    "completed yet.\n\n"
-                    f"Checkout ID: {checkout.checkout_id}\n"
-                    f"Status: {checkout.status}\n\n"
-                    "Complete the payment on the simulated "
-                    "Square Terminal, then run the payment "
-                    "again after we add automatic polling."
-                ),
-            )
+        print(
+            "DEBUG: Terminal status",
+            status,
+        )
+
+        self.square_payment_button.setText(
+            f"Square Terminal: {status or 'WAITING'}"
+        )
+
+        if status == "COMPLETED":
+            self._finish_terminal_payment(checkout)
             return
 
-        if checkout_status in {
+        if status in {
             "CANCELED",
             "CANCELLED",
             "FAILED",
         }:
+            self._stop_terminal_polling()
+
             QMessageBox.warning(
                 self,
                 "Square Terminal Payment Not Completed",
@@ -1097,29 +1164,65 @@ class RepairDetailsPanel(QWidget):
                     "The Terminal checkout did not complete.\n\n"
                     f"Checkout ID: {checkout.checkout_id}\n"
                     f"Status: {checkout.status}\n"
-                    f"Reason: {checkout.cancel_reason or 'Not provided'}"
+                    f"Reason: "
+                    f"{checkout.cancel_reason or 'Not provided'}"
                 ),
             )
             return
 
+        # PENDING, IN_PROGRESS, and other non-final states
+        # intentionally do nothing here.
+        # The QTimer will call this method again.
+
+        if (
+            self.square_terminal_poll_count
+            >= self.square_terminal_max_polls
+        ):
+            checkout_id = self.square_terminal_checkout_id
+
+            self._stop_terminal_polling()
+
+            QMessageBox.information(
+                self,
+                "Square Terminal Still Waiting",
+                (
+                    "The Terminal checkout is still pending "
+                    "after the polling window.\n\n"
+                    f"Checkout ID: {checkout_id}\n"
+                    f"Last status: {checkout.status}\n\n"
+                    "The payment has not been recorded locally."
+                ),
+            )
+
+    def _finish_terminal_payment(
+        self,
+        checkout: Any,
+    ) -> None:
+        if self.square_terminal_service is None or self.ticket_id is None:
+            self._stop_terminal_polling()
+            return
+
         if not checkout.payment_ids:
+            self._stop_terminal_polling()
+
             QMessageBox.warning(
                 self,
                 "Square Payment Missing",
                 (
                     "The Terminal checkout completed, "
-                    "but Square did not return a payment ID.\n\n"
-                    f"Checkout ID: {checkout.checkout_id}"
+                    "but Square did not return a payment ID."
                 ),
             )
             return
 
-        square_payment_id = checkout.payment_ids[0]
+        square_payment_id = str(checkout.payment_ids[0])
 
         try:
-            square_payment = square_service.get_payment(square_payment_id)
+            square_payment = self.square_terminal_service.get_payment(square_payment_id)
 
         except Exception as exc:
+            self._stop_terminal_polling()
+
             QMessageBox.critical(
                 self,
                 "Square Payment Lookup Failed",
@@ -1127,20 +1230,19 @@ class RepairDetailsPanel(QWidget):
             )
             return
 
-        square_status = square_payment.status.strip().upper()
+        if square_payment.status.strip().upper() != "COMPLETED":
+            self._stop_terminal_polling()
 
-        if square_status != "COMPLETED":
             QMessageBox.warning(
                 self,
                 "Square Payment Not Completed",
                 (
                     "The Terminal checkout completed, "
-                    "but the resulting Square payment "
-                    "is not COMPLETED.\n\n"
+                    "but the resulting payment is not "
+                    "COMPLETED.\n\n"
                     f"Square Payment ID: "
                     f"{square_payment.payment_id}\n"
-                    f"Status: "
-                    f"{square_payment.status}"
+                    f"Status: {square_payment.status}"
                 ),
             )
             return
@@ -1159,12 +1261,16 @@ class RepairDetailsPanel(QWidget):
             )
 
         except Exception as exc:
+            self._stop_terminal_polling()
+
             QMessageBox.critical(
                 self,
                 "Payment Recording Failed",
                 str(exc),
             )
             return
+
+        self._stop_terminal_polling()
 
         QMessageBox.information(
             self,
@@ -1182,6 +1288,20 @@ class RepairDetailsPanel(QWidget):
         )
 
         self.load_repair(self.ticket_id)
+
+    def _stop_terminal_polling(
+        self,
+    ) -> None:
+        if self.square_terminal_timer.isActive():
+            self.square_terminal_timer.stop()
+
+        self.square_terminal_service = None
+        self.square_terminal_checkout_id = None
+        self.square_terminal_poll_count = 0
+
+        self.square_payment_button.setText("Take Payment with Square Terminal")
+
+        self._update_payment_buttons()
 
     def _update_payment_buttons(
         self,
