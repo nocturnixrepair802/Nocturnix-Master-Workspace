@@ -1219,6 +1219,11 @@ class RepairDetailsPanel(QWidget):
             or 0.0
         )
 
+        remaining_refundable = self.payment_service.remaining_refundable_amount(
+            self.ticket_id,
+            payment,
+        )
+
         if original_amount <= 0:
             QMessageBox.warning(
                 self,
@@ -1226,14 +1231,20 @@ class RepairDetailsPanel(QWidget):
                 ("The selected payment has no " "refundable amount."),
             )
             return
-
+        if remaining_refundable <= 0:
+            QMessageBox.information(
+                self,
+                "Payment Fully Refunded",
+                ("This Square payment has already " "been fully refunded."),
+            )
+            return
         refund_amount, accepted = QInputDialog.getDouble(
             self,
             "Refund Square Payment",
             "Refund amount:",
-            original_amount,
+            remaining_refundable,
             0.01,
-            original_amount,
+            remaining_refundable,
             2,
         )
 
