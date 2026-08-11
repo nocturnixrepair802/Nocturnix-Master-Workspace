@@ -25,7 +25,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from desktop.services.payment_service import PaymentService
 from desktop.services.repair_service import RepairService
+from desktop.services.square_service import SquareService
 
 
 class RepairDetailsPanel(QWidget):
@@ -40,7 +42,8 @@ class RepairDetailsPanel(QWidget):
     ) -> None:
         super().__init__()
 
-        self.service: RepairService = service
+        self.service = service
+        self.payment_service = PaymentService()
 
         self.on_edit = on_edit
         self.on_checkin = on_checkin
@@ -53,28 +56,20 @@ class RepairDetailsPanel(QWidget):
 
         self.current_repair: dict[str, Any] | None = None
         self.current_events: list[dict[str, Any]] = []
+        self.current_payments: list[dict[str, Any]] = []
 
         self._build_ui()
         self.clear()
 
     def _build_ui(self) -> None:
         outer_layout = QVBoxLayout(self)
-
-        outer_layout.setContentsMargins(
-            0,
-            0,
-            0,
-            0,
-        )
+        outer_layout.setContentsMargins(0, 0, 0, 0)
 
         self.scroll_area = QScrollArea()
-
         self.scroll_area.setWidgetResizable(True)
-
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
 
         content = QWidget()
-
         self.root = QVBoxLayout(content)
 
         self.root.setContentsMargins(
@@ -91,17 +86,13 @@ class RepairDetailsPanel(QWidget):
         # -----------------------------------------------------
 
         self.title = QLabel("Repair Details")
-
         self.title.setObjectName("sectionTitle")
 
         self.subtitle = QLabel("Select a repair from the queue.")
-
         self.subtitle.setObjectName("mutedText")
-
         self.subtitle.setWordWrap(True)
 
         self.root.addWidget(self.title)
-
         self.root.addWidget(self.subtitle)
 
         # -----------------------------------------------------
@@ -109,41 +100,29 @@ class RepairDetailsPanel(QWidget):
         # -----------------------------------------------------
 
         actions = QHBoxLayout()
-
         actions.setSpacing(10)
 
         self.edit_button = QPushButton("Edit Repair")
-
         self.edit_button.setObjectName("primaryButton")
-
         self.edit_button.clicked.connect(self._edit_clicked)
 
         self.checkin_button = QPushButton("＋ New Check-In")
-
         self.checkin_button.clicked.connect(self._checkin_clicked)
 
         self.customer_button = QPushButton("View Customer")
-
         self.customer_button.clicked.connect(self._customer_clicked)
 
         self.device_button = QPushButton("View Device")
-
         self.device_button.clicked.connect(self._device_clicked)
 
         self.print_button = QPushButton("Print Repair History")
-
         self.print_button.clicked.connect(self._print_repair_history)
 
         actions.addWidget(self.edit_button)
-
         actions.addWidget(self.checkin_button)
-
         actions.addWidget(self.customer_button)
-
         actions.addWidget(self.device_button)
-
         actions.addStretch(1)
-
         actions.addWidget(self.print_button)
 
         self.root.addLayout(actions)
@@ -166,23 +145,17 @@ class RepairDetailsPanel(QWidget):
         lifecycle_layout.setSpacing(10)
 
         self.complete_button = QPushButton("Mark Repair Complete")
-
         self.complete_button.clicked.connect(self._mark_repair_complete)
 
         self.ready_button = QPushButton("Ready for Pickup")
-
         self.ready_button.clicked.connect(self._mark_ready_for_pickup)
 
         self.picked_up_button = QPushButton("Mark Picked Up")
-
         self.picked_up_button.clicked.connect(self._mark_picked_up)
 
         lifecycle_layout.addWidget(self.complete_button)
-
         lifecycle_layout.addWidget(self.ready_button)
-
         lifecycle_layout.addWidget(self.picked_up_button)
-
         lifecycle_layout.addStretch(1)
 
         self.root.addWidget(lifecycle_box)
@@ -192,7 +165,6 @@ class RepairDetailsPanel(QWidget):
         # -----------------------------------------------------
 
         summary_box = QGroupBox("Repair Summary")
-
         summary_box.setMinimumHeight(410)
 
         summary_layout = QGridLayout(summary_box)
@@ -205,9 +177,7 @@ class RepairDetailsPanel(QWidget):
         )
 
         summary_layout.setHorizontalSpacing(22)
-
         summary_layout.setVerticalSpacing(10)
-
         summary_layout.setColumnMinimumWidth(
             0,
             155,
@@ -217,7 +187,6 @@ class RepairDetailsPanel(QWidget):
             0,
             0,
         )
-
         summary_layout.setColumnStretch(
             1,
             1,
@@ -262,9 +231,7 @@ class RepairDetailsPanel(QWidget):
 
         for label in value_labels:
             label.setWordWrap(True)
-
             label.setMinimumHeight(24)
-
             label.setAlignment(
                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
             )
@@ -292,9 +259,7 @@ class RepairDetailsPanel(QWidget):
             field_value,
         ) in enumerate(summary_rows):
             field_label = QLabel(field_name)
-
             field_label.setMinimumHeight(24)
-
             field_label.setAlignment(
                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
             )
@@ -314,6 +279,128 @@ class RepairDetailsPanel(QWidget):
         self.root.addWidget(summary_box)
 
         # -----------------------------------------------------
+        # PAYMENT / CLOSEOUT
+        # -----------------------------------------------------
+
+        payment_box = QGroupBox("Payment / Closeout")
+
+        payment_layout = QGridLayout(payment_box)
+
+        payment_layout.setContentsMargins(
+            18,
+            24,
+            18,
+            18,
+        )
+
+        payment_layout.setHorizontalSpacing(18)
+        payment_layout.setVerticalSpacing(10)
+
+        payment_layout.setColumnMinimumWidth(
+            0,
+            145,
+        )
+        payment_layout.setColumnStretch(
+            1,
+            1,
+        )
+
+        self.payment_final_cost = QLabel()
+        self.payment_amount_paid = QLabel()
+        self.payment_balance_due = QLabel()
+        self.payment_status_value = QLabel()
+
+        payment_values = (
+            self.payment_final_cost,
+            self.payment_amount_paid,
+            self.payment_balance_due,
+            self.payment_status_value,
+        )
+
+        for label in payment_values:
+            label.setMinimumHeight(24)
+            label.setWordWrap(True)
+
+        payment_layout.addWidget(
+            QLabel("Final Cost"),
+            0,
+            0,
+        )
+        payment_layout.addWidget(
+            self.payment_final_cost,
+            0,
+            1,
+        )
+
+        payment_layout.addWidget(
+            QLabel("Amount Paid"),
+            1,
+            0,
+        )
+        payment_layout.addWidget(
+            self.payment_amount_paid,
+            1,
+            1,
+        )
+
+        payment_layout.addWidget(
+            QLabel("Balance Due"),
+            2,
+            0,
+        )
+        payment_layout.addWidget(
+            self.payment_balance_due,
+            2,
+            1,
+        )
+
+        payment_layout.addWidget(
+            QLabel("Payment Status"),
+            3,
+            0,
+        )
+        payment_layout.addWidget(
+            self.payment_status_value,
+            3,
+            1,
+        )
+
+        payment_actions = QHBoxLayout()
+
+        self.cash_payment_button = QPushButton("Record Cash Payment")
+        self.cash_payment_button.clicked.connect(self._record_cash_payment)
+
+        self.square_payment_button = QPushButton("Take Payment with Square")
+        self.square_payment_button.clicked.connect(self._take_square_payment)
+
+        payment_actions.addWidget(self.cash_payment_button)
+        payment_actions.addWidget(self.square_payment_button)
+        payment_actions.addStretch(1)
+
+        payment_layout.addLayout(
+            payment_actions,
+            4,
+            0,
+            1,
+            2,
+        )
+
+        self.root.addWidget(payment_box)
+
+        # -----------------------------------------------------
+        # PAYMENT HISTORY
+        # -----------------------------------------------------
+
+        payment_history_title = QLabel("Payment History")
+        payment_history_title.setObjectName("sectionTitle")
+
+        self.root.addWidget(payment_history_title)
+
+        self.payments_table = self._build_payments_table()
+
+        self.root.addWidget(self.payments_table)
+
+        # -----------------------------------------------------
         # REPAIR INFORMATION
         # -----------------------------------------------------
 
@@ -329,41 +416,30 @@ class RepairDetailsPanel(QWidget):
         )
 
         information_layout.setHorizontalSpacing(16)
-
         information_layout.setVerticalSpacing(12)
 
         information_layout.setColumnMinimumWidth(
             0,
             110,
         )
-
         information_layout.setColumnStretch(
             1,
             1,
         )
 
         self.problem_value = QTextEdit()
-
         self.problem_value.setReadOnly(True)
-
         self.problem_value.setMinimumHeight(90)
-
         self.problem_value.setMaximumHeight(130)
 
         self.diagnosis_value = QTextEdit()
-
         self.diagnosis_value.setReadOnly(True)
-
         self.diagnosis_value.setMinimumHeight(90)
-
         self.diagnosis_value.setMaximumHeight(130)
 
         self.notes_value = QTextEdit()
-
         self.notes_value.setReadOnly(True)
-
         self.notes_value.setMinimumHeight(80)
-
         self.notes_value.setMaximumHeight(120)
 
         information_layout.addWidget(
@@ -372,7 +448,6 @@ class RepairDetailsPanel(QWidget):
             0,
             alignment=Qt.AlignmentFlag.AlignTop,
         )
-
         information_layout.addWidget(
             self.problem_value,
             0,
@@ -385,7 +460,6 @@ class RepairDetailsPanel(QWidget):
             0,
             alignment=Qt.AlignmentFlag.AlignTop,
         )
-
         information_layout.addWidget(
             self.diagnosis_value,
             1,
@@ -398,7 +472,6 @@ class RepairDetailsPanel(QWidget):
             0,
             alignment=Qt.AlignmentFlag.AlignTop,
         )
-
         information_layout.addWidget(
             self.notes_value,
             2,
@@ -412,23 +485,17 @@ class RepairDetailsPanel(QWidget):
         # -----------------------------------------------------
 
         checkin_title = QLabel("Check-In History")
-
         checkin_title.setObjectName("sectionTitle")
-
         self.root.addWidget(checkin_title)
 
         checkin_note = QLabel(
             "Recorded intake and device-condition " "check-ins for this repair."
         )
-
         checkin_note.setObjectName("mutedText")
-
         checkin_note.setWordWrap(True)
-
         self.root.addWidget(checkin_note)
 
         self.checkins_table = self._build_checkins_table()
-
         self.root.addWidget(self.checkins_table)
 
         # -----------------------------------------------------
@@ -438,15 +505,12 @@ class RepairDetailsPanel(QWidget):
         event_header = QHBoxLayout()
 
         event_title = QLabel("Repair Event History")
-
         event_title.setObjectName("sectionTitle")
 
         event_header.addWidget(event_title)
-
         event_header.addStretch(1)
 
         self.event_count = QLabel("0 events")
-
         self.event_count.setObjectName("mutedText")
 
         event_header.addWidget(self.event_count)
@@ -460,9 +524,7 @@ class RepairDetailsPanel(QWidget):
         )
 
         event_note.setObjectName("mutedText")
-
         event_note.setWordWrap(True)
-
         self.root.addWidget(event_note)
 
         self.events_container = QWidget()
@@ -487,6 +549,53 @@ class RepairDetailsPanel(QWidget):
         outer_layout.addWidget(self.scroll_area)
 
     @staticmethod
+    def _build_payments_table() -> QTableWidget:
+        table = QTableWidget()
+
+        table.setColumnCount(7)
+
+        table.setHorizontalHeaderLabels(
+            [
+                "Payment",
+                "Date",
+                "Method",
+                "Status",
+                "Amount",
+                "Reference",
+                "Square Payment ID",
+            ]
+        )
+
+        table.setMinimumHeight(200)
+        table.setMaximumHeight(300)
+        table.setWordWrap(False)
+
+        table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+
+        table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+
+        table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+
+        table.setAlternatingRowColors(True)
+
+        table.verticalHeader().setDefaultSectionSize(24)
+
+        header = table.horizontalHeader()
+
+        for column in range(table.columnCount()):
+            header.setSectionResizeMode(
+                column,
+                QHeaderView.ResizeMode.ResizeToContents,
+            )
+
+        header.setSectionResizeMode(
+            5,
+            QHeaderView.ResizeMode.Stretch,
+        )
+
+        return table
+
+    @staticmethod
     def _build_checkins_table() -> QTableWidget:
         table = QTableWidget()
 
@@ -505,9 +614,7 @@ class RepairDetailsPanel(QWidget):
         )
 
         table.setMinimumHeight(220)
-
         table.setMaximumHeight(320)
-
         table.setWordWrap(False)
 
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -546,6 +653,7 @@ class RepairDetailsPanel(QWidget):
 
         self.current_repair = None
         self.current_events = []
+        self.current_payments = []
 
         self.title.setText("Repair Details")
 
@@ -567,6 +675,10 @@ class RepairDetailsPanel(QWidget):
             self.estimate_value,
             self.final_value,
             self.warranty_value,
+            self.payment_final_cost,
+            self.payment_amount_paid,
+            self.payment_balance_due,
+            self.payment_status_value,
         ):
             label.clear()
 
@@ -575,6 +687,7 @@ class RepairDetailsPanel(QWidget):
         self.notes_value.clear()
 
         self.checkins_table.setRowCount(0)
+        self.payments_table.setRowCount(0)
 
         self._clear_event_widgets()
 
@@ -587,20 +700,17 @@ class RepairDetailsPanel(QWidget):
         enabled: bool,
     ) -> None:
         self.edit_button.setEnabled(enabled)
-
         self.checkin_button.setEnabled(enabled)
-
         self.customer_button.setEnabled(enabled)
-
         self.device_button.setEnabled(enabled)
-
         self.print_button.setEnabled(enabled)
 
         self.complete_button.setEnabled(enabled)
-
         self.ready_button.setEnabled(enabled)
-
         self.picked_up_button.setEnabled(enabled)
+
+        self.cash_payment_button.setEnabled(enabled)
+        self.square_payment_button.setEnabled(enabled)
 
     def load_repair(
         self,
@@ -675,13 +785,316 @@ class RepairDetailsPanel(QWidget):
 
         self.notes_value.setPlainText(self._text(repair.get("notes")))
 
+        self._load_payment_summary()
+        self._load_payments()
         self._load_checkins()
         self._load_events()
-        self._update_lifecycle_buttons()
 
         self._set_actions_enabled(True)
 
         self._update_lifecycle_buttons()
+        self._update_payment_buttons()
+
+    # ---------------------------------------------------------
+    # PAYMENTS
+    # ---------------------------------------------------------
+
+    def _load_payment_summary(
+        self,
+    ) -> None:
+        if self.ticket_id is None:
+            return
+
+        summary = self.payment_service.payment_summary(self.ticket_id)
+
+        self.payment_final_cost.setText(self._currency(summary.get("final_cost")))
+
+        self.payment_amount_paid.setText(self._currency(summary.get("amount_paid")))
+
+        self.payment_balance_due.setText(self._currency(summary.get("balance_due")))
+
+        self.payment_status_value.setText(self._text(summary.get("payment_status")))
+
+    def _load_payments(
+        self,
+    ) -> None:
+        if self.ticket_id is None:
+            self.current_payments = []
+            self.payments_table.setRowCount(0)
+            return
+
+        payments = self.payment_service.list_repair_payments(self.ticket_id)
+
+        self.current_payments = payments
+
+        self.payments_table.setRowCount(len(payments))
+
+        for row_index, payment in enumerate(payments):
+            values = [
+                payment.get(
+                    "payment_id",
+                    "",
+                ),
+                self._format_datetime(
+                    payment.get(
+                        "payment_timestamp",
+                        "",
+                    )
+                ),
+                payment.get(
+                    "payment_method",
+                    "",
+                ),
+                payment.get(
+                    "payment_status",
+                    "",
+                ),
+                self._currency(payment.get("amount")),
+                payment.get(
+                    "reference_number",
+                    "",
+                ),
+                payment.get(
+                    "square_payment_id",
+                    "",
+                ),
+            ]
+
+            for column_index, value in enumerate(values):
+                text = str(value or "")
+
+                item = QTableWidgetItem(text)
+
+                if text:
+                    item.setToolTip(text)
+
+                self.payments_table.setItem(
+                    row_index,
+                    column_index,
+                    item,
+                )
+
+    def _record_cash_payment(
+        self,
+    ) -> None:
+        if self.ticket_id is None:
+            return
+
+        summary = self.payment_service.payment_summary(self.ticket_id)
+
+        balance_due = float(
+            summary.get(
+                "balance_due",
+                0.0,
+            )
+            or 0.0
+        )
+
+        if balance_due <= 0:
+            QMessageBox.information(
+                self,
+                "No Balance Due",
+                ("This repair currently has " "no outstanding balance."),
+            )
+            return
+
+        amount, accepted = QInputDialog.getDouble(
+            self,
+            "Record Cash Payment",
+            "Cash amount received:",
+            balance_due,
+            0.01,
+            999999.99,
+            2,
+        )
+
+        if not accepted:
+            return
+
+        if amount > balance_due:
+            answer = QMessageBox.question(
+                self,
+                "Payment Exceeds Balance",
+                (
+                    f"The payment amount "
+                    f"{self._currency(amount)} "
+                    f"is greater than the current "
+                    f"balance of "
+                    f"{self._currency(balance_due)}.\n\n"
+                    "Record it anyway?"
+                ),
+                (QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No),
+                QMessageBox.StandardButton.No,
+            )
+
+            if answer != QMessageBox.StandardButton.Yes:
+                return
+
+        try:
+            payment = self.payment_service.record_cash_payment(
+                self.ticket_id,
+                amount=amount,
+            )
+
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Cash Payment Failed",
+                str(exc),
+            )
+            return
+
+        QMessageBox.information(
+            self,
+            "Cash Payment Recorded",
+            (f"{payment['payment_id']} " f"was recorded successfully."),
+        )
+
+        self.load_repair(self.ticket_id)
+
+
+    def _take_square_payment(
+        self,
+    ) -> None:
+        if self.ticket_id is None:
+            return
+
+        summary = self.payment_service.payment_summary(self.ticket_id)
+
+        balance_due = float(
+            summary.get(
+                "balance_due",
+                0.0,
+            )
+            or 0.0
+        )
+
+        if balance_due <= 0:
+            QMessageBox.information(
+                self,
+                "No Balance Due",
+                ("This repair currently has " "no outstanding balance."),
+            )
+            return
+
+        amount, accepted = QInputDialog.getDouble(
+            self,
+            "Square Sandbox Payment",
+            "Sandbox payment amount:",
+            min(
+                balance_due,
+                1.00,
+            ),
+            0.01,
+            balance_due,
+            2,
+        )
+
+        if not accepted:
+            return
+
+        answer = QMessageBox.question(
+            self,
+            "Confirm Square Sandbox Payment",
+            (
+                f"Create a Square Sandbox card payment "
+                f"for {self._currency(amount)}?\n\n"
+                f"Repair: {self.ticket_id}\n"
+                f"Current balance: "
+                f"{self._currency(balance_due)}\n\n"
+                "This uses Square's Sandbox test card source. "
+                "No real card will be charged."
+            ),
+            (QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No),
+            QMessageBox.StandardButton.No,
+        )
+
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            square_service = SquareService()
+
+            square_payment = square_service.create_sandbox_card_payment(
+                amount=amount,
+                repair_id=self.ticket_id,
+            )
+
+            square_status = square_payment.status.strip().upper()
+
+            if square_status != "COMPLETED":
+                QMessageBox.warning(
+                    self,
+                    "Square Payment Not Completed",
+                    (
+                        "Square created the Sandbox payment, "
+                        "but its status is not COMPLETED.\n\n"
+                        f"Square Payment ID: "
+                        f"{square_payment.payment_id}\n"
+                        f"Status: "
+                        f"{square_payment.status}\n\n"
+                        "The payment was not recorded as a "
+                        "completed local repair payment."
+                    ),
+                )
+                return
+
+            payment = self.payment_service.record_square_payment(
+                self.ticket_id,
+                amount=square_payment.amount,
+                square_payment_id=(square_payment.payment_id),
+                square_order_id=(square_payment.order_id),
+                square_receipt_url=(square_payment.receipt_url),
+                payment_status="Completed",
+                reference_number=(square_payment.payment_id),
+                notes=("Square Sandbox card payment."),
+            )
+
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Square Payment Failed",
+                str(exc),
+            )
+            return
+
+        QMessageBox.information(
+            self,
+            "Square Sandbox Payment Complete",
+            (
+                f"{payment['payment_id']} "
+                "was recorded successfully.\n\n"
+                f"Amount: "
+                f"{self._currency(square_payment.amount)}\n"
+                f"Square Payment ID: "
+                f"{square_payment.payment_id}"
+            ),
+        )
+
+        self.load_repair(self.ticket_id)
+    def _update_payment_buttons(
+        self,
+    ) -> None:
+        if self.ticket_id is None:
+            self.cash_payment_button.setEnabled(False)
+            self.square_payment_button.setEnabled(False)
+            return
+
+        summary = self.payment_service.payment_summary(self.ticket_id)
+
+        balance_due = float(
+            summary.get(
+                "balance_due",
+                0.0,
+            )
+            or 0.0
+        )
+
+        has_balance = balance_due > 0
+
+        self.cash_payment_button.setEnabled(has_balance)
+
+        self.square_payment_button.setEnabled(has_balance)
 
     # ---------------------------------------------------------
     # DIRECT LIFECYCLE ACTIONS
@@ -706,8 +1119,8 @@ class RepairDetailsPanel(QWidget):
             "Ready for Pickup",
             (
                 "Mark this repair as Ready for Pickup?\n\n"
-                "The repair will appear in the Ready for Pickup "
-                "workflow on the Dashboard."
+                "The repair will appear in the "
+                "Ready for Pickup workflow."
             ),
         )
 
@@ -717,27 +1130,30 @@ class RepairDetailsPanel(QWidget):
         if self.ticket_id is None or self.current_repair is None:
             return
 
-        repair = dict(self.current_repair)
+        payment_summary = self.payment_service.payment_summary(self.ticket_id)
 
-        warranty = bool(repair.get("warranty"))
-
-        final_cost = repair.get("final_cost")
-
-        if not warranty and final_cost is None:
-            amount, accepted = QInputDialog.getDouble(
-                self,
-                "Final Cost Required",
-                ("Enter the Final Cost before " "marking this repair Picked Up:"),
-                0.00,
-                0.00,
-                999999.99,
-                2,
+        balance_due = float(
+            payment_summary.get(
+                "balance_due",
+                0.0,
             )
+            or 0.0
+        )
 
-            if not accepted:
-                return
+        if balance_due > 0:
+            QMessageBox.warning(
+                self,
+                "Outstanding Balance",
+                (
+                    "This repair cannot be marked "
+                    "Picked Up while a balance remains.\n\n"
+                    f"Balance Due: "
+                    f"{self._currency(balance_due)}"
+                ),
+            )
+            return
 
-            repair["final_cost"] = amount
+        repair = dict(self.current_repair)
 
         answer = QMessageBox.question(
             self,
@@ -773,7 +1189,7 @@ class RepairDetailsPanel(QWidget):
         QMessageBox.information(
             self,
             "Repair Updated",
-            (f"{self.ticket_id} was marked " "Picked Up."),
+            (f"{self.ticket_id} " "was marked Picked Up."),
         )
 
         self.load_repair(self.ticket_id)
@@ -828,7 +1244,7 @@ class RepairDetailsPanel(QWidget):
         QMessageBox.information(
             self,
             "Repair Updated",
-            (f"{self.ticket_id} was marked " f"{status}."),
+            (f"{self.ticket_id} " f"was marked {status}."),
         )
 
         self.load_repair(self.ticket_id)
@@ -838,11 +1254,8 @@ class RepairDetailsPanel(QWidget):
     ) -> None:
         if self.current_repair is None:
             self.complete_button.setEnabled(False)
-
             self.ready_button.setEnabled(False)
-
             self.picked_up_button.setEnabled(False)
-
             return
 
         status = self._text(self.current_repair.get("repair_status"))
@@ -893,12 +1306,12 @@ class RepairDetailsPanel(QWidget):
         value: object,
     ) -> str:
         if value is None:
-            return ""
+            return "$0.00"
 
         text = str(value).strip()
 
         if not text:
-            return ""
+            return "$0.00"
 
         try:
             amount = float(text)
@@ -928,6 +1341,7 @@ class RepairDetailsPanel(QWidget):
             )
 
             return parsed.strftime("%Y-%m-%d %I:%M:%S %p")
+
         except ValueError:
             return text
 
@@ -1085,9 +1499,7 @@ class RepairDetailsPanel(QWidget):
 
         if self.ticket_id is None:
             self.current_events = []
-
             self.event_count.setText("0 events")
-
             return
 
         events = self.service.list_repair_events(self.ticket_id)
@@ -1100,13 +1512,10 @@ class RepairDetailsPanel(QWidget):
 
         if not events:
             empty = QLabel("No repair events have been recorded.")
-
             empty.setObjectName("mutedText")
-
             empty.setWordWrap(True)
 
             self.events_layout.addWidget(empty)
-
             return
 
         for event in events:
@@ -1198,29 +1607,21 @@ class RepairDetailsPanel(QWidget):
 
         if transition:
             transition_label = QLabel(transition)
-
             transition_label.setWordWrap(True)
-
             layout.addWidget(transition_label)
 
         if created_by:
             by_label = QLabel(f"By: {created_by}")
-
             by_label.setObjectName("mutedText")
-
             by_label.setWordWrap(True)
-
             layout.addWidget(by_label)
 
         if notes:
             notes_label = QLabel(notes)
-
             notes_label.setWordWrap(True)
-
             notes_label.setTextInteractionFlags(
                 Qt.TextInteractionFlag.TextSelectableByMouse
             )
-
             layout.addWidget(notes_label)
 
         return card
@@ -1279,7 +1680,6 @@ class RepairDetailsPanel(QWidget):
                 "No Repair Selected",
                 "Select a repair before printing.",
             )
-
             return
 
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
@@ -1312,6 +1712,11 @@ class RepairDetailsPanel(QWidget):
         customer_name = self._customer_name(repair)
 
         device_name = self._device_name(repair)
+
+        payment_summary: dict[str, Any] = {}
+
+        if self.ticket_id is not None:
+            payment_summary = self.payment_service.payment_summary(self.ticket_id)
 
         html = [
             """
@@ -1396,7 +1801,10 @@ class RepairDetailsPanel(QWidget):
         ]
 
         summary_rows = [
-            ("Repair ID", self.ticket_id or ""),
+            (
+                "Repair ID",
+                self.ticket_id or "",
+            ),
             (
                 "Status",
                 self._text(repair.get("repair_status")),
@@ -1418,30 +1826,26 @@ class RepairDetailsPanel(QWidget):
                 self._text(repair.get("technician")),
             ),
             (
-                "Intake",
-                self._format_datetime(repair.get("intake_date")),
-            ),
-            (
-                "Completed",
-                self._format_datetime(repair.get("date_completed")),
-            ),
-            (
-                "Picked Up",
-                self._format_datetime(repair.get("date_picked_up")),
-            ),
-            (
-                "Estimate",
-                self._currency(repair.get("estimated_cost")),
-            ),
-            (
                 "Final Cost",
-                self._currency(repair.get("final_cost")),
+                self._currency(payment_summary.get("final_cost")),
+            ),
+            (
+                "Amount Paid",
+                self._currency(payment_summary.get("amount_paid")),
+            ),
+            (
+                "Balance Due",
+                self._currency(payment_summary.get("balance_due")),
+            ),
+            (
+                "Payment Status",
+                self._text(payment_summary.get("payment_status")),
             ),
         ]
 
         for label, value in summary_rows:
             html.append(
-                
+
                     "<tr>"
                     f"<td class='label'>"
                     f"{self._html(label)}"
@@ -1450,10 +1854,54 @@ class RepairDetailsPanel(QWidget):
                     f"{self._html(value)}"
                     "</td>"
                     "</tr>"
-                
+
             )
 
         html.append("</table>")
+
+        html.append("<h2>Payment History</h2>")
+
+        if not self.current_payments:
+            html.append("<p>No payments recorded.</p>")
+
+        for payment in self.current_payments:
+            html.append("<div class='event'>")
+
+            html.append(
+
+                    f"<div class='event-title'>"
+                    f"{self._html(payment.get('payment_id', ''))}"
+                    f" — "
+                    f"{self._html(payment.get('payment_method', ''))}"
+                    f" — "
+                    f"{self._html(self._currency(payment.get('amount')))}"
+                    f"</div>"
+
+            )
+
+            html.append(
+
+                    f"<div class='muted'>"
+                    f"{self._html(self._format_datetime(payment.get('payment_timestamp')))}"
+                    f" — "
+                    f"{self._html(payment.get('payment_status', ''))}"
+                    f"</div>"
+
+            )
+
+            square_payment_id = self._text(payment.get("square_payment_id"))
+
+            if square_payment_id:
+                html.append(
+
+                        f"<div>"
+                        f"Square Payment ID: "
+                        f"{self._html(square_payment_id)}"
+                        f"</div>"
+
+                )
+
+            html.append("</div>")
 
         html.append("<h2>Repair Event History</h2>")
 
@@ -1483,13 +1931,13 @@ class RepairDetailsPanel(QWidget):
             html.append("<div class='event'>")
 
             html.append(
-                
+
                     f"<div class='muted'>"
                     f"{self._html(date_text)}"
                     f" &nbsp;&nbsp; "
                     f"{self._html(event_id)}"
                     f"</div>"
-                
+
             )
 
             html.append(
@@ -1501,12 +1949,12 @@ class RepairDetailsPanel(QWidget):
 
             if created_by:
                 html.append(
-                    
+
                         f"<div class='muted'>"
                         f"By: "
                         f"{self._html(created_by)}"
                         f"</div>"
-                    
+
                 )
 
             if notes:
