@@ -225,6 +225,32 @@ class PaymentService:
 
         return repair
 
+    def get_payment_by_reference_number(
+        self,
+        reference_number: str,
+    ) -> dict[str, Any] | None:
+        reference_number = str(reference_number).strip()
+
+        if not reference_number:
+            return None
+
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM repair_payments
+                WHERE reference_number = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (reference_number,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
     # ---------------------------------------------------------
     # PAYMENT IDS
     # ---------------------------------------------------------
@@ -670,6 +696,84 @@ class PaymentService:
             2,
         )
 
+    def refunded_amount_for_square_payment(
+        self,
+        repair_id: str,
+        square_payment_id: str,
+    ) -> float:
+        repair_id = self._required_text(
+            repair_id,
+            "Repair ID",
+        )
+
+        square_payment_id = self._required_text(
+            square_payment_id,
+            "Square payment ID",
+        )
+
+        self._require_repair(repair_id)
+
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    amount,
+                    notes
+                FROM repair_payments
+                WHERE repair_id = ?
+                  AND payment_method = 'Square Refund'
+                  AND payment_status IN (
+                      'Refunded',
+                      'Partially Refunded'
+                  )
+                """,
+                (repair_id,),
+            ).fetchall()
+
+        total_refunded = 0.0
+
+        marker = "Square refund for " f"{square_payment_id}."
+
+        for row in rows:
+            notes = str(row["notes"] or "").strip()
+
+            if notes != marker:
+                continue
+
+            total_refunded += float(row["amount"] or 0.0)
+
+        return round(
+            total_refunded,
+            2,
+        )
+
+    def remaining_refundable_amount(
+        self,
+        repair_id: str,
+        payment: dict[str, Any],
+    ) -> float:
+        square_payment_id = self._required_text(
+            payment.get("square_payment_id"),
+            "Square payment ID",
+        )
+
+        original_amount = self._required_amount(payment.get("amount"))
+
+        refunded = self.refunded_amount_for_square_payment(
+            repair_id,
+            square_payment_id,
+        )
+
+        remaining = original_amount - refunded
+
+        return round(
+            max(
+                remaining,
+                0.0,
+            ),
+            2,
+        )
+
     def net_amount_paid(
         self,
         repair_id: str,
@@ -893,6 +997,11 @@ class PaymentService:
             square_refund_id,
             "Square refund ID",
         )
+
+        existing_refund = self.get_payment_by_reference_number(square_refund_id)
+
+        if existing_refund is not None:
+            return existing_refund
 
         return self.create_payment(
             repair_id,
