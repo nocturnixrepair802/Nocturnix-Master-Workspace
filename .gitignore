@@ -20,3 +20,10 @@ __pycache__/
 
 # Local environment secrets
 .env
+
+# Local operational SQLite databases and backups
+Data/*.local.sqlite3
+Data/*local-before-*.sqlite3
+Data/*active-before-*.sqlite3
+Data/*before-switch*.sqlite3
+Data/backups/
