@@ -25,6 +25,11 @@ class RepairService:
     def _resolve_database_path() -> Path:
         service_root = Path(__file__).resolve().parents[3]
 
+        local_database = service_root / "data" / "nocturnix_operations.local.sqlite3"
+
+        if local_database.exists():
+            return local_database
+
         return service_root / "data" / "nocturnix_operations.sqlite3"
 
     def connect(self) -> sqlite3.Connection:

@@ -29,7 +29,20 @@ class PaymentService:
     def _resolve_database_path() -> Path:
         service_root = Path(__file__).resolve().parents[3]
 
-        return service_root / "data" / "nocturnix_operations.sqlite3"
+        local_database = (
+            service_root
+            / "data"
+            / "nocturnix_operations.local.sqlite3"
+        )
+
+        if local_database.exists():
+            return local_database
+
+        return (
+            service_root
+            / "data"
+            / "nocturnix_operations.sqlite3"
+        )
 
     def connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(
@@ -856,6 +869,44 @@ class PaymentService:
                 "square_terminal_checkout_id": square_terminal_checkout_id,
                 "square_receipt_url": square_receipt_url,
                 "notes": notes,
+                "created_by": created_by,
+            },
+        )
+
+    def record_square_refund(
+        self,
+        repair_id: str,
+        *,
+        amount: float,
+        square_payment_id: str,
+        square_refund_id: str,
+        refund_status: str = "Refunded",
+        notes: str = "",
+        created_by: str = "Ryan Brown",
+    ) -> dict[str, Any]:
+        square_payment_id = self._required_text(
+            square_payment_id,
+            "Square payment ID",
+        )
+
+        square_refund_id = self._required_text(
+            square_refund_id,
+            "Square refund ID",
+        )
+
+        return self.create_payment(
+            repair_id,
+            {
+                "payment_status": refund_status,
+                "payment_method": "Square Refund",
+                "amount": amount,
+                "currency": "USD",
+                "reference_number": square_refund_id,
+                "square_payment_id": None,
+                "notes": (
+                    notes.strip()
+                    or ("Refund for Square payment " f"{square_payment_id}")
+                ),
                 "created_by": created_by,
             },
         )

@@ -67,6 +67,19 @@ class RepairDetailsPanel(QWidget):
         self.square_terminal_timer.setInterval(2000)
         self.square_terminal_timer.timeout.connect(self._poll_terminal_checkout)
 
+        self.square_refund_service: SquareService | None = None
+        self.square_refund_id: str | None = None
+        self.square_refund_payment: dict[str, Any] | None = None
+        self.square_refund_amount = 0.0
+        self.square_refund_poll_count = 0
+        self.square_refund_max_polls = 30
+
+        self.square_refund_timer = QTimer(self)
+        self.square_refund_timer.setInterval(2000)
+        self.square_refund_timer.timeout.connect(
+            self._poll_square_refund
+        )
+
         self._build_ui()
         self.clear()
 
@@ -376,14 +389,36 @@ class RepairDetailsPanel(QWidget):
 
         payment_actions = QHBoxLayout()
 
-        self.cash_payment_button = QPushButton("Record Cash Payment")
-        self.cash_payment_button.clicked.connect(self._record_cash_payment)
+        self.cash_payment_button = QPushButton(
+            "Record Cash Payment"
+        )
+        self.cash_payment_button.clicked.connect(
+            self._record_cash_payment
+        )
 
-        self.square_payment_button = QPushButton("Take Payment with Square Terminal")
-        self.square_payment_button.clicked.connect(self._take_square_payment)
+        self.square_payment_button = QPushButton(
+            "Take Payment with Square Terminal"
+        )
+        self.square_payment_button.clicked.connect(
+            self._take_square_payment
+        )
 
-        payment_actions.addWidget(self.cash_payment_button)
-        payment_actions.addWidget(self.square_payment_button)
+        self.refund_payment_button = QPushButton(
+            "Refund Square Payment"
+        )
+        self.refund_payment_button.clicked.connect(
+            self._refund_square_payment
+        )
+
+        payment_actions.addWidget(
+            self.cash_payment_button
+        )
+        payment_actions.addWidget(
+            self.square_payment_button
+        )
+        payment_actions.addWidget(
+            self.refund_payment_button
+        )
         payment_actions.addStretch(1)
 
         payment_layout.addLayout(
@@ -1099,6 +1134,197 @@ class RepairDetailsPanel(QWidget):
 
         self.square_terminal_timer.start()
 
+    def _refund_square_payment(
+        self,
+    ) -> None:
+        if self.ticket_id is None:
+            return
+
+        selected_row = self.payments_table.currentRow()
+
+        if selected_row < 0:
+            QMessageBox.information(
+                self,
+                "Select a Payment",
+                ("Select a Square payment in " "Payment History first."),
+            )
+            return
+
+        if selected_row >= len(self.current_payments):
+            QMessageBox.warning(
+                self,
+                "Payment Not Found",
+                ("The selected payment could " "not be loaded."),
+            )
+            return
+
+        payment = self.current_payments[selected_row]
+
+        square_payment_id = str(
+            payment.get(
+                "square_payment_id",
+                "",
+            )
+            or ""
+        ).strip()
+
+        payment_method = str(
+            payment.get(
+                "payment_method",
+                "",
+            )
+            or ""
+        ).strip()
+
+        payment_status = str(
+            payment.get(
+                "payment_status",
+                "",
+            )
+            or ""
+        ).strip()
+
+        if not square_payment_id:
+            QMessageBox.warning(
+                self,
+                "Square Payment Required",
+                ("The selected payment does not " "have a Square Payment ID."),
+            )
+            return
+
+        if payment_method == "Square Refund":
+            QMessageBox.warning(
+                self,
+                "Refund Not Allowed",
+                ("Select the original Square " "payment, not a refund record."),
+            )
+            return
+
+        if payment_status not in {
+            "Completed",
+            "Paid",
+        }:
+            QMessageBox.warning(
+                self,
+                "Payment Not Refundable",
+                ("Only completed Square payments " "can be refunded."),
+            )
+            return
+
+        original_amount = float(
+            payment.get(
+                "amount",
+                0.0,
+            )
+            or 0.0
+        )
+
+        if original_amount <= 0:
+            QMessageBox.warning(
+                self,
+                "Invalid Payment Amount",
+                ("The selected payment has no " "refundable amount."),
+            )
+            return
+
+        refund_amount, accepted = QInputDialog.getDouble(
+            self,
+            "Refund Square Payment",
+            "Refund amount:",
+            original_amount,
+            0.01,
+            original_amount,
+            2,
+        )
+
+        if not accepted:
+            return
+
+        answer = QMessageBox.question(
+            self,
+            "Confirm Square Refund",
+            (
+                f"Refund "
+                f"{self._currency(refund_amount)} "
+                "to this Square payment?\n\n"
+                f"Local Payment: "
+                f"{payment.get('payment_id', '')}\n"
+                f"Square Payment ID: "
+                f"{square_payment_id}\n\n"
+                "This will create a refund in "
+                "Square Sandbox."
+            ),
+            (QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No),
+            QMessageBox.StandardButton.No,
+        )
+
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            square_service = SquareService()
+
+            square_refund = square_service.refund_payment(
+                payment_id=(square_payment_id),
+                amount=refund_amount,
+                reason=(f"Nocturnix repair " f"{self.ticket_id} refund"),
+            )
+
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Square Refund Failed",
+                str(exc),
+            )
+            return
+
+        refund_status = (
+            square_refund.status
+            .strip()
+            .upper()
+        )
+
+        if refund_status == "COMPLETED":
+            self._finish_square_refund(
+                square_refund,
+                payment,
+                refund_amount,
+            )
+            return
+
+        if refund_status in {
+            "FAILED",
+            "REJECTED",
+        }:
+            QMessageBox.warning(
+                self,
+                "Square Refund Failed",
+                (
+                    "Square did not complete the refund.\n\n"
+                    f"Refund ID: "
+                    f"{square_refund.refund_id}\n"
+                    f"Status: "
+                    f"{square_refund.status}"
+                ),
+            )
+            return
+
+        self.square_refund_service = square_service
+        self.square_refund_id = (
+            square_refund.refund_id
+        )
+        self.square_refund_payment = payment
+        self.square_refund_amount = refund_amount
+        self.square_refund_poll_count = 0
+
+        self.refund_payment_button.setEnabled(False)
+        self.refund_payment_button.setText(
+            "Waiting for Square Refund..."
+        )
+
+        self.square_refund_timer.start()
+        return
+
     def _poll_terminal_checkout(
         self,
     ) -> None:
@@ -1193,6 +1419,189 @@ class RepairDetailsPanel(QWidget):
                     "The payment has not been recorded locally."
                 ),
             )
+
+    def _poll_square_refund(
+        self,
+    ) -> None:
+        if (
+            self.square_refund_service is None
+            or self.square_refund_id is None
+            or self.square_refund_payment is None
+        ):
+            self._stop_square_refund_polling()
+            return
+
+        self.square_refund_poll_count += 1
+
+        try:
+            square_refund = (
+                self.square_refund_service.get_refund(
+                    self.square_refund_id
+                )
+            )
+
+        except Exception as exc:
+            self._stop_square_refund_polling()
+
+            QMessageBox.critical(
+                self,
+                "Square Refund Status Failed",
+                str(exc),
+            )
+            return
+
+        status = square_refund.status.strip().upper()
+
+        self.refund_payment_button.setText(
+            f"Square Refund: {status or 'WAITING'}"
+        )
+
+        if status == "COMPLETED":
+            payment = self.square_refund_payment
+            refund_amount = self.square_refund_amount
+
+            self._finish_square_refund(
+                square_refund,
+                payment,
+                refund_amount,
+            )
+            return
+
+        if status in {
+            "FAILED",
+            "REJECTED",
+        }:
+            self._stop_square_refund_polling()
+
+            QMessageBox.warning(
+                self,
+                "Square Refund Failed",
+                (
+                    "Square did not complete the refund.\n\n"
+                    f"Refund ID: "
+                    f"{square_refund.refund_id}\n"
+                    f"Status: "
+                    f"{square_refund.status}"
+                ),
+            )
+            return
+
+        if (
+            self.square_refund_poll_count
+            >= self.square_refund_max_polls
+        ):
+            refund_id = self.square_refund_id
+
+            self._stop_square_refund_polling()
+
+            QMessageBox.information(
+                self,
+                "Square Refund Still Pending",
+                (
+                    "The refund is still pending after "
+                    "the polling window.\n\n"
+                    f"Refund ID: {refund_id}\n"
+                    f"Last status: "
+                    f"{square_refund.status}\n\n"
+                    "The refund has not been recorded "
+                    "locally yet."
+                ),
+            )
+            return
+    def _finish_square_refund(
+        self,
+        square_refund: Any,
+        payment: dict[str, Any],
+        refund_amount: float,
+    ) -> None:
+        if self.square_refund_timer.isActive():
+            self.square_refund_timer.stop()
+
+        if self.ticket_id is None:
+            self._stop_square_refund_polling()
+            return
+
+        refund_id = str(
+            square_refund.refund_id or ""
+        ).strip()
+
+        if not refund_id:
+            self._stop_square_refund_polling()
+            return
+
+        square_payment_id = str(
+            payment.get(
+                "square_payment_id",
+                "",
+            )
+            or ""
+        ).strip()
+
+        original_amount = float(
+            payment.get(
+                "amount",
+                0.0,
+            )
+            or 0.0
+        )
+
+        local_status = "Refunded"
+
+        if refund_amount < original_amount:
+            local_status = "Partially Refunded"
+
+        try:
+            local_refund = self.payment_service.record_square_refund(
+                self.ticket_id,
+                amount=square_refund.amount,
+                square_payment_id=(square_payment_id),
+                square_refund_id=(square_refund.refund_id),
+                refund_status=(local_status),
+                notes=("Square refund for " f"{square_payment_id}."),
+            )
+
+        except Exception as exc:
+            self._stop_square_refund_polling()
+
+            QMessageBox.critical(
+                self,
+                "Refund Recording Failed",
+                str(exc),
+            )
+            return
+
+        self._stop_square_refund_polling()
+
+        QMessageBox.information(
+            self,
+            "Square Refund Complete",
+            (
+                f"{local_refund['payment_id']} "
+                "was recorded successfully.\n\n"
+                f"Refund amount: "
+                f"{self._currency(square_refund.amount)}\n"
+                f"Square Refund ID: "
+                f"{square_refund.refund_id}"
+            ),
+        )
+
+        self.load_repair(self.ticket_id)
+
+    def _stop_square_refund_polling(
+        self,
+    ) -> None:
+        if self.square_refund_timer.isActive():
+            self.square_refund_timer.stop()
+
+        self.square_refund_service = None
+        self.square_refund_id = None
+        self.square_refund_payment = None
+        self.square_refund_amount = 0.0
+        self.square_refund_poll_count = 0
+
+        self.refund_payment_button.setText("Refund Square Payment")
+
+        self._update_payment_buttons()
 
     def _finish_terminal_payment(
         self,
@@ -1326,6 +1735,24 @@ class RepairDetailsPanel(QWidget):
         self.cash_payment_button.setEnabled(has_balance)
 
         self.square_payment_button.setEnabled(has_balance)
+
+        has_square_payment = any(
+            bool(
+                str(
+                    payment.get(
+                        "square_payment_id",
+                        "",
+                    )
+                    or ""
+                ).strip()
+            )
+            for payment in self.current_payments
+        )
+
+        self.refund_payment_button.setEnabled(
+            has_square_payment
+            and not self.square_refund_timer.isActive()
+        )
 
     # ---------------------------------------------------------
     # DIRECT LIFECYCLE ACTIONS
