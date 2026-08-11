@@ -1,0 +1,861 @@
+from __future__ import annotations
+
+import re
+import sqlite3
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
+
+
+class PaymentService:
+    BACKUP_LIMIT = 10
+
+    def __init__(self) -> None:
+        self.database_path = self._resolve_database_path()
+        self.backup_directory = self.database_path.parent / "backups"
+
+        self.backup_directory.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        self._ensure_schema()
+
+    # ---------------------------------------------------------
+    # DATABASE
+    # ---------------------------------------------------------
+
+    @staticmethod
+    def _resolve_database_path() -> Path:
+        service_root = Path(__file__).resolve().parents[3]
+
+        return service_root / "data" / "nocturnix_operations.sqlite3"
+
+    def connect(self) -> sqlite3.Connection:
+        connection = sqlite3.connect(
+            self.database_path,
+            timeout=30,
+        )
+
+        connection.row_factory = sqlite3.Row
+
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute("PRAGMA journal_mode = WAL")
+
+        return connection
+
+    def _ensure_schema(self) -> None:
+        with self.connect() as connection:
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS repair_payments (
+                    payment_id TEXT PRIMARY KEY,
+                    repair_id TEXT NOT NULL,
+                    payment_status TEXT NOT NULL DEFAULT 'Completed',
+                    payment_method TEXT NOT NULL,
+                    amount REAL NOT NULL,
+                    currency TEXT NOT NULL DEFAULT 'USD',
+                    payment_timestamp TEXT NOT NULL,
+                    reference_number TEXT,
+                    square_payment_id TEXT,
+                    square_order_id TEXT,
+                    square_terminal_checkout_id TEXT,
+                    square_receipt_url TEXT,
+                    notes TEXT,
+                    created_at TEXT NOT NULL,
+                    created_by TEXT NOT NULL DEFAULT 'Ryan Brown',
+                    FOREIGN KEY (repair_id)
+                        REFERENCES repair_tickets(ticket_id)
+                )
+                """)
+
+            connection.execute("""
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_payments_repair_id
+                ON repair_payments(repair_id)
+                """)
+
+            connection.execute("""
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_payments_square_payment_id
+                ON repair_payments(square_payment_id)
+                """)
+
+            connection.commit()
+
+    # ---------------------------------------------------------
+    # BACKUPS
+    # ---------------------------------------------------------
+
+    def create_write_backup(self) -> Path | None:
+        if not self.database_path.exists():
+            return None
+
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+
+        backup_path = (
+            self.backup_directory / f"nocturnix_operations-{timestamp}.sqlite3"
+        )
+
+        source = sqlite3.connect(
+            self.database_path,
+            timeout=30,
+        )
+
+        destination = sqlite3.connect(
+            backup_path,
+            timeout=30,
+        )
+
+        try:
+            source.backup(destination)
+        finally:
+            destination.close()
+            source.close()
+
+        self._prune_backups()
+
+        return backup_path
+
+    def _prune_backups(self) -> None:
+        backups = sorted(
+            self.backup_directory.glob("nocturnix_operations-*.sqlite3"),
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        )
+
+        for old_backup in backups[self.BACKUP_LIMIT :]:
+            old_backup.unlink(missing_ok=True)
+
+    # ---------------------------------------------------------
+    # VALUE HELPERS
+    # ---------------------------------------------------------
+
+    @staticmethod
+    def _required_text(
+        value: object,
+        field_name: str,
+    ) -> str:
+        text = str(value or "").strip()
+
+        if not text:
+            raise ValueError(f"{field_name} is required.")
+
+        return text
+
+    @staticmethod
+    def _optional_text(
+        value: object,
+    ) -> str:
+        return str(value or "").strip()
+
+    @staticmethod
+    def _required_amount(
+        value: object,
+    ) -> float:
+        if value is None:
+            raise ValueError("Payment amount is required.")
+
+        text = str(value).strip()
+
+        if not text:
+            raise ValueError("Payment amount is required.")
+
+        try:
+            amount = float(text)
+        except ValueError as exc:
+            raise ValueError("Payment amount must be a valid number.") from exc
+
+        if amount <= 0:
+            raise ValueError("Payment amount must be greater than zero.")
+
+        return round(
+            amount,
+            2,
+        )
+
+    # ---------------------------------------------------------
+    # REPAIR LOOKUP
+    # ---------------------------------------------------------
+
+    def get_repair(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any] | None:
+        repair_id = str(repair_id).strip()
+
+        if not repair_id:
+            return None
+
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM repair_tickets
+                WHERE ticket_id = ?
+                """,
+                (repair_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def _require_repair(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]:
+        repair = self.get_repair(repair_id)
+
+        if repair is None:
+            raise ValueError(f"Repair not found: {repair_id}")
+
+        return repair
+
+    # ---------------------------------------------------------
+    # PAYMENT IDS
+    # ---------------------------------------------------------
+
+    def _next_payment_id(
+        self,
+        connection: sqlite3.Connection,
+    ) -> str:
+        rows = connection.execute("""
+            SELECT payment_id
+            FROM repair_payments
+            """).fetchall()
+
+        highest = 0
+
+        for row in rows:
+            payment_id = str(row["payment_id"] or "")
+
+            match = re.fullmatch(
+                r"PAY(\d{6})",
+                payment_id,
+            )
+
+            if match is None:
+                continue
+
+            number = int(match.group(1))
+
+            highest = max(
+                highest,
+                number,
+            )
+
+        return f"PAY{highest + 1:06d}"
+
+    # ---------------------------------------------------------
+    # CREATE PAYMENT
+    # ---------------------------------------------------------
+
+    def create_payment(
+        self,
+        repair_id: str,
+        values: dict[str, Any],
+    ) -> dict[str, Any]:
+        repair_id = self._required_text(
+            repair_id,
+            "Repair ID",
+        )
+
+        self._require_repair(repair_id)
+
+        payment_method = self._required_text(
+            values.get("payment_method"),
+            "Payment method",
+        )
+
+        amount = self._required_amount(values.get("amount"))
+
+        payment_status = (
+            self._optional_text(values.get("payment_status")) or "Completed"
+        )
+
+        currency = (self._optional_text(values.get("currency")) or "USD").upper()
+
+        payment_timestamp = (
+            self._optional_text(values.get("payment_timestamp"))
+            or datetime.now(UTC).isoformat()
+        )
+
+        reference_number = self._optional_text(values.get("reference_number"))
+
+        square_payment_id = self._optional_text(values.get("square_payment_id"))
+
+        square_order_id = self._optional_text(values.get("square_order_id"))
+
+        square_terminal_checkout_id = self._optional_text(
+            values.get("square_terminal_checkout_id")
+        )
+
+        square_receipt_url = self._optional_text(values.get("square_receipt_url"))
+
+        notes = self._optional_text(values.get("notes"))
+
+        created_by = self._optional_text(values.get("created_by")) or "Ryan Brown"
+
+        created_at = datetime.now(UTC).isoformat()
+
+        self.create_write_backup()
+
+        with self.connect() as connection:
+            payment_id = self._next_payment_id(connection)
+
+            connection.execute(
+                """
+                INSERT INTO repair_payments (
+                    payment_id,
+                    repair_id,
+                    payment_status,
+                    payment_method,
+                    amount,
+                    currency,
+                    payment_timestamp,
+                    reference_number,
+                    square_payment_id,
+                    square_order_id,
+                    square_terminal_checkout_id,
+                    square_receipt_url,
+                    notes,
+                    created_at,
+                    created_by
+                )
+                VALUES (
+                    ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?
+                )
+                """,
+                (
+                    payment_id,
+                    repair_id,
+                    payment_status,
+                    payment_method,
+                    amount,
+                    currency,
+                    payment_timestamp,
+                    reference_number or None,
+                    square_payment_id or None,
+                    square_order_id or None,
+                    square_terminal_checkout_id or None,
+                    square_receipt_url or None,
+                    notes or None,
+                    created_at,
+                    created_by,
+                ),
+            )
+
+            connection.commit()
+
+        payment = self.get_payment(payment_id)
+
+        if payment is None:
+            raise RuntimeError("Payment was created but could not be reloaded.")
+
+        return payment
+
+    # ---------------------------------------------------------
+    # PAYMENT LOOKUPS
+    # ---------------------------------------------------------
+
+    def get_payment(
+        self,
+        payment_id: str,
+    ) -> dict[str, Any] | None:
+        payment_id = str(payment_id).strip()
+
+        if not payment_id:
+            return None
+
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM repair_payments
+                WHERE payment_id = ?
+                """,
+                (payment_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def get_payment_by_square_id(
+        self,
+        square_payment_id: str,
+    ) -> dict[str, Any] | None:
+        square_payment_id = str(square_payment_id).strip()
+
+        if not square_payment_id:
+            return None
+
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM repair_payments
+                WHERE square_payment_id = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (square_payment_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def list_repair_payments(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        repair_id = self._required_text(
+            repair_id,
+            "Repair ID",
+        )
+
+        self._require_repair(repair_id)
+
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT *
+                FROM repair_payments
+                WHERE repair_id = ?
+                ORDER BY
+                    payment_timestamp DESC,
+                    payment_id DESC
+                """,
+                (repair_id,),
+            ).fetchall()
+
+        return [dict(row) for row in rows]
+
+    # ---------------------------------------------------------
+    # UPDATE PAYMENT
+    # ---------------------------------------------------------
+
+    def update_payment(
+        self,
+        payment_id: str,
+        values: dict[str, Any],
+    ) -> dict[str, Any]:
+        current = self.get_payment(payment_id)
+
+        if current is None:
+            raise ValueError(f"Payment not found: {payment_id}")
+
+        payment_status = self._optional_text(
+            values.get(
+                "payment_status",
+                current["payment_status"],
+            )
+        ) or str(current["payment_status"])
+
+        payment_method = self._optional_text(
+            values.get(
+                "payment_method",
+                current["payment_method"],
+            )
+        ) or str(current["payment_method"])
+
+        amount = self._required_amount(
+            values.get(
+                "amount",
+                current["amount"],
+            )
+        )
+
+        currency = (
+            self._optional_text(
+                values.get(
+                    "currency",
+                    current["currency"],
+                )
+            )
+            or "USD"
+        ).upper()
+
+        payment_timestamp = (
+            self._optional_text(
+                values.get(
+                    "payment_timestamp",
+                    current["payment_timestamp"],
+                )
+            )
+            or datetime.now(UTC).isoformat()
+        )
+
+        reference_number = self._optional_text(
+            values.get(
+                "reference_number",
+                current["reference_number"],
+            )
+        )
+
+        square_payment_id = self._optional_text(
+            values.get(
+                "square_payment_id",
+                current["square_payment_id"],
+            )
+        )
+
+        square_order_id = self._optional_text(
+            values.get(
+                "square_order_id",
+                current["square_order_id"],
+            )
+        )
+
+        square_terminal_checkout_id = self._optional_text(
+            values.get(
+                "square_terminal_checkout_id",
+                current["square_terminal_checkout_id"],
+            )
+        )
+
+        square_receipt_url = self._optional_text(
+            values.get(
+                "square_receipt_url",
+                current["square_receipt_url"],
+            )
+        )
+
+        notes = self._optional_text(
+            values.get(
+                "notes",
+                current["notes"],
+            )
+        )
+
+        self.create_write_backup()
+
+        with self.connect() as connection:
+            connection.execute(
+                """
+                UPDATE repair_payments
+                SET
+                    payment_status = ?,
+                    payment_method = ?,
+                    amount = ?,
+                    currency = ?,
+                    payment_timestamp = ?,
+                    reference_number = ?,
+                    square_payment_id = ?,
+                    square_order_id = ?,
+                    square_terminal_checkout_id = ?,
+                    square_receipt_url = ?,
+                    notes = ?
+                WHERE payment_id = ?
+                """,
+                (
+                    payment_status,
+                    payment_method,
+                    amount,
+                    currency,
+                    payment_timestamp,
+                    reference_number or None,
+                    square_payment_id or None,
+                    square_order_id or None,
+                    square_terminal_checkout_id or None,
+                    square_receipt_url or None,
+                    notes or None,
+                    payment_id,
+                ),
+            )
+
+            connection.commit()
+
+        updated = self.get_payment(payment_id)
+
+        if updated is None:
+            raise RuntimeError("Payment was updated but could not be reloaded.")
+
+        return updated
+
+    # ---------------------------------------------------------
+    # PAYMENT TOTALS
+    # ---------------------------------------------------------
+
+    def amount_paid(
+        self,
+        repair_id: str,
+    ) -> float:
+        repair_id = self._required_text(
+            repair_id,
+            "Repair ID",
+        )
+
+        self._require_repair(repair_id)
+
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT
+                    COALESCE(
+                        SUM(amount),
+                        0
+                    ) AS total_paid
+                FROM repair_payments
+                WHERE repair_id = ?
+                  AND payment_status IN (
+                      'Completed',
+                      'Paid'
+                  )
+                """,
+                (repair_id,),
+            ).fetchone()
+
+        if row is None:
+            return 0.0
+
+        return round(
+            float(row["total_paid"] or 0),
+            2,
+        )
+
+    def refunded_amount(
+        self,
+        repair_id: str,
+    ) -> float:
+        repair_id = self._required_text(
+            repair_id,
+            "Repair ID",
+        )
+
+        self._require_repair(repair_id)
+
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT
+                    COALESCE(
+                        SUM(amount),
+                        0
+                    ) AS total_refunded
+                FROM repair_payments
+                WHERE repair_id = ?
+                  AND payment_status IN (
+                      'Refunded',
+                      'Partially Refunded'
+                  )
+                """,
+                (repair_id,),
+            ).fetchone()
+
+        if row is None:
+            return 0.0
+
+        return round(
+            float(row["total_refunded"] or 0),
+            2,
+        )
+
+    def net_amount_paid(
+        self,
+        repair_id: str,
+    ) -> float:
+        return round(
+            self.amount_paid(repair_id) - self.refunded_amount(repair_id),
+            2,
+        )
+
+    def amount_due(
+        self,
+        repair_id: str,
+    ) -> float:
+        repair = self._require_repair(repair_id)
+
+        final_cost = repair.get("final_cost")
+
+        if final_cost is None:
+            return 0.0
+
+        try:
+            amount = float(final_cost)
+        except (TypeError, ValueError):
+            return 0.0
+
+        return round(
+            max(
+                amount,
+                0.0,
+            ),
+            2,
+        )
+
+    def balance_due(
+        self,
+        repair_id: str,
+    ) -> float:
+        balance = self.amount_due(repair_id) - self.net_amount_paid(repair_id)
+
+        return round(
+            max(
+                balance,
+                0.0,
+            ),
+            2,
+        )
+
+    def payment_status(
+        self,
+        repair_id: str,
+    ) -> str:
+        amount_due = self.amount_due(repair_id)
+
+        amount_paid = self.net_amount_paid(repair_id)
+
+        if amount_due <= 0:
+            return "No Balance"
+
+        if amount_paid <= 0:
+            return "Unpaid"
+
+        if amount_paid < amount_due:
+            return "Partially Paid"
+
+        return "Paid"
+
+    def payment_summary(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]:
+        repair = self._require_repair(repair_id)
+
+        final_cost = self.amount_due(repair_id)
+
+        amount_paid = self.net_amount_paid(repair_id)
+
+        balance_due = round(
+            max(
+                final_cost - amount_paid,
+                0.0,
+            ),
+            2,
+        )
+
+        return {
+            "repair_id": repair_id,
+            "repair_status": str(
+                repair.get(
+                    "repair_status",
+                    "",
+                )
+                or ""
+            ),
+            "final_cost": final_cost,
+            "amount_paid": amount_paid,
+            "balance_due": balance_due,
+            "payment_status": self.payment_status(repair_id),
+            "currency": "USD",
+        }
+
+    # ---------------------------------------------------------
+    # CASH PAYMENTS
+    # ---------------------------------------------------------
+
+    def record_cash_payment(
+        self,
+        repair_id: str,
+        *,
+        amount: float,
+        reference_number: str = "",
+        notes: str = "",
+        created_by: str = "Ryan Brown",
+    ) -> dict[str, Any]:
+        return self.create_payment(
+            repair_id,
+            {
+                "payment_status": "Completed",
+                "payment_method": "Cash",
+                "amount": amount,
+                "currency": "USD",
+                "reference_number": reference_number,
+                "notes": notes,
+                "created_by": created_by,
+            },
+        )
+
+    # ---------------------------------------------------------
+    # EXTERNAL PAYMENTS
+    # ---------------------------------------------------------
+
+    def record_external_payment(
+        self,
+        repair_id: str,
+        *,
+        amount: float,
+        payment_method: str,
+        reference_number: str = "",
+        notes: str = "",
+        created_by: str = "Ryan Brown",
+    ) -> dict[str, Any]:
+        payment_method = self._required_text(
+            payment_method,
+            "Payment method",
+        )
+
+        return self.create_payment(
+            repair_id,
+            {
+                "payment_status": "Completed",
+                "payment_method": payment_method,
+                "amount": amount,
+                "currency": "USD",
+                "reference_number": reference_number,
+                "notes": notes,
+                "created_by": created_by,
+            },
+        )
+
+    # ---------------------------------------------------------
+    # SQUARE PAYMENTS
+    # ---------------------------------------------------------
+
+    def record_square_payment(
+        self,
+        repair_id: str,
+        *,
+        amount: float,
+        square_payment_id: str,
+        square_order_id: str = "",
+        square_terminal_checkout_id: str = "",
+        square_receipt_url: str = "",
+        payment_status: str = "Completed",
+        reference_number: str = "",
+        notes: str = "",
+        created_by: str = "Ryan Brown",
+    ) -> dict[str, Any]:
+        square_payment_id = self._required_text(
+            square_payment_id,
+            "Square payment ID",
+        )
+
+        existing = self.get_payment_by_square_id(square_payment_id)
+
+        if existing is not None:
+            return existing
+
+        return self.create_payment(
+            repair_id,
+            {
+                "payment_status": payment_status,
+                "payment_method": "Square",
+                "amount": amount,
+                "currency": "USD",
+                "reference_number": reference_number,
+                "square_payment_id": square_payment_id,
+                "square_order_id": square_order_id,
+                "square_terminal_checkout_id": square_terminal_checkout_id,
+                "square_receipt_url": square_receipt_url,
+                "notes": notes,
+                "created_by": created_by,
+            },
+        )
