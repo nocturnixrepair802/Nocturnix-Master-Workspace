@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from desktop.services.read_service import ReadService
 from desktop.services.repair_service import RepairService
 from desktop.views.checkin_dialog import NewCheckinDialog
 from desktop.views.customer_devices_dialog import DeviceDialog
@@ -101,10 +102,12 @@ class DashboardView(QWidget):
     def __init__(
         self,
         service: RepairService,
+        read_service: ReadService,
     ) -> None:
         super().__init__()
 
         self.service: RepairService = service
+        self.read_service = read_service
 
         self.activity_repairs: list[str] = []
 
@@ -144,9 +147,7 @@ class DashboardView(QWidget):
 
         title.setObjectName("pageTitle")
 
-        subtitle = QLabel(
-            "Local repair operations, workflow status, " "and recent activity."
-        )
+        subtitle = QLabel("Repair operations, workflow status, " "and recent activity.")
 
         subtitle.setObjectName("mutedText")
 
@@ -530,9 +531,9 @@ class DashboardView(QWidget):
     # ---------------------------------------------------------
 
     def refresh(self) -> None:
-        counts = self.service.dashboard_counts()
+        counts = self.read_service.dashboard_counts()
 
-        operational = self.service.dashboard_operational_counts()
+        operational = self.read_service.dashboard_operational_counts()
 
         self.customers_card.value.setText(str(counts["customers"]))
 
@@ -556,6 +557,7 @@ class DashboardView(QWidget):
 
         self.urgent_card.value.setText(str(operational["urgent_repairs"]))
 
+        # Recent activity remains local during v0.14.
         self._refresh_activity()
 
     def _refresh_activity(
@@ -606,7 +608,10 @@ class DashboardView(QWidget):
                 device_name,
             ]
 
-            for column_index, value in enumerate(values):
+            for (
+                column_index,
+                value,
+            ) in enumerate(values):
                 text = str(value or "")
 
                 item = QTableWidgetItem(text)
@@ -625,9 +630,9 @@ class DashboardView(QWidget):
         event_type: str,
     ) -> str:
         names = {
-            "repair_created": "Repair Created",
-            "repair_status_changed": "Status Changed",
-            "checkin_created": "Check-In Created",
+            "repair_created": ("Repair Created"),
+            "repair_status_changed": ("Status Changed"),
+            "checkin_created": ("Check-In Created"),
         }
 
         if event_type in names:
@@ -951,7 +956,7 @@ class DashboardView(QWidget):
             QMessageBox.information(
                 self,
                 "No Devices",
-                "This customer has no devices yet.",
+                ("This customer has " "no devices yet."),
             )
 
             return None
@@ -1069,6 +1074,7 @@ class DashboardView(QWidget):
                 device_id=device_id,
                 parent=self,
             )
+
         except Exception as exc:
             QMessageBox.critical(
                 self,
@@ -1084,6 +1090,8 @@ class DashboardView(QWidget):
     def _new_checkin(
         self,
     ) -> None:
+        # Writes intentionally continue to use the
+        # local service during v0.14.
         repairs = self.service.list_repairs()
 
         if not repairs:
@@ -1165,6 +1173,7 @@ class DashboardView(QWidget):
                 repair_id=repair_id,
                 parent=self,
             )
+
         except Exception as exc:
             QMessageBox.critical(
                 self,

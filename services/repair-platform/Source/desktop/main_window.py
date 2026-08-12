@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 from desktop.services.api_client import (
     ApiClient,
 )
+from desktop.services.read_service import ReadService
 from desktop.services.repair_service import RepairService
 from desktop.services.settings_service import (
     SettingsService,
@@ -60,6 +61,13 @@ class MainWindow(QMainWindow):
 
         self.api_health = (
             self.api_client.health()
+        )
+
+        self.read_service = ReadService(
+            local_service=self.repair_service,
+            api_client=self.api_client,
+            settings=self.settings,
+            api_available=self.api_health.available,
         )
 
         self._build_ui()
@@ -120,13 +128,19 @@ class MainWindow(QMainWindow):
 
         self.stack = QStackedWidget()
 
-        self.dashboard_view = DashboardView(service=self.repair_service)
+        self.dashboard_view = DashboardView(
+            service=self.repair_service,
+            read_service=self.read_service,
+        )
 
         self.customers_view = CustomersView(service=self.repair_service)
 
         self.devices_view = DevicesView(service=self.repair_service)
 
-        self.repair_queue_view = RepairQueueView(service=self.repair_service)
+        self.repair_queue_view = RepairQueueView(
+            service=self.repair_service,
+            read_service=self.read_service,
+        )
 
         self.checkin_view = CheckinView(service=self.repair_service)
 
