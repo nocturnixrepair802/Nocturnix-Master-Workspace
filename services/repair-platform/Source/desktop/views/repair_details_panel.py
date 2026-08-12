@@ -4,10 +4,15 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QFont, QPageLayout, QPageSize, QTextDocument
+from PySide6.QtCore import Qt, QTimer, QUrl
+from PySide6.QtGui import QDesktopServices, QFont, QPageLayout, QPageSize, QTextDocument
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter
 from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QFormLayout,
     QFrame,
     QGridLayout,
     QGroupBox,
@@ -15,6 +20,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QInputDialog,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -26,12 +32,20 @@ from PySide6.QtWidgets import (
 )
 
 from desktop.services.payment_service import PaymentService
+from desktop.services.photo_service import (
+    PHOTO_CATEGORIES,
+    PhotoService,
+)
 from desktop.services.repair_service import RepairService
 from desktop.services.square_service import SquareService
 
 
 class RepairDetailsPanel(QWidget):
     def __init__(
+    self.photo_service = PhotoService(
+    self.service.database_path()
+
+    self.current_photos: list[dict[str, Any]] = [])git a
         self,
         service: RepairService,
         *,
