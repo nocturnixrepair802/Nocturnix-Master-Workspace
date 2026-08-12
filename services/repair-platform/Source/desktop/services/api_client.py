@@ -159,3 +159,17 @@ class ApiClient:
             result.append(dict(item))
 
         return result
+
+    def get_repair(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]:
+        payload = self.get_json(f"/api/repairs/{repair_id}/workspace")
+
+        if not isinstance(
+            payload,
+            dict,
+        ):
+            raise ApiRequestError("Repair endpoint did not " "return an object.")
+
+        return dict(payload)

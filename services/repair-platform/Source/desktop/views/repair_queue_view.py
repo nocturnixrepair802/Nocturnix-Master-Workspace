@@ -205,6 +205,7 @@ class RepairQueueView(QWidget):
 
         self.details_panel = RepairDetailsPanel(
             service=self.service,
+            read_service=self.read_service,
             on_edit=self._edit_repair,
             on_checkin=self._new_checkin_for,
             on_customer=self._view_customer,
