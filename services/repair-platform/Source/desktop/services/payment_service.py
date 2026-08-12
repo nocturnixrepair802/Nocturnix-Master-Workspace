@@ -6,13 +6,19 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from desktop.services.settings_service import SettingsService
+
 
 class PaymentService:
-    BACKUP_LIMIT = 10
-
     def __init__(self) -> None:
+        self.settings = SettingsService().load()
+
         self.database_path = self._resolve_database_path()
         self.backup_directory = self.database_path.parent / "backups"
+        self.backup_limit = self.settings.backup_limit
+
+        self.default_currency = self.settings.default_currency
+        self.default_created_by = self.settings.default_created_by
 
         self.backup_directory.mkdir(
             parents=True,
@@ -25,24 +31,20 @@ class PaymentService:
     # DATABASE
     # ---------------------------------------------------------
 
-    @staticmethod
-    def _resolve_database_path() -> Path:
+    def _resolve_database_path(self) -> Path:
+        configured_path = self.settings.database_path.strip()
+
+        if configured_path:
+            return Path(configured_path).expanduser()
+
         service_root = Path(__file__).resolve().parents[3]
 
-        local_database = (
-            service_root
-            / "data"
-            / "nocturnix_operations.local.sqlite3"
-        )
+        local_database = service_root / "data" / "nocturnix_operations.local.sqlite3"
 
         if local_database.exists():
             return local_database
 
-        return (
-            service_root
-            / "data"
-            / "nocturnix_operations.sqlite3"
-        )
+        return service_root / "data" / "nocturnix_operations.sqlite3"
 
     def connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(
@@ -264,7 +266,7 @@ class PaymentService:
             reverse=True,
         )
 
-        for old_backup in backups[self.BACKUP_LIMIT :]:
+        for old_backup in backups[self.backup_limit :]:
             old_backup.unlink(missing_ok=True)
 
     # ---------------------------------------------------------
@@ -441,7 +443,9 @@ class PaymentService:
             self._optional_text(values.get("payment_status")) or "Completed"
         )
 
-        currency = (self._optional_text(values.get("currency")) or "USD").upper()
+        currency = (
+            self._optional_text(values.get("currency")) or self.default_currency
+        ).upper()
 
         payment_timestamp = (
             self._optional_text(values.get("payment_timestamp"))
@@ -468,7 +472,9 @@ class PaymentService:
             values.get("refunded_square_payment_id")
         )
 
-        created_by = self._optional_text(values.get("created_by")) or "Ryan Brown"
+        created_by = (
+            self._optional_text(values.get("created_by")) or self.default_created_by
+        )
 
         created_at = datetime.now(UTC).isoformat()
 
@@ -925,7 +931,7 @@ class PaymentService:
                     current["currency"],
                 )
             )
-            or "USD"
+            or self.default_currency
         ).upper()
 
         payment_timestamp = (
@@ -1284,7 +1290,7 @@ class PaymentService:
             "amount_paid": amount_paid,
             "balance_due": balance_due,
             "payment_status": self.payment_status(repair_id),
-            "currency": "USD",
+            "currency": self.default_currency,
         }
 
     # ---------------------------------------------------------
@@ -1298,7 +1304,7 @@ class PaymentService:
         amount: float,
         reference_number: str = "",
         notes: str = "",
-        created_by: str = "Ryan Brown",
+        created_by: str = "",
     ) -> dict[str, Any]:
         return self.create_payment(
             repair_id,
@@ -1306,7 +1312,7 @@ class PaymentService:
                 "payment_status": "Completed",
                 "payment_method": "Cash",
                 "amount": amount,
-                "currency": "USD",
+                "currency": self.default_currency,
                 "reference_number": reference_number,
                 "notes": notes,
                 "created_by": created_by,
@@ -1325,7 +1331,7 @@ class PaymentService:
         payment_method: str,
         reference_number: str = "",
         notes: str = "",
-        created_by: str = "Ryan Brown",
+        created_by: str = "",
     ) -> dict[str, Any]:
         payment_method = self._required_text(
             payment_method,
@@ -1338,7 +1344,7 @@ class PaymentService:
                 "payment_status": "Completed",
                 "payment_method": payment_method,
                 "amount": amount,
-                "currency": "USD",
+                "currency": self.default_currency,
                 "reference_number": reference_number,
                 "notes": notes,
                 "created_by": created_by,
@@ -1361,7 +1367,7 @@ class PaymentService:
         payment_status: str = "Completed",
         reference_number: str = "",
         notes: str = "",
-        created_by: str = "Ryan Brown",
+        created_by: str = "",
     ) -> dict[str, Any]:
         square_payment_id = self._required_text(
             square_payment_id,
@@ -1379,7 +1385,7 @@ class PaymentService:
                 "payment_status": payment_status,
                 "payment_method": "Square",
                 "amount": amount,
-                "currency": "USD",
+                "currency": self.default_currency,
                 "reference_number": reference_number,
                 "square_payment_id": square_payment_id,
                 "square_order_id": square_order_id,
@@ -1399,7 +1405,7 @@ class PaymentService:
         square_refund_id: str,
         refund_status: str = "Refunded",
         notes: str = "",
-        created_by: str = "Ryan Brown",
+        created_by: str = "",
     ) -> dict[str, Any]:
         square_payment_id = self._required_text(
             square_payment_id,
@@ -1431,7 +1437,7 @@ class PaymentService:
                 "payment_status": refund_status,
                 "payment_method": "Square Refund",
                 "amount": amount,
-                "currency": "USD",
+                "currency": self.default_currency,
                 "reference_number": square_refund_id,
                 "square_payment_id": None,
                 "square_refund_id": square_refund_id,
