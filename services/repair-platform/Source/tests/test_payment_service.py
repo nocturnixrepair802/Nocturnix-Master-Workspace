@@ -37,7 +37,7 @@ def payment_service(
     monkeypatch.setattr(
         PaymentService,
         "_resolve_database_path",
-        staticmethod(lambda: database_path),
+        lambda self: database_path,
     )
 
     return PaymentService()

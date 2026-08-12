@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 from square import Square
 from square.environment import SquareEnvironment
 
+from desktop.services.settings_service import SettingsService
+
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 load_dotenv(PROJECT_ROOT / ".env")
@@ -66,6 +68,11 @@ class SquareService:
     SANDBOX_CARD_SOURCE_ID = "cnon:card-nonce-ok"
 
     def __init__(self) -> None:
+
+        self.settings = SettingsService().load()
+        self.default_currency = self.settings.default_currency
+        self.square_environment = self.settings.square_environment
+
         self.access_token = os.getenv(
             "SQUARE_ACCESS_TOKEN",
             "",
@@ -92,9 +99,15 @@ class SquareService:
         if not self.location_id:
             raise RuntimeError("SQUARE_LOCATION_ID is not configured.")
 
+        environment = (
+            SquareEnvironment.PRODUCTION
+            if self.square_environment == "production"
+            else SquareEnvironment.SANDBOX
+        )
+
         self.client = Square(
             token=self.access_token,
-            environment=SquareEnvironment.SANDBOX,
+            environment=environment,
         )
 
     # ---------------------------------------------------------
@@ -128,8 +141,7 @@ class SquareService:
 
         if not locations:
             raise RuntimeError(
-                "Square Sandbox connection succeeded, "
-                "but no locations were returned."
+                "Square connection succeeded, " "but no locations were returned."
             )
 
         for location in locations:
@@ -139,7 +151,7 @@ class SquareService:
         raise RuntimeError(
             "Square connection succeeded, but "
             "SQUARE_LOCATION_ID did not match "
-            "any Sandbox location."
+            "the configured Square location."
         )
 
     # ---------------------------------------------------------
@@ -185,12 +197,12 @@ class SquareService:
             2,
         )
 
-    @staticmethod
     def _money_currency(
+        self,
         money: object,
     ) -> str:
         if money is None:
-            return "USD"
+            return self.default_currency
 
         currency = getattr(
             money,
@@ -199,7 +211,7 @@ class SquareService:
         )
 
         if currency is None:
-            return "USD"
+            return self.default_currency
 
         return str(currency)
 
