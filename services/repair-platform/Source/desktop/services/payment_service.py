@@ -93,6 +93,49 @@ class PaymentService:
                 ON repair_payments(square_payment_id)
                 """)
 
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS payment_operations (
+                    operation_id TEXT PRIMARY KEY,
+                    repair_id TEXT NOT NULL,
+                    operation_type TEXT NOT NULL,
+                    operation_status TEXT NOT NULL,
+                    amount REAL NOT NULL,
+                    square_terminal_checkout_id TEXT,
+                    square_payment_id TEXT,
+                    square_refund_id TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    completed_at TEXT,
+                    notes TEXT,
+                    FOREIGN KEY (repair_id)
+                        REFERENCES repair_tickets(ticket_id)
+                )
+                """)
+
+            connection.execute("""
+                CREATE INDEX IF NOT EXISTS
+                    idx_payment_operations_repair_id
+                ON payment_operations(repair_id)
+                """)
+
+            connection.execute("""
+                CREATE INDEX IF NOT EXISTS
+                    idx_payment_operations_status
+                ON payment_operations(operation_status)
+                """)
+
+            connection.execute("""
+                CREATE INDEX IF NOT EXISTS
+                    idx_payment_operations_terminal_checkout
+                ON payment_operations(square_terminal_checkout_id)
+                """)
+
+            connection.execute("""
+                CREATE INDEX IF NOT EXISTS
+                    idx_payment_operations_refund_id
+                ON payment_operations(square_refund_id)
+                """)
+
             connection.commit()
 
     # ---------------------------------------------------------
@@ -473,6 +516,274 @@ class PaymentService:
                 """,
                 (repair_id,),
             ).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def create_payment_operation(
+        self,
+        repair_id: str,
+        *,
+        operation_type: str,
+        operation_status: str,
+        amount: float,
+        square_terminal_checkout_id: str = "",
+        square_payment_id: str = "",
+        square_refund_id: str = "",
+        notes: str = "",
+    ) -> dict[str, Any]:
+        repair_id = self._required_text(
+            repair_id,
+            "Repair ID",
+        )
+
+        self._require_repair(repair_id)
+
+        operation_type = self._required_text(
+            operation_type,
+            "Operation type",
+        )
+
+        operation_status = self._required_text(
+            operation_status,
+            "Operation status",
+        )
+
+        amount = self._required_amount(amount)
+
+        timestamp = datetime.now(UTC).isoformat()
+
+        with self.connect() as connection:
+            rows = connection.execute("""
+                SELECT operation_id
+                FROM payment_operations
+                """).fetchall()
+
+            highest = 0
+
+            for row in rows:
+                operation_id = str(row["operation_id"] or "")
+
+                match = re.fullmatch(
+                    r"POP(\d{6})",
+                    operation_id,
+                )
+
+                if match is None:
+                    continue
+
+                highest = max(
+                    highest,
+                    int(match.group(1)),
+                )
+
+            operation_id = f"POP{highest + 1:06d}"
+
+            connection.execute(
+                """
+                INSERT INTO payment_operations (
+                    operation_id,
+                    repair_id,
+                    operation_type,
+                    operation_status,
+                    amount,
+                    square_terminal_checkout_id,
+                    square_payment_id,
+                    square_refund_id,
+                    created_at,
+                    updated_at,
+                    completed_at,
+                    notes
+                )
+                VALUES (
+                    ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?
+                )
+                """,
+                (
+                    operation_id,
+                    repair_id,
+                    operation_type,
+                    operation_status,
+                    amount,
+                    square_terminal_checkout_id or None,
+                    square_payment_id or None,
+                    square_refund_id or None,
+                    timestamp,
+                    timestamp,
+                    None,
+                    notes or None,
+                ),
+            )
+
+            connection.commit()
+
+        operation = self.get_payment_operation(operation_id)
+
+        if operation is None:
+            raise RuntimeError(
+                "Payment operation was created " "but could not be reloaded."
+            )
+
+        return operation
+
+    def get_payment_operation(
+        self,
+        operation_id: str,
+    ) -> dict[str, Any] | None:
+        operation_id = str(operation_id).strip()
+
+        if not operation_id:
+            return None
+
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM payment_operations
+                WHERE operation_id = ?
+                """,
+                (operation_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def update_payment_operation(
+        self,
+        operation_id: str,
+        *,
+        operation_status: str | None = None,
+        square_payment_id: str | None = None,
+        square_refund_id: str | None = None,
+        completed: bool = False,
+        notes: str | None = None,
+    ) -> dict[str, Any]:
+        current = self.get_payment_operation(operation_id)
+
+        if current is None:
+            raise ValueError(f"Payment operation not found: " f"{operation_id}")
+
+        status = (
+            operation_status
+            if operation_status is not None
+            else str(current["operation_status"])
+        )
+
+        payment_id = (
+            square_payment_id
+            if square_payment_id is not None
+            else str(
+                current.get(
+                    "square_payment_id",
+                    "",
+                )
+                or ""
+            )
+        )
+
+        refund_id = (
+            square_refund_id
+            if square_refund_id is not None
+            else str(
+                current.get(
+                    "square_refund_id",
+                    "",
+                )
+                or ""
+            )
+        )
+
+        new_notes = (
+            notes
+            if notes is not None
+            else str(
+                current.get(
+                    "notes",
+                    "",
+                )
+                or ""
+            )
+        )
+
+        updated_at = datetime.now(UTC).isoformat()
+
+        completed_at = updated_at if completed else current.get("completed_at")
+
+        with self.connect() as connection:
+            connection.execute(
+                """
+                UPDATE payment_operations
+                SET
+                    operation_status = ?,
+                    square_payment_id = ?,
+                    square_refund_id = ?,
+                    updated_at = ?,
+                    completed_at = ?,
+                    notes = ?
+                WHERE operation_id = ?
+                """,
+                (
+                    status,
+                    payment_id or None,
+                    refund_id or None,
+                    updated_at,
+                    completed_at,
+                    new_notes or None,
+                    operation_id,
+                ),
+            )
+
+            connection.commit()
+
+        updated = self.get_payment_operation(operation_id)
+
+        if updated is None:
+            raise RuntimeError(
+                "Payment operation was updated " "but could not be reloaded."
+            )
+
+        return updated
+
+    def list_pending_payment_operations(
+        self,
+        repair_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            if repair_id:
+                rows = connection.execute(
+                    """
+                    SELECT *
+                    FROM payment_operations
+                    WHERE repair_id = ?
+                      AND completed_at IS NULL
+                      AND operation_status NOT IN (
+                          'COMPLETED',
+                          'FAILED',
+                          'REJECTED',
+                          'CANCELED',
+                          'CANCELLED'
+                      )
+                    ORDER BY created_at
+                    """,
+                    (repair_id,),
+                ).fetchall()
+
+            else:
+                rows = connection.execute("""
+                    SELECT *
+                    FROM payment_operations
+                    WHERE completed_at IS NULL
+                      AND operation_status NOT IN (
+                          'COMPLETED',
+                          'FAILED',
+                          'REJECTED',
+                          'CANCELED',
+                          'CANCELLED'
+                      )
+                    ORDER BY created_at
+                    """).fetchall()
 
         return [dict(row) for row in rows]
 
