@@ -2,11 +2,21 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import Qt, QTimer, QUrl
-from PySide6.QtGui import QDesktopServices, QFont, QPageLayout, QPageSize, QTextDocument
-from PySide6.QtPrintSupport import QPrintDialog, QPrinter
+from PySide6.QtGui import (
+    QDesktopServices,
+    QFont,
+    QPageLayout,
+    QPageSize,
+    QTextDocument,
+)
+from PySide6.QtPrintSupport import (
+    QPrintDialog,
+    QPrinter,
+)
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -31,21 +41,23 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from desktop.services.payment_service import PaymentService
+from desktop.services.payment_service import (
+    PaymentService,
+)
 from desktop.services.photo_service import (
     PHOTO_CATEGORIES,
     PhotoService,
 )
-from desktop.services.repair_service import RepairService
-from desktop.services.square_service import SquareService
+from desktop.services.repair_service import (
+    RepairService,
+)
+from desktop.services.square_service import (
+    SquareService,
+)
 
 
 class RepairDetailsPanel(QWidget):
     def __init__(
-    self.photo_service = PhotoService(
-    self.service.database_path()
-
-    self.current_photos: list[dict[str, Any]] = [])git a
         self,
         service: RepairService,
         *,
@@ -58,6 +70,7 @@ class RepairDetailsPanel(QWidget):
 
         self.service = service
         self.payment_service = PaymentService()
+        self.photo_service = PhotoService(self.service.database_path)
 
         self.on_edit = on_edit
         self.on_checkin = on_checkin
@@ -71,6 +84,7 @@ class RepairDetailsPanel(QWidget):
         self.current_repair: dict[str, Any] | None = None
         self.current_events: list[dict[str, Any]] = []
         self.current_payments: list[dict[str, Any]] = []
+        self.current_photos: list[dict[str, Any]] = []
 
         self.square_terminal_operation_id: str | None = None
         self.square_terminal_service: SquareService | None = None
@@ -92,9 +106,7 @@ class RepairDetailsPanel(QWidget):
 
         self.square_refund_timer = QTimer(self)
         self.square_refund_timer.setInterval(2000)
-        self.square_refund_timer.timeout.connect(
-            self._poll_square_refund
-        )
+        self.square_refund_timer.timeout.connect(self._poll_square_refund)
 
         self._build_ui()
         self.clear()
@@ -461,6 +473,42 @@ class RepairDetailsPanel(QWidget):
         self.root.addWidget(self.payments_table)
 
         # -----------------------------------------------------
+        # REPAIR PHOTOS
+        # -----------------------------------------------------
+
+        photos_box = QGroupBox("Repair Photos")
+
+        photos_layout = QVBoxLayout(photos_box)
+        photos_layout.setSpacing(10)
+
+        self.photos_table = self._build_photos_table()
+        photos_layout.addWidget(self.photos_table)
+
+        photo_actions = QHBoxLayout()
+
+        self.add_photo_button = QPushButton("Add Photo")
+        self.add_photo_button.clicked.connect(self._add_photo)
+
+        self.view_photo_button = QPushButton("View Photo")
+        self.view_photo_button.clicked.connect(self._view_photo)
+
+        self.edit_photo_button = QPushButton("Edit Metadata")
+        self.edit_photo_button.clicked.connect(self._edit_photo)
+
+        self.remove_photo_button = QPushButton("Remove Photo")
+        self.remove_photo_button.clicked.connect(self._remove_photo)
+
+        photo_actions.addWidget(self.add_photo_button)
+        photo_actions.addWidget(self.view_photo_button)
+        photo_actions.addWidget(self.edit_photo_button)
+        photo_actions.addWidget(self.remove_photo_button)
+        photo_actions.addStretch(1)
+
+        photos_layout.addLayout(photo_actions)
+
+        self.root.addWidget(photos_box)
+
+        # -----------------------------------------------------
         # REPAIR INFORMATION
         # -----------------------------------------------------
 
@@ -609,6 +657,50 @@ class RepairDetailsPanel(QWidget):
         outer_layout.addWidget(self.scroll_area)
 
     @staticmethod
+    def _build_photos_table() -> QTableWidget:
+        table = QTableWidget()
+
+        table.setColumnCount(5)
+
+        table.setHorizontalHeaderLabels(
+            [
+                "Photo",
+                "Category",
+                "Caption",
+                "Original File",
+                "Added",
+            ]
+        )
+
+        table.setMaximumHeight(260)
+        table.setWordWrap(False)
+
+        table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+
+        table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+
+        table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+
+        table.setAlternatingRowColors(True)
+
+        table.verticalHeader().setDefaultSectionSize(24)
+
+        header = table.horizontalHeader()
+
+        for column in range(table.columnCount()):
+            header.setSectionResizeMode(
+                column,
+                QHeaderView.ResizeMode.ResizeToContents,
+            )
+
+        header.setSectionResizeMode(
+            2,
+            QHeaderView.ResizeMode.Stretch,
+        )
+
+        return table
+
+    @staticmethod
     def _build_payments_table() -> QTableWidget:
         table = QTableWidget()
 
@@ -714,6 +806,14 @@ class RepairDetailsPanel(QWidget):
         self.current_repair = None
         self.current_events = []
         self.current_payments = []
+        self.current_photos = []
+
+        self.photos_table.setRowCount(0)
+
+        self.add_photo_button.setEnabled(False)
+        self.view_photo_button.setEnabled(False)
+        self.edit_photo_button.setEnabled(False)
+        self.remove_photo_button.setEnabled(False)
 
         self.title.setText("Repair Details")
 
@@ -790,6 +890,8 @@ class RepairDetailsPanel(QWidget):
 
         self.device_id = str(repair["device_id"])
 
+        self.current_photos = self.photo_service.list_repair_photos(self.ticket_id)
+
         customer_name = self._customer_name(repair)
 
         device_name = self._device_name(repair)
@@ -850,12 +952,313 @@ class RepairDetailsPanel(QWidget):
         self._load_checkins()
         self._load_events()
 
+        self._populate_photos_table()
+
         self._set_actions_enabled(True)
+
+        self.add_photo_button.setEnabled(True)
+
+        has_photos = bool(self.current_photos)
+
+        self.view_photo_button.setEnabled(has_photos)
+
+        self.edit_photo_button.setEnabled(has_photos)
+
+        self.remove_photo_button.setEnabled(has_photos)
 
         self._update_lifecycle_buttons()
         self._update_payment_buttons()
+
         self._recover_pending_terminal_payment()
         self._recover_pending_square_refund()
+
+    def _populate_photos_table(
+        self,
+    ) -> None:
+        self.photos_table.setRowCount(len(self.current_photos))
+
+        for row_index, photo in enumerate(self.current_photos):
+            values = [
+                photo.get("photo_id", ""),
+                photo.get("category", ""),
+                photo.get("caption", ""),
+                photo.get("original_filename", ""),
+                self._format_datetime(photo.get("created_at", "")),
+            ]
+
+            for column_index, value in enumerate(values):
+                text = str(value or "")
+
+                item = QTableWidgetItem(text)
+
+                if text:
+                    item.setToolTip(text)
+
+                self.photos_table.setItem(
+                    row_index,
+                    column_index,
+                    item,
+                )
+
+    def _selected_photo(
+        self,
+    ) -> dict[str, Any] | None:
+        row = self.photos_table.currentRow()
+
+        if row < 0:
+            QMessageBox.information(
+                self,
+                "Select a Photo",
+                "Select a repair photo first.",
+            )
+            return None
+
+        if row >= len(self.current_photos):
+            QMessageBox.warning(
+                self,
+                "Photo Not Found",
+                ("The selected photo could " "not be loaded."),
+            )
+            return None
+
+        return self.current_photos[row]
+
+    def _add_photo(
+        self,
+    ) -> None:
+        if self.ticket_id is None:
+            return
+
+        filename, _ = QFileDialog.getOpenFileName(
+            self,
+            "Add Repair Photo",
+            "",
+            ("Images " "(*.jpg *.jpeg *.png *.webp *.heic)"),
+        )
+
+        if not filename:
+            return
+
+        category, accepted = QInputDialog.getItem(
+            self,
+            "Photo Category",
+            "Category:",
+            sorted(PHOTO_CATEGORIES),
+            0,
+            False,
+        )
+
+        if not accepted:
+            return
+
+        caption, accepted = QInputDialog.getText(
+            self,
+            "Photo Caption",
+            "Caption (optional):",
+        )
+
+        if not accepted:
+            return
+
+        try:
+            photo = self.photo_service.add_photo(
+                self.ticket_id,
+                Path(filename),
+                category=category,
+                caption=caption,
+            )
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Add Photo Failed",
+                str(exc),
+            )
+            return
+
+        QMessageBox.information(
+            self,
+            "Photo Added",
+            (f"{photo['photo_id']} " "was added successfully."),
+        )
+
+        self.load_repair(self.ticket_id)
+
+    def _view_photo(
+        self,
+    ) -> None:
+        photo = self._selected_photo()
+
+        if photo is None:
+            return
+
+        path = Path(
+            str(
+                photo.get(
+                    "file_path",
+                    "",
+                )
+            )
+        )
+
+        if not path.exists():
+            QMessageBox.warning(
+                self,
+                "Photo File Missing",
+                (
+                    "The photo record exists, "
+                    "but the image file could not "
+                    "be found.\n\n"
+                    f"{path}"
+                ),
+            )
+            return
+
+        opened = QDesktopServices.openUrl(QUrl.fromLocalFile(str(path.resolve())))
+
+        if not opened:
+            QMessageBox.warning(
+                self,
+                "Unable to Open Photo",
+                ("The operating system could " "not open this image."),
+            )
+
+    def _edit_photo(
+        self,
+    ) -> None:
+        photo = self._selected_photo()
+
+        if photo is None:
+            return
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Edit Photo Metadata")
+
+        layout = QVBoxLayout(dialog)
+        form = QFormLayout()
+
+        category_field = QComboBox()
+
+        categories = sorted(PHOTO_CATEGORIES)
+
+        category_field.addItems(categories)
+
+        current_category = str(
+            photo.get(
+                "category",
+                "",
+            )
+            or ""
+        )
+
+        if current_category in categories:
+            category_field.setCurrentText(current_category)
+
+        caption_field = QLineEdit(
+            str(
+                photo.get(
+                    "caption",
+                    "",
+                )
+                or ""
+            )
+        )
+
+        form.addRow(
+            "Category",
+            category_field,
+        )
+
+        form.addRow(
+            "Caption",
+            caption_field,
+        )
+
+        layout.addLayout(form)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Save
+            | QDialogButtonBox.StandardButton.Cancel
+        )
+
+        buttons.accepted.connect(dialog.accept)
+
+        buttons.rejected.connect(dialog.reject)
+
+        layout.addWidget(buttons)
+
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        try:
+            self.photo_service.update_photo(
+                str(photo["photo_id"]),
+                category=category_field.currentText(),
+                caption=caption_field.text(),
+            )
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Update Photo Failed",
+                str(exc),
+            )
+            return
+
+        if self.ticket_id is not None:
+            self.load_repair(self.ticket_id)
+
+    def _remove_photo(
+        self,
+    ) -> None:
+        photo = self._selected_photo()
+
+        if photo is None:
+            return
+
+        photo_id = str(
+            photo.get(
+                "photo_id",
+                "",
+            )
+        )
+
+        answer = QMessageBox.question(
+            self,
+            "Remove Photo",
+            (
+                f"Remove {photo_id} from "
+                "this repair?\n\n"
+                "The stored image file will "
+                "be preserved."
+            ),
+            (QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No),
+            QMessageBox.StandardButton.No,
+        )
+
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            removed = self.photo_service.remove_photo(
+                photo_id,
+                delete_file=False,
+            )
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Remove Photo Failed",
+                str(exc),
+            )
+            return
+
+        if not removed:
+            QMessageBox.warning(
+                self,
+                "Photo Not Found",
+                ("The selected photo record " "no longer exists."),
+            )
+
+        if self.ticket_id is not None:
+            self.load_repair(self.ticket_id)
 
     # ---------------------------------------------------------
     # PAYMENTS
@@ -1018,7 +1421,6 @@ class RepairDetailsPanel(QWidget):
         self,
     ) -> None:
 
-
         if self.ticket_id is None:
 
             return
@@ -1143,8 +1545,6 @@ class RepairDetailsPanel(QWidget):
         self.square_payment_button.setText(
             "Waiting for Square Terminal..."
         )
-
-
 
         self.square_terminal_timer.start()
 

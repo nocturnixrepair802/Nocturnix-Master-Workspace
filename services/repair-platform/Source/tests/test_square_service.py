@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from typing import cast
 
 import pytest
 
@@ -54,7 +55,13 @@ def test_square_service_uses_sandbox_environment(
 
     service = square_service_module.SquareService()
 
-    assert service.client.environment == square_service_module.SquareEnvironment.SANDBOX
+    client = cast(
+        FakeSquareClient,
+        service.client,
+    )
+
+    assert client.environment == square_service_module.SquareEnvironment.SANDBOX
+
     assert service.default_currency == "USD"
 
 
@@ -73,9 +80,12 @@ def test_square_service_uses_production_environment(
 
     service = square_service_module.SquareService()
 
-    assert (
-        service.client.environment == square_service_module.SquareEnvironment.PRODUCTION
+    client = cast(
+        FakeSquareClient,
+        service.client,
     )
+
+    assert client.environment == square_service_module.SquareEnvironment.PRODUCTION
 
 
 def test_money_currency_uses_configured_default(
