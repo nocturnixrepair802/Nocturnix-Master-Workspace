@@ -13,7 +13,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from desktop.services.api_client import (
+    ApiClient,
+)
 from desktop.services.repair_service import RepairService
+from desktop.services.settings_service import (
+    SettingsService,
+)
 from desktop.views.checkin_view import CheckinView
 from desktop.views.customers_view import CustomersView
 from desktop.views.dashboard_view import DashboardView
@@ -46,6 +52,15 @@ class MainWindow(QMainWindow):
         )
 
         self.repair_service = RepairService()
+        self.settings = SettingsService().load()
+
+        self.api_client = ApiClient(
+            self.settings
+        )
+
+        self.api_health = (
+            self.api_client.health()
+        )
 
         self._build_ui()
         self._show_dashboard()
@@ -143,13 +158,15 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(root)
 
-        status = QStatusBar()
+        self.status_bar = QStatusBar()
 
-        status.showMessage(
-            "LOCAL / OFFLINE READY  |  " f"{self.repair_service.database_path}"
+        self.status_bar.showMessage(
+            self._connection_status_text()
         )
 
-        self.setStatusBar(status)
+        self.setStatusBar(
+            self.status_bar
+        )
 
     def _build_header(
         self,
@@ -194,17 +211,24 @@ class MainWindow(QMainWindow):
 
         title_layout.addWidget(subtitle)
 
-        mode = QLabel("●  LOCAL / OFFLINE READY")
+        self.mode_label = QLabel(
+            self._connection_mode_text()
+        )
 
-        mode.setObjectName("appSubtitle")
+        self.mode_label.setObjectName(
+            "appSubtitle"
+        )
 
-        mode.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.mode_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight
+            | Qt.AlignmentFlag.AlignVCenter
+        )
 
         layout.addWidget(title_block)
 
         layout.addStretch(1)
 
-        layout.addWidget(mode)
+        layout.addWidget(self.mode_label)
 
         return header
 
@@ -274,3 +298,32 @@ class MainWindow(QMainWindow):
         self,
     ) -> None:
         self.navigation.setCurrentRow(0)
+
+    def _connection_mode_text(
+        self,
+    ) -> str:
+        mode = self.settings.connection_mode
+
+        if mode == "offline":
+            return "LOCAL / OFFLINE READY"
+
+        if self.api_health.available:
+            if mode == "online":
+                return "ONLINE READY"
+
+            return "AUTO / ONLINE"
+
+        if mode == "online":
+            return "ONLINE UNAVAILABLE"
+
+        return "AUTO / OFFLINE FALLBACK"
+
+    def _connection_status_text(
+        self,
+    ) -> str:
+        mode_text = self._connection_mode_text()
+
+        if self.api_health.available:
+            return f"{mode_text}" f"  |  " f"{self.settings.api_base_url}"
+
+        return f"{mode_text}" f"  |  " f"{self.repair_service.database_path}"

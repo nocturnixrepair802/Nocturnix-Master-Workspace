@@ -13,6 +13,9 @@ class DesktopSettings:
     default_created_by: str = "Ryan Brown"
     database_path: str = ""
     backup_limit: int = 10
+    connection_mode: str = "auto"
+    api_base_url: str = "http://127.0.0.1:8000"
+    api_timeout_seconds: float = 2.0
 
 
 class SettingsService:
@@ -129,6 +132,26 @@ class SettingsService:
                         defaults.backup_limit,
                     )
                 ),
+                connection_mode=str(
+                    values.get(
+                        "connection_mode",
+                        defaults.connection_mode,
+                    )
+                    or defaults.connection_mode
+                ),
+                api_base_url=str(
+                    values.get(
+                        "api_base_url",
+                        defaults.api_base_url,
+                    )
+                    or defaults.api_base_url
+                ),
+                api_timeout_seconds=cls._coerce_api_timeout(
+                    values.get(
+                        "api_timeout_seconds",
+                        defaults.api_timeout_seconds,
+                    )
+                ),
             )
         )
 
@@ -157,12 +180,31 @@ class SettingsService:
 
         database_path = str(settings.database_path).strip()
 
+        connection_mode = str(settings.connection_mode).strip().lower()
+
+        if connection_mode not in {
+            "offline",
+            "online",
+            "auto",
+        }:
+            connection_mode = "auto"
+
+        api_base_url = str(settings.api_base_url).strip().rstrip("/")
+
+        if not api_base_url:
+            api_base_url = "http://127.0.0.1:8000"
+
+        api_timeout_seconds = cls._coerce_api_timeout(settings.api_timeout_seconds)
+
         return DesktopSettings(
             square_environment=environment,
             default_currency=currency,
             default_created_by=created_by,
             database_path=database_path,
             backup_limit=cls._coerce_backup_limit(settings.backup_limit),
+            connection_mode=connection_mode,
+            api_base_url=api_base_url,
+            api_timeout_seconds=api_timeout_seconds,
         )
 
     @staticmethod
@@ -181,3 +223,20 @@ class SettingsService:
             result,
             1,
         )
+
+    @staticmethod
+    def _coerce_api_timeout(
+        value: Any,
+    ) -> float:
+        try:
+            result = float(value)
+        except (
+            TypeError,
+            ValueError,
+        ):
+            return 2.0
+
+        if result <= 0:
+            return 2.0
+
+        return result

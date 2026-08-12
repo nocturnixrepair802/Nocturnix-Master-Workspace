@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project.scripts]
-nocturnix = "run_gui:main"
+nocturnix = "desktop.main:main"
 
 [tool.setuptools]
 package-dir = { "" = "Source" }
