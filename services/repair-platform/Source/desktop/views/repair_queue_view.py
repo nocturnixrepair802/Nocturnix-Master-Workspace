@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from desktop.services.read_service import ReadService
 from desktop.services.repair_service import RepairService
 from desktop.views.checkin_dialog import NewCheckinDialog
 from desktop.views.customer_devices_dialog import DeviceDialog
@@ -35,10 +36,12 @@ class RepairQueueView(QWidget):
     def __init__(
         self,
         service: RepairService,
+        read_service: ReadService,
     ) -> None:
         super().__init__()
 
         self.service: RepairService = service
+        self.read_service = read_service
 
         self.repairs: list[dict[str, Any]] = []
         self.filtered_repairs: list[dict[str, Any]] = []
@@ -325,17 +328,26 @@ class RepairQueueView(QWidget):
     # ---------------------------------------------------------
 
     def refresh(self) -> None:
-        selected_ticket = self.pending_ticket_id or self._selected_ticket_id()
+        selected_ticket = (
+            self.pending_ticket_id
+            or self._selected_ticket_id()
+        )
 
-        self.repairs = self.service.list_repairs()
+        self.repairs = (
+            self.read_service.list_repairs()
+        )
 
         self._apply_filters()
 
         if selected_ticket is not None:
-            selected = self._select_ticket(selected_ticket)
+            selected = self._select_ticket(
+                selected_ticket
+            )
 
             if selected:
-                self.details_panel.load_repair(selected_ticket)
+                self.details_panel.load_repair(
+                    selected_ticket
+                )
 
         self.pending_ticket_id = None
 
