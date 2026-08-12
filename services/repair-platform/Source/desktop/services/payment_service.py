@@ -111,33 +111,118 @@ class PaymentService:
                         REFERENCES repair_tickets(ticket_id)
                 )
                 """)
+        payment_columns = {
+            row["name"]
+            for row in connection.execute(
+                "PRAGMA table_info(repair_payments)"
+            ).fetchall()
+        }
 
+        if "square_refund_id" not in payment_columns:
             connection.execute("""
-                CREATE INDEX IF NOT EXISTS
-                    idx_payment_operations_repair_id
-                ON payment_operations(repair_id)
+                ALTER TABLE repair_payments
+                ADD COLUMN square_refund_id TEXT
                 """)
 
+        if "refunded_square_payment_id" not in payment_columns:
             connection.execute("""
-                CREATE INDEX IF NOT EXISTS
-                    idx_payment_operations_status
-                ON payment_operations(operation_status)
+                ALTER TABLE repair_payments
+                ADD COLUMN refunded_square_payment_id TEXT
                 """)
 
-            connection.execute("""
-                CREATE INDEX IF NOT EXISTS
-                    idx_payment_operations_terminal_checkout
-                ON payment_operations(square_terminal_checkout_id)
-                """)
+        connection.execute("""
+            UPDATE repair_payments
+            SET
+                square_refund_id = reference_number
+            WHERE payment_method = 'Square Refund'
+              AND square_refund_id IS NULL
+              AND reference_number IS NOT NULL
+              AND TRIM(reference_number) <> ''
+              AND reference_number IN (
+                  SELECT reference_number
+                  FROM repair_payments
+                  WHERE payment_method = 'Square Refund'
+                    AND reference_number IS NOT NULL
+                    AND TRIM(reference_number) <> ''
+                  GROUP BY reference_number
+                  HAVING COUNT(*) = 1
+              )
+            """)
 
-            connection.execute("""
-                CREATE INDEX IF NOT EXISTS
-                    idx_payment_operations_refund_id
-                ON payment_operations(square_refund_id)
-                """)
+        refund_rows = connection.execute("""
+            SELECT
+                payment_id,
+                notes
+            FROM repair_payments
+            WHERE payment_method = 'Square Refund'
+              AND refunded_square_payment_id IS NULL
+              AND notes IS NOT NULL
+            """).fetchall()
 
-            connection.commit()
+        refund_note_pattern = re.compile(r"^Square refund for (.+)\.$")
 
+        for row in refund_rows:
+            notes = str(row["notes"] or "").strip()
+            match = refund_note_pattern.fullmatch(notes)
+
+            if match is None:
+                continue
+
+            refunded_square_payment_id = match.group(1).strip()
+
+            if not refunded_square_payment_id:
+                continue
+
+            connection.execute(
+                """
+                UPDATE repair_payments
+                SET refunded_square_payment_id = ?
+                WHERE payment_id = ?
+                """,
+                (
+                    refunded_square_payment_id,
+                    row["payment_id"],
+                ),
+            )
+
+        connection.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS
+                idx_repair_payments_square_refund_id
+            ON repair_payments(square_refund_id)
+            WHERE square_refund_id IS NOT NULL
+            """)
+
+        connection.execute("""
+            CREATE INDEX IF NOT EXISTS
+                idx_repair_payments_refunded_square_payment_id
+            ON repair_payments(refunded_square_payment_id)
+            """)
+
+        connection.execute("""
+            CREATE INDEX IF NOT EXISTS
+                idx_payment_operations_repair_id
+            ON payment_operations(repair_id)
+            """)
+
+        connection.execute("""
+            CREATE INDEX IF NOT EXISTS
+                idx_payment_operations_status
+            ON payment_operations(operation_status)
+            """)
+
+        connection.execute("""
+            CREATE INDEX IF NOT EXISTS
+                idx_payment_operations_terminal_checkout
+            ON payment_operations(square_terminal_checkout_id)
+            """)
+
+        connection.execute("""
+            CREATE INDEX IF NOT EXISTS
+                idx_payment_operations_refund_id
+            ON payment_operations(square_refund_id)
+            """)
+
+        connection.commit()
     # ---------------------------------------------------------
     # BACKUPS
     # ---------------------------------------------------------
@@ -377,6 +462,12 @@ class PaymentService:
 
         notes = self._optional_text(values.get("notes"))
 
+        square_refund_id = self._optional_text(values.get("square_refund_id"))
+
+        refunded_square_payment_id = self._optional_text(
+            values.get("refunded_square_payment_id")
+        )
+
         created_by = self._optional_text(values.get("created_by")) or "Ryan Brown"
 
         created_at = datetime.now(UTC).isoformat()
@@ -401,6 +492,8 @@ class PaymentService:
                     square_order_id,
                     square_terminal_checkout_id,
                     square_receipt_url,
+                    square_refund_id,
+                    refunded_square_payment_id,
                     notes,
                     created_at,
                     created_by
@@ -408,7 +501,7 @@ class PaymentService:
                 VALUES (
                     ?, ?, ?, ?, ?, ?,
                     ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?
+                    ?, ?, ?, ?, ?
                 )
                 """,
                 (
@@ -424,6 +517,8 @@ class PaymentService:
                     square_order_id or None,
                     square_terminal_checkout_id or None,
                     square_receipt_url or None,
+                    square_refund_id or None,
+                    refunded_square_payment_id or None,
                     notes or None,
                     created_at,
                     created_by,
@@ -435,10 +530,11 @@ class PaymentService:
         payment = self.get_payment(payment_id)
 
         if payment is None:
-            raise RuntimeError("Payment was created but could not be reloaded.")
+            raise RuntimeError(
+                "Payment was created but could not be reloaded."
+            )
 
         return payment
-
     # ---------------------------------------------------------
     # PAYMENT LOOKUPS
     # ---------------------------------------------------------
@@ -1025,36 +1121,42 @@ class PaymentService:
         self._require_repair(repair_id)
 
         with self.connect() as connection:
-            rows = connection.execute(
+            row = connection.execute(
                 """
                 SELECT
-                    amount,
-                    notes
-                FROM repair_payments
-                WHERE repair_id = ?
-                  AND payment_method = 'Square Refund'
-                  AND payment_status IN (
-                      'Refunded',
-                      'Partially Refunded'
-                  )
+                    COALESCE(
+                        SUM(refund_amount),
+                        0.0
+                    ) AS total_refunded
+                FROM (
+                    SELECT
+                        MAX(amount) AS refund_amount
+                    FROM repair_payments
+                    WHERE repair_id = ?
+                      AND payment_method = 'Square Refund'
+                      AND payment_status IN (
+                          'Refunded',
+                          'Partially Refunded'
+                      )
+                      AND refunded_square_payment_id = ?
+                    GROUP BY COALESCE(
+                        square_refund_id,
+                        reference_number,
+                        payment_id
+                    )
+                )
                 """,
-                (repair_id,),
-            ).fetchall()
+                (
+                    repair_id,
+                    square_payment_id,
+                ),
+            ).fetchone()
 
-        total_refunded = 0.0
-
-        marker = "Square refund for " f"{square_payment_id}."
-
-        for row in rows:
-            notes = str(row["notes"] or "").strip()
-
-            if notes != marker:
-                continue
-
-            total_refunded += float(row["amount"] or 0.0)
+        if row is None:
+            return 0.0
 
         return round(
-            total_refunded,
+            float(row["total_refunded"] or 0.0),
             2,
         )
 
@@ -1309,10 +1411,19 @@ class PaymentService:
             "Square refund ID",
         )
 
-        existing_refund = self.get_payment_by_reference_number(square_refund_id)
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM repair_payments
+                WHERE square_refund_id = ?
+                LIMIT 1
+                """,
+                (square_refund_id,),
+            ).fetchone()
 
-        if existing_refund is not None:
-            return existing_refund
+        if row is not None:
+            return dict(row)
 
         return self.create_payment(
             repair_id,
@@ -1323,6 +1434,8 @@ class PaymentService:
                 "currency": "USD",
                 "reference_number": square_refund_id,
                 "square_payment_id": None,
+                "square_refund_id": square_refund_id,
+                "refunded_square_payment_id": (square_payment_id),
                 "notes": (
                     notes.strip()
                     or ("Refund for Square payment " f"{square_payment_id}")
