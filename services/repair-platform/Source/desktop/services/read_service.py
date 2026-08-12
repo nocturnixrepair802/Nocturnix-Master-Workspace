@@ -30,6 +30,11 @@ class LocalReadProvider(Protocol):
         limit: int = 500,
     ) -> list[dict[str, Any]]: ...
 
+    def get_repair_workspace(
+        self,
+        ticket_id: str,
+    ) -> dict[str, Any] | None: ...
+
 
 class ApiReadProvider(Protocol):
     def dashboard(
@@ -39,6 +44,11 @@ class ApiReadProvider(Protocol):
     def repair_queue(
         self,
     ) -> list[dict[str, Any]]: ...
+
+    def get_repair(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]: ...
 
 
 class ReadServiceUnavailable(RuntimeError):
@@ -227,6 +237,24 @@ class ReadService:
 
         return normalized[:limit]
 
+    def get_repair_workspace(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any] | None:
+        if not self._should_use_api():
+            return self.local_service.get_repair_workspace(repair_id)
+
+        try:
+            repair = self.api_client.get_repair(repair_id)
+
+        except ApiRequestError as exc:
+            if self._fallback_allowed():
+                return self.local_service.get_repair_workspace(repair_id)
+
+            raise ReadServiceUnavailable(str(exc)) from exc
+
+        return self._normalize_repair(repair)
+
     @staticmethod
     def _normalize_queue_item(
         item: dict[str, Any],
@@ -362,3 +390,163 @@ class ReadService:
             ValueError,
         ):
             return 0
+
+
+    @staticmethod
+    def _normalize_repair(
+        repair: dict[str, Any],
+    ) -> dict[str, Any]:
+        normalized = dict(repair)
+
+        repair_id = str(
+            repair.get(
+                "id",
+                repair.get(
+                    "ticket_id",
+                    "",
+                ),
+            )
+            or ""
+        )
+
+        normalized["ticket_id"] = (
+            repair_id
+        )
+
+        if "id" not in normalized:
+            normalized["id"] = (
+                repair_id
+            )
+
+        normalized.setdefault(
+            "customer_id",
+            "",
+        )
+        normalized.setdefault(
+            "device_id",
+            "",
+        )
+        normalized.setdefault(
+            "repair_status",
+            "",
+        )
+        normalized.setdefault(
+            "intake_date",
+            "",
+        )
+        normalized.setdefault(
+            "technician",
+            "",
+        )
+        normalized.setdefault(
+            "priority",
+            "Normal",
+        )
+        normalized.setdefault(
+            "due_date",
+            "",
+        )
+        normalized.setdefault(
+            "problem_description",
+            "",
+        )
+        normalized.setdefault(
+            "diagnosis",
+            "",
+        )
+        normalized.setdefault(
+            "estimated_cost",
+            None,
+        )
+        normalized.setdefault(
+            "final_cost",
+            None,
+        )
+        normalized.setdefault(
+            "date_completed",
+            "",
+        )
+        normalized.setdefault(
+            "date_picked_up",
+            "",
+        )
+        normalized.setdefault(
+            "warranty",
+            False,
+        )
+        normalized.setdefault(
+            "notes",
+            "",
+        )
+        normalized.setdefault(
+            "last_modified",
+            "",
+        )
+
+        normalized.setdefault(
+            "customer_type",
+            "",
+        )
+        normalized.setdefault(
+            "first_name",
+            "",
+        )
+        normalized.setdefault(
+            "last_name",
+            "",
+        )
+        normalized.setdefault(
+            "business_name",
+            "",
+        )
+        normalized.setdefault(
+            "email",
+            "",
+        )
+        normalized.setdefault(
+            "mobile_phone",
+            "",
+        )
+        normalized.setdefault(
+            "preferred_contact",
+            "",
+        )
+
+        normalized.setdefault(
+            "catalog_device_id",
+            "",
+        )
+        normalized.setdefault(
+            "manufacturer",
+            "",
+        )
+        normalized.setdefault(
+            "device_family",
+            "",
+        )
+        normalized.setdefault(
+            "device_model",
+            "",
+        )
+        normalized.setdefault(
+            "serial_number",
+            "",
+        )
+        normalized.setdefault(
+            "imei_service_tag",
+            "",
+        )
+        normalized.setdefault(
+            "color",
+            "",
+        )
+        normalized.setdefault(
+            "storage",
+            "",
+        )
+        normalized.setdefault(
+            "carrier",
+            "",
+        )
+
+        return normalized

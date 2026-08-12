@@ -62,6 +62,16 @@ class FakeLocalService:
         ][:limit]
 
 
+    def get_repair_workspace(
+        self,
+        ticket_id: str,
+    ) -> dict[str, Any] | None:
+        return {
+            "ticket_id": ticket_id,
+            "source": "local",
+        }
+
+
 class FakeApiClient:
     def __init__(
         self,
@@ -134,6 +144,22 @@ class FakeApiClient:
                 "due_date": "",
             },
         ]
+
+
+    def get_repair(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]:
+        if self.fail:
+            raise ApiRequestError("API unavailable")
+
+        return {
+            "id": repair_id,
+            "customer_id": "CUS000100",
+            "device_id": "DEV000100",
+            "repair_status": "In Repair",
+            "priority": "Normal",
+        }
 
 
 def test_offline_mode_uses_local_dashboard() -> None:
@@ -294,3 +320,69 @@ def test_auto_queue_failure_falls_back_local() -> None:
 
     assert repairs[0]["ticket_id"] == ("LOCAL001")
     assert local.repair_calls == 1
+
+
+def test_remote_repair_detail_is_normalized() -> None:
+    service = ReadService(
+        local_service=FakeLocalService(),
+        api_client=FakeApiClient(),
+        settings=DesktopSettings(
+            connection_mode="auto",
+        ),
+        api_available=True,
+    )
+
+    repair = service.get_repair_workspace("RPR000100")
+
+    assert repair is not None
+    assert repair["ticket_id"] == "RPR000100"
+    assert repair["customer_id"] == "CUS000100"
+    assert repair["device_id"] == "DEV000100"
+
+
+def test_offline_repair_detail_uses_local() -> None:
+    service = ReadService(
+        local_service=FakeLocalService(),
+        api_client=FakeApiClient(),
+        settings=DesktopSettings(
+            connection_mode="offline",
+        ),
+        api_available=True,
+    )
+
+    repair = service.get_repair_workspace("LOCAL001")
+
+    assert repair is not None
+    assert repair["source"] == "local"
+
+
+def test_auto_repair_detail_failure_falls_back_local() -> None:
+    service = ReadService(
+        local_service=FakeLocalService(),
+        api_client=FakeApiClient(fail=True),
+        settings=DesktopSettings(
+            connection_mode="auto",
+        ),
+        api_available=True,
+    )
+
+    repair = service.get_repair_workspace("LOCAL002")
+
+    assert repair is not None
+    assert repair["source"] == "local"
+
+
+def test_online_repair_detail_failure_raises() -> None:
+    service = ReadService(
+        local_service=FakeLocalService(),
+        api_client=FakeApiClient(fail=True),
+        settings=DesktopSettings(
+            connection_mode="online",
+        ),
+        api_available=True,
+    )
+
+    with pytest.raises(
+        ReadServiceUnavailable,
+    ):
+        service.get_repair_workspace("RPR000100")

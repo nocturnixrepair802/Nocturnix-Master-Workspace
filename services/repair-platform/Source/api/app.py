@@ -38,6 +38,7 @@ from api.schemas import (
     RepairQueueItemResponse,
     RepairResponse,
     RepairUpdateRequest,
+    RepairWorkspaceResponse,
     WPFormsIntakeRequest,
     WPFormsIntakeResponse,
 )
@@ -300,6 +301,225 @@ def repair_response(
         due_date=str(
             record.get(
                 "due_date",
+                "",
+            )
+            or ""
+        ),
+    )
+
+
+def repair_workspace_response(
+    repair: dict[str, Any],
+    customer: dict[str, Any],
+    device: dict[str, Any],
+) -> RepairWorkspaceResponse:
+    estimated_cost = repair.get("estimated_cost")
+    final_cost = repair.get("final_cost")
+
+    return RepairWorkspaceResponse(
+        id=str(repair["ticket_id"]),
+        customer_id=str(repair["customer_id"]),
+        device_id=str(repair["device_id"]),
+        repair_status=str(
+            repair.get(
+                "repair_status",
+                "",
+            )
+            or ""
+        ),
+        problem_description=str(
+            repair.get(
+                "problem_description",
+                "",
+            )
+            or ""
+        ),
+        technician_notes=str(
+            repair.get(
+                "notes",
+                "",
+            )
+            or ""
+        ),
+        estimated_cost=(None if estimated_cost is None else float(estimated_cost)),
+        final_cost=(None if final_cost is None else float(final_cost)),
+        intake_date=str(
+            repair.get(
+                "intake_date",
+                "",
+            )
+            or ""
+        ),
+        technician=str(
+            repair.get(
+                "technician",
+                DEFAULT_TECHNICIAN,
+            )
+            or DEFAULT_TECHNICIAN
+        ),
+        priority=str(
+            repair.get(
+                "priority",
+                "Normal",
+            )
+            or "Normal"
+        ),
+        due_date=str(
+            repair.get(
+                "due_date",
+                "",
+            )
+            or ""
+        ),
+        diagnosis=str(
+            repair.get(
+                "diagnosis",
+                "",
+            )
+            or ""
+        ),
+        date_completed=str(
+            repair.get(
+                "date_completed",
+                "",
+            )
+            or ""
+        ),
+        date_picked_up=str(
+            repair.get(
+                "date_picked_up",
+                "",
+            )
+            or ""
+        ),
+        warranty=bool(
+            repair.get(
+                "warranty",
+                False,
+            )
+        ),
+        notes=str(
+            repair.get(
+                "notes",
+                "",
+            )
+            or ""
+        ),
+        last_modified=str(
+            repair.get(
+                "last_modified",
+                "",
+            )
+            or ""
+        ),
+        customer_type=str(
+            customer.get(
+                "customer_type",
+                "",
+            )
+            or ""
+        ),
+        first_name=str(
+            customer.get(
+                "first_name",
+                "",
+            )
+            or ""
+        ),
+        last_name=str(
+            customer.get(
+                "last_name",
+                "",
+            )
+            or ""
+        ),
+        business_name=str(
+            customer.get(
+                "business_name",
+                "",
+            )
+            or ""
+        ),
+        email=str(
+            customer.get(
+                "email",
+                "",
+            )
+            or ""
+        ),
+        mobile_phone=str(
+            customer.get(
+                "mobile_phone",
+                "",
+            )
+            or ""
+        ),
+        preferred_contact=str(
+            customer.get(
+                "preferred_contact",
+                "",
+            )
+            or ""
+        ),
+        catalog_device_id=str(
+            device.get(
+                "catalog_device_id",
+                "",
+            )
+            or ""
+        ),
+        manufacturer=str(
+            device.get(
+                "manufacturer",
+                "",
+            )
+            or ""
+        ),
+        device_family=str(
+            device.get(
+                "device_family",
+                "",
+            )
+            or ""
+        ),
+        device_model=str(
+            device.get(
+                "device_model",
+                "",
+            )
+            or ""
+        ),
+        serial_number=str(
+            device.get(
+                "serial_number",
+                "",
+            )
+            or ""
+        ),
+        imei_service_tag=str(
+            device.get(
+                "imei_service_tag",
+                "",
+            )
+            or ""
+        ),
+        color=str(
+            device.get(
+                "color",
+                "",
+            )
+            or ""
+        ),
+        storage=str(
+            device.get(
+                "storage",
+                "",
+            )
+            or ""
+        ),
+        carrier=str(
+            device.get(
+                "carrier",
                 "",
             )
             or ""
@@ -1418,6 +1638,49 @@ def get_repair(
         )
 
     return repair_response(record)
+
+
+@app.get(
+    "/api/repairs/{repair_id}/workspace",
+    response_model=RepairWorkspaceResponse,
+)
+def get_repair_workspace(
+    repair_id: str,
+) -> RepairWorkspaceResponse:
+    database = get_database()
+
+    repair = database.get_repair(repair_id)
+
+    if repair is None:
+        raise HTTPException(
+            status_code=404,
+            detail=("Repair ticket not found."),
+        )
+
+    customer_id = str(repair["customer_id"])
+    device_id = str(repair["device_id"])
+
+    customer = database.get_customer(customer_id)
+
+    if customer is None:
+        raise HTTPException(
+            status_code=404,
+            detail=("Repair customer not found."),
+        )
+
+    device = database.get_customer_device(device_id)
+
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail=("Repair device not found."),
+        )
+
+    return repair_workspace_response(
+        repair,
+        customer,
+        device,
+    )
 
 
 @app.patch(

@@ -48,6 +48,7 @@ from desktop.services.photo_service import (
     PHOTO_CATEGORIES,
     PhotoService,
 )
+from desktop.services.read_service import ReadService
 from desktop.services.repair_service import (
     RepairService,
 )
@@ -57,9 +58,11 @@ from desktop.services.square_service import (
 
 
 class RepairDetailsPanel(QWidget):
+
     def __init__(
         self,
         service: RepairService,
+        read_service: ReadService,
         *,
         on_edit: Callable[[str], None],
         on_checkin: Callable[[str], None],
@@ -69,6 +72,7 @@ class RepairDetailsPanel(QWidget):
         super().__init__()
 
         self.service = service
+        self.read_service = read_service
         self.payment_service = PaymentService()
         self.photo_service = PhotoService(self.service.database_path)
 
@@ -876,7 +880,7 @@ class RepairDetailsPanel(QWidget):
         self,
         ticket_id: str,
     ) -> None:
-        repair = self.service.get_repair_workspace(ticket_id)
+        repair = self.read_service.get_repair_workspace(ticket_id)
 
         if repair is None:
             self.clear()

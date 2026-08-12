@@ -80,6 +80,47 @@ class RepairResponse(BaseModel):
     due_date: str = ""
 
 
+class RepairWorkspaceResponse(BaseModel):
+    id: str
+    customer_id: str
+    device_id: str
+
+    repair_status: str = ""
+    problem_description: str = ""
+    technician_notes: str = ""
+    estimated_cost: float | None = None
+    final_cost: float | None = None
+    intake_date: str = ""
+    technician: str = ""
+    priority: str = "Normal"
+    due_date: str = ""
+
+    diagnosis: str = ""
+    date_completed: str = ""
+    date_picked_up: str = ""
+    warranty: bool = False
+    notes: str = ""
+    last_modified: str = ""
+
+    customer_type: str = ""
+    first_name: str = ""
+    last_name: str = ""
+    business_name: str = ""
+    email: str = ""
+    mobile_phone: str = ""
+    preferred_contact: str = ""
+
+    catalog_device_id: str = ""
+    manufacturer: str = ""
+    device_family: str = ""
+    device_model: str = ""
+    serial_number: str = ""
+    imei_service_tag: str = ""
+    color: str = ""
+    storage: str = ""
+    carrier: str = ""
+
+
 class RepairQueueItemResponse(BaseModel):
     id: str
     customer_id: str
