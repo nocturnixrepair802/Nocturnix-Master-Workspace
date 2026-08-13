@@ -173,3 +173,46 @@ class ApiClient:
             raise ApiRequestError("Repair endpoint did not " "return an object.")
 
         return dict(payload)
+
+    def list_repair_events(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        payload = self.get_json(f"/api/repairs/{repair_id}/events")
+
+        if not isinstance(
+            payload,
+            list,
+        ):
+            raise ApiRequestError("Repair events endpoint did not " "return a list.")
+
+        events: list[dict[str, Any]] = []
+
+        for item in payload:
+            if not isinstance(
+                item,
+                dict,
+            ):
+                raise ApiRequestError(
+                    "Repair events endpoint " "contained an invalid record."
+                )
+
+            events.append(dict(item))
+
+        return events
+
+    def get_repair_checkin(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]:
+        payload = self.get_json(f"/api/repairs/{repair_id}/checkin")
+
+        if not isinstance(
+            payload,
+            dict,
+        ):
+            raise ApiRequestError(
+                "Repair check-in endpoint did not " "return an object."
+            )
+
+        return dict(payload)

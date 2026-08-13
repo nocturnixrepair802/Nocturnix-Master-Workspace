@@ -61,7 +61,6 @@ class FakeLocalService:
             }
         ][:limit]
 
-
     def get_repair_workspace(
         self,
         ticket_id: str,
@@ -70,6 +69,31 @@ class FakeLocalService:
             "ticket_id": ticket_id,
             "source": "local",
         }
+
+    def list_repair_events(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        return [
+            {
+                "event_id": "LOCAL_EVENT",
+                "repair_id": repair_id,
+                "event_type": "local_event",
+                "created_at": "2026-08-12",
+            }
+        ]
+
+    def list_repair_checkins(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        return [
+            {
+                "checkin_id": "LOCAL_CHECKIN",
+                "repair_id": repair_id,
+                "technician": "Local Technician",
+            }
+        ]
 
 
 class FakeApiClient:
@@ -145,7 +169,6 @@ class FakeApiClient:
             },
         ]
 
-
     def get_repair(
         self,
         repair_id: str,
@@ -159,6 +182,46 @@ class FakeApiClient:
             "device_id": "DEV000100",
             "repair_status": "In Repair",
             "priority": "Normal",
+        }
+
+    def list_repair_events(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        if self.fail:
+            raise ApiRequestError("API unavailable")
+
+        return [
+            {
+                "event_id": "EVT000001",
+                "repair_id": repair_id,
+                "event_type": "repair_created",
+                "old_value": "",
+                "new_value": "New Intake",
+                "notes": "",
+                "created_at": "2026-08-12T10:00:00",
+                "created_by": "Ryan Brown",
+            }
+        ]
+
+    def get_repair_checkin(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]:
+        if self.fail:
+            raise ApiRequestError("API unavailable")
+
+        return {
+            "id": "CHK000001",
+            "repair_id": repair_id,
+            "customer_id": "CUS000100",
+            "device_id": "DEV000100",
+            "technician": "Ryan Brown",
+            "checkin_timestamp": ("2026-08-12T10:00:00"),
+            "powers_on": "Yes",
+            "battery_percentage": 75,
+            "liquid_damage": "No",
+            "intake_notes": "Remote check-in",
         }
 
 
@@ -386,3 +449,68 @@ def test_online_repair_detail_failure_raises() -> None:
         ReadServiceUnavailable,
     ):
         service.get_repair_workspace("RPR000100")
+
+
+def test_remote_repair_events_use_api() -> None:
+    service = ReadService(
+        local_service=FakeLocalService(),
+        api_client=FakeApiClient(),
+        settings=DesktopSettings(
+            connection_mode="auto",
+        ),
+        api_available=True,
+    )
+
+    events = service.list_repair_events("RPR000100")
+
+    assert len(events) == 1
+    assert events[0]["event_id"] == ("EVT000001")
+    assert events[0]["repair_id"] == ("RPR000100")
+
+
+def test_auto_repair_events_failure_falls_back_local() -> None:
+    service = ReadService(
+        local_service=FakeLocalService(),
+        api_client=FakeApiClient(fail=True),
+        settings=DesktopSettings(
+            connection_mode="auto",
+        ),
+        api_available=True,
+    )
+
+    events = service.list_repair_events("RPR000100")
+
+    assert events[0]["event_id"] == ("LOCAL_EVENT")
+
+
+def test_remote_repair_checkin_is_normalized() -> None:
+    service = ReadService(
+        local_service=FakeLocalService(),
+        api_client=FakeApiClient(),
+        settings=DesktopSettings(
+            connection_mode="auto",
+        ),
+        api_available=True,
+    )
+
+    checkins = service.list_repair_checkins("RPR000100")
+
+    assert len(checkins) == 1
+    assert checkins[0]["checkin_id"] == ("CHK000001")
+    assert checkins[0]["repair_id"] == ("RPR000100")
+    assert checkins[0]["battery_percentage"] == 75
+
+
+def test_auto_repair_checkin_failure_falls_back_local() -> None:
+    service = ReadService(
+        local_service=FakeLocalService(),
+        api_client=FakeApiClient(fail=True),
+        settings=DesktopSettings(
+            connection_mode="auto",
+        ),
+        api_available=True,
+    )
+
+    checkins = service.list_repair_checkins("RPR000100")
+
+    assert checkins[0]["checkin_id"] == ("LOCAL_CHECKIN")
