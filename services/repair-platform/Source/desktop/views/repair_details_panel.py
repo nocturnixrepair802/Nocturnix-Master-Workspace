@@ -2821,7 +2821,7 @@ class RepairDetailsPanel(QWidget):
             self.checkins_table.setRowCount(0)
             return
 
-        rows = self.service.list_repair_checkins(self.ticket_id)
+        rows = self.read_service.list_repair_checkins(self.ticket_id)
 
         self.checkins_table.setRowCount(len(rows))
 
@@ -2886,7 +2886,7 @@ class RepairDetailsPanel(QWidget):
             self.event_count.setText("0 events")
             return
 
-        events = self.service.list_repair_events(self.ticket_id)
+        events = self.read_service.list_repair_events(self.ticket_id)
 
         self.current_events = events
 

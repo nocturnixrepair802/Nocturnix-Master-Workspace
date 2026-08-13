@@ -34,6 +34,15 @@ class LocalReadProvider(Protocol):
         self,
         ticket_id: str,
     ) -> dict[str, Any] | None: ...
+    def list_repair_checkins(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]: ...
+
+    def list_repair_events(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]: ...
 
 
 class ApiReadProvider(Protocol):
@@ -46,6 +55,15 @@ class ApiReadProvider(Protocol):
     ) -> list[dict[str, Any]]: ...
 
     def get_repair(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]: ...
+    def list_repair_events(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]: ...
+
+    def get_repair_checkin(
         self,
         repair_id: str,
     ) -> dict[str, Any]: ...
@@ -255,6 +273,42 @@ class ReadService:
 
         return self._normalize_repair(repair)
 
+    def list_repair_events(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        if not self._should_use_api():
+            return self.local_service.list_repair_events(repair_id)
+
+        try:
+            events = self.api_client.list_repair_events(repair_id)
+
+        except ApiRequestError as exc:
+            if self._fallback_allowed():
+                return self.local_service.list_repair_events(repair_id)
+
+            raise ReadServiceUnavailable(str(exc)) from exc
+
+        return [dict(event) for event in events]
+
+    def list_repair_checkins(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        if not self._should_use_api():
+            return self.local_service.list_repair_checkins(repair_id)
+
+        try:
+            checkin = self.api_client.get_repair_checkin(repair_id)
+
+        except ApiRequestError as exc:
+            if self._fallback_allowed():
+                return self.local_service.list_repair_checkins(repair_id)
+
+            raise ReadServiceUnavailable(str(exc)) from exc
+
+        return [self._normalize_checkin(checkin)]
+
     @staticmethod
     def _normalize_queue_item(
         item: dict[str, Any],
@@ -390,7 +444,6 @@ class ReadService:
             ValueError,
         ):
             return 0
-
 
     @staticmethod
     def _normalize_repair(
@@ -548,5 +601,29 @@ class ReadService:
             "carrier",
             "",
         )
+
+        return normalized
+
+    @staticmethod
+    def _normalize_checkin(
+        checkin: dict[str, Any],
+    ) -> dict[str, Any]:
+        normalized = dict(checkin)
+
+        checkin_id = str(
+            checkin.get(
+                "id",
+                checkin.get(
+                    "checkin_id",
+                    "",
+                ),
+            )
+            or ""
+        )
+
+        normalized["checkin_id"] = checkin_id
+
+        if "id" not in normalized:
+            normalized["id"] = checkin_id
 
         return normalized
