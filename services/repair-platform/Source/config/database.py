@@ -38,7 +38,23 @@ TABLES = {
 
 OPERATIONS_DATA_FOLDER = PROJECT_ROOT / "data"
 
-OPERATIONS_DATABASE = OPERATIONS_DATA_FOLDER / "nocturnix_operations.sqlite3"
+OPERATIONS_LOCAL_DATABASE = (
+    OPERATIONS_DATA_FOLDER / "nocturnix_operations.local.sqlite3"
+)
+
+OPERATIONS_FALLBACK_DATABASE = OPERATIONS_DATA_FOLDER / "nocturnix_operations.sqlite3"
+
+_configured_operations_database = os.environ.get(
+    "NOCTURNIX_OPERATIONS_DATABASE",
+    "",
+).strip()
+
+if _configured_operations_database:
+    OPERATIONS_DATABASE = Path(_configured_operations_database).expanduser()
+elif OPERATIONS_LOCAL_DATABASE.exists():
+    OPERATIONS_DATABASE = OPERATIONS_LOCAL_DATABASE
+else:
+    OPERATIONS_DATABASE = OPERATIONS_FALLBACK_DATABASE
 # ======================================================
 # Read-Only Master Catalog SQLite Database
 # ======================================================

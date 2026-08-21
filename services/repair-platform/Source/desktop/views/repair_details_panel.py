@@ -63,6 +63,7 @@ class RepairDetailsPanel(QWidget):
         self,
         service: RepairService,
         read_service: ReadService,
+        payment_service: PaymentService,
         *,
         on_edit: Callable[[str], None],
         on_checkin: Callable[[str], None],
@@ -73,7 +74,7 @@ class RepairDetailsPanel(QWidget):
 
         self.service = service
         self.read_service = read_service
-        self.payment_service = PaymentService()
+        self.payment_service = payment_service
         self.photo_service = PhotoService(self.service.database_path)
 
         self.on_edit = on_edit
@@ -1274,7 +1275,7 @@ class RepairDetailsPanel(QWidget):
         if self.ticket_id is None:
             return
 
-        summary = self.payment_service.payment_summary(self.ticket_id)
+        summary = self.read_service.payment_summary(self.ticket_id)
 
         self.payment_final_cost.setText(self._currency(summary.get("final_cost")))
 
@@ -1292,7 +1293,7 @@ class RepairDetailsPanel(QWidget):
             self.payments_table.setRowCount(0)
             return
 
-        payments = self.payment_service.list_repair_payments(self.ticket_id)
+        payments = self.read_service.list_repair_payments(self.ticket_id)
 
         self.current_payments = payments
 

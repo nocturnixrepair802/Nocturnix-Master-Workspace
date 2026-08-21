@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from desktop.services.payment_service import PaymentService
 from desktop.services.read_service import ReadService
 from desktop.services.repair_service import RepairService
 from desktop.views.checkin_dialog import NewCheckinDialog
@@ -33,15 +34,18 @@ from desktop.views.repair_dialog import (
 
 
 class RepairQueueView(QWidget):
+
     def __init__(
         self,
         service: RepairService,
         read_service: ReadService,
+        payment_service: PaymentService,
     ) -> None:
         super().__init__()
 
         self.service: RepairService = service
         self.read_service = read_service
+        self.payment_service = payment_service
 
         self.repairs: list[dict[str, Any]] = []
         self.filtered_repairs: list[dict[str, Any]] = []
@@ -206,6 +210,7 @@ class RepairQueueView(QWidget):
         self.details_panel = RepairDetailsPanel(
             service=self.service,
             read_service=self.read_service,
+            payment_service=self.payment_service,
             on_edit=self._edit_repair,
             on_checkin=self._new_checkin_for,
             on_customer=self._view_customer,

@@ -809,6 +809,135 @@ class OperationsDatabase:
 
         return dict(row)
 
+    def list_repair_payments(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT *
+                FROM repair_payments
+                WHERE repair_id = ?
+                ORDER BY
+                    payment_timestamp DESC,
+                    payment_id DESC
+                """,
+                (repair_id,),
+            ).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def repair_payment_summary(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any] | None:
+        repair = self.get_repair(repair_id)
+
+        if repair is None:
+            return None
+
+        final_cost_value = repair.get("final_cost")
+
+        if final_cost_value is None:
+            final_cost = 0.0
+        else:
+            try:
+                final_cost = float(final_cost_value)
+            except (TypeError, ValueError):
+                final_cost = 0.0
+
+        final_cost = round(
+            max(
+                final_cost,
+                0.0,
+            ),
+            2,
+        )
+
+        with self.connect() as connection:
+            paid_row = connection.execute(
+                """
+                SELECT
+                    COALESCE(
+                        SUM(amount),
+                        0
+                    ) AS total_paid
+                FROM repair_payments
+                WHERE repair_id = ?
+                  AND payment_status IN (
+                      'Completed',
+                      'Paid'
+                  )
+                """,
+                (repair_id,),
+            ).fetchone()
+
+            refunded_row = connection.execute(
+                """
+                SELECT
+                    COALESCE(
+                        SUM(amount),
+                        0
+                    ) AS total_refunded
+                FROM repair_payments
+                WHERE repair_id = ?
+                  AND payment_status IN (
+                      'Refunded',
+                      'Partially Refunded'
+                  )
+                """,
+                (repair_id,),
+            ).fetchone()
+
+        total_paid = 0.0
+
+        if paid_row is not None:
+            total_paid = float(paid_row["total_paid"] or 0.0)
+
+        total_refunded = 0.0
+
+        if refunded_row is not None:
+            total_refunded = float(refunded_row["total_refunded"] or 0.0)
+
+        amount_paid = round(
+            total_paid - total_refunded,
+            2,
+        )
+
+        balance_due = round(
+            max(
+                final_cost - amount_paid,
+                0.0,
+            ),
+            2,
+        )
+
+        if final_cost <= 0:
+            payment_status = "No Balance"
+        elif amount_paid <= 0:
+            payment_status = "Unpaid"
+        elif amount_paid < final_cost:
+            payment_status = "Partially Paid"
+        else:
+            payment_status = "Paid"
+
+        return {
+            "repair_id": repair_id,
+            "repair_status": str(
+                repair.get(
+                    "repair_status",
+                    "",
+                )
+                or ""
+            ),
+            "final_cost": final_cost,
+            "amount_paid": amount_paid,
+            "balance_due": balance_due,
+            "payment_status": payment_status,
+            "currency": "USD",
+        }
+
     def update_repair(
         self,
         ticket_id: str,

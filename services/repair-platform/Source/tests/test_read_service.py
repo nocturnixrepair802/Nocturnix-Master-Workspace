@@ -96,6 +96,37 @@ class FakeLocalService:
         ]
 
 
+class FakePaymentService:
+    def list_repair_payments(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        return [
+            {
+                "payment_id": "LOCAL_PAYMENT",
+                "repair_id": repair_id,
+                "payment_method": "Cash",
+                "payment_status": "Completed",
+                "amount": 25.0,
+            }
+        ]
+
+    def payment_summary(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]:
+        return {
+            "repair_id": repair_id,
+            "repair_status": "In Repair",
+            "final_cost": 100.0,
+            "amount_paid": 25.0,
+            "balance_due": 75.0,
+            "payment_status": "Partially Paid",
+            "currency": "USD",
+            "source": "local",
+        }
+
+
 class FakeApiClient:
     def __init__(
         self,
@@ -224,12 +255,52 @@ class FakeApiClient:
             "intake_notes": "Remote check-in",
         }
 
+    def list_repair_payments(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        if self.fail:
+            raise ApiRequestError("API unavailable")
+
+        return [
+            {
+                "payment_id": "PAY000100",
+                "repair_id": repair_id,
+                "payment_method": "Square",
+                "payment_status": "Completed",
+                "amount": 60.0,
+                "currency": "USD",
+                "payment_timestamp": ("2026-08-12T15:00:00"),
+                "reference_number": "",
+                "square_payment_id": "SQPAY100",
+            }
+        ]
+
+    def repair_payment_summary(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]:
+        if self.fail:
+            raise ApiRequestError("API unavailable")
+
+        return {
+            "repair_id": repair_id,
+            "repair_status": "In Repair",
+            "final_cost": 100.0,
+            "amount_paid": 60.0,
+            "balance_due": 40.0,
+            "payment_status": "Partially Paid",
+            "currency": "USD",
+            "source": "remote",
+        }
+
 
 def test_offline_mode_uses_local_dashboard() -> None:
     local = FakeLocalService()
 
     service = ReadService(
         local_service=local,
+        local_payment_service=FakePaymentService(),
         api_client=FakeApiClient(),
         settings=DesktopSettings(
             connection_mode="offline",
@@ -247,7 +318,8 @@ def test_auto_online_uses_api_dashboard() -> None:
     local = FakeLocalService()
 
     service = ReadService(
-        local_service=local,
+        local_service=FakeLocalService(),
+        local_payment_service=FakePaymentService(),
         api_client=FakeApiClient(),
         settings=DesktopSettings(
             connection_mode="auto",
@@ -272,6 +344,7 @@ def test_auto_unavailable_uses_local_dashboard() -> None:
 
     service = ReadService(
         local_service=local,
+        local_payment_service=FakePaymentService(),
         api_client=FakeApiClient(),
         settings=DesktopSettings(
             connection_mode="auto",
@@ -290,7 +363,10 @@ def test_auto_request_failure_falls_back_local() -> None:
 
     service = ReadService(
         local_service=local,
-        api_client=FakeApiClient(fail=True),
+        local_payment_service=FakePaymentService(),
+        api_client=FakeApiClient(
+            fail=True,
+        ),
         settings=DesktopSettings(
             connection_mode="auto",
         ),
@@ -306,6 +382,7 @@ def test_auto_request_failure_falls_back_local() -> None:
 def test_online_unavailable_raises() -> None:
     service = ReadService(
         local_service=FakeLocalService(),
+        local_payment_service=FakePaymentService(),
         api_client=FakeApiClient(),
         settings=DesktopSettings(
             connection_mode="online",
@@ -323,6 +400,7 @@ def test_online_unavailable_raises() -> None:
 def test_operational_counts_use_remote_statuses() -> None:
     service = ReadService(
         local_service=FakeLocalService(),
+        local_payment_service=FakePaymentService(),
         api_client=FakeApiClient(),
         settings=DesktopSettings(
             connection_mode="auto",
@@ -345,6 +423,7 @@ def test_operational_counts_use_remote_statuses() -> None:
 def test_remote_queue_is_normalized_for_desktop() -> None:
     service = ReadService(
         local_service=FakeLocalService(),
+        local_payment_service=FakePaymentService(),
         api_client=FakeApiClient(),
         settings=DesktopSettings(
             connection_mode="auto",
@@ -372,7 +451,10 @@ def test_auto_queue_failure_falls_back_local() -> None:
 
     service = ReadService(
         local_service=local,
-        api_client=FakeApiClient(fail=True),
+        local_payment_service=FakePaymentService(),
+        api_client=FakeApiClient(
+            fail=True,
+        ),
         settings=DesktopSettings(
             connection_mode="auto",
         ),
@@ -388,6 +470,7 @@ def test_auto_queue_failure_falls_back_local() -> None:
 def test_remote_repair_detail_is_normalized() -> None:
     service = ReadService(
         local_service=FakeLocalService(),
+        local_payment_service=FakePaymentService(),
         api_client=FakeApiClient(),
         settings=DesktopSettings(
             connection_mode="auto",
@@ -406,6 +489,7 @@ def test_remote_repair_detail_is_normalized() -> None:
 def test_offline_repair_detail_uses_local() -> None:
     service = ReadService(
         local_service=FakeLocalService(),
+        local_payment_service=FakePaymentService(),
         api_client=FakeApiClient(),
         settings=DesktopSettings(
             connection_mode="offline",
@@ -422,7 +506,10 @@ def test_offline_repair_detail_uses_local() -> None:
 def test_auto_repair_detail_failure_falls_back_local() -> None:
     service = ReadService(
         local_service=FakeLocalService(),
-        api_client=FakeApiClient(fail=True),
+        local_payment_service=FakePaymentService(),
+        api_client=FakeApiClient(
+            fail=True,
+        ),
         settings=DesktopSettings(
             connection_mode="auto",
         ),
@@ -438,7 +525,10 @@ def test_auto_repair_detail_failure_falls_back_local() -> None:
 def test_online_repair_detail_failure_raises() -> None:
     service = ReadService(
         local_service=FakeLocalService(),
-        api_client=FakeApiClient(fail=True),
+        local_payment_service=FakePaymentService(),
+        api_client=FakeApiClient(
+            fail=True,
+        ),
         settings=DesktopSettings(
             connection_mode="online",
         ),
@@ -454,6 +544,7 @@ def test_online_repair_detail_failure_raises() -> None:
 def test_remote_repair_events_use_api() -> None:
     service = ReadService(
         local_service=FakeLocalService(),
+        local_payment_service=FakePaymentService(),
         api_client=FakeApiClient(),
         settings=DesktopSettings(
             connection_mode="auto",
@@ -471,7 +562,10 @@ def test_remote_repair_events_use_api() -> None:
 def test_auto_repair_events_failure_falls_back_local() -> None:
     service = ReadService(
         local_service=FakeLocalService(),
-        api_client=FakeApiClient(fail=True),
+        local_payment_service=FakePaymentService(),
+        api_client=FakeApiClient(
+            fail=True,
+        ),
         settings=DesktopSettings(
             connection_mode="auto",
         ),
@@ -486,6 +580,7 @@ def test_auto_repair_events_failure_falls_back_local() -> None:
 def test_remote_repair_checkin_is_normalized() -> None:
     service = ReadService(
         local_service=FakeLocalService(),
+        local_payment_service=FakePaymentService(),
         api_client=FakeApiClient(),
         settings=DesktopSettings(
             connection_mode="auto",
@@ -504,7 +599,10 @@ def test_remote_repair_checkin_is_normalized() -> None:
 def test_auto_repair_checkin_failure_falls_back_local() -> None:
     service = ReadService(
         local_service=FakeLocalService(),
-        api_client=FakeApiClient(fail=True),
+        local_payment_service=FakePaymentService(),
+        api_client=FakeApiClient(
+            fail=True,
+        ),
         settings=DesktopSettings(
             connection_mode="auto",
         ),
@@ -514,3 +612,71 @@ def test_auto_repair_checkin_failure_falls_back_local() -> None:
     checkins = service.list_repair_checkins("RPR000100")
 
     assert checkins[0]["checkin_id"] == ("LOCAL_CHECKIN")
+
+
+def test_remote_repair_payments_use_api() -> None:
+    service = ReadService(
+        local_service=FakeLocalService(),
+        local_payment_service=FakePaymentService(),
+        api_client=FakeApiClient(),
+        settings=DesktopSettings(
+            connection_mode="auto",
+        ),
+        api_available=True,
+    )
+
+    payments = service.list_repair_payments("RPR000100")
+
+    assert len(payments) == 1
+    assert payments[0]["payment_id"] == ("PAY000100")
+
+
+def test_auto_payment_history_failure_falls_back_local() -> None:
+    service = ReadService(
+        local_service=FakeLocalService(),
+        local_payment_service=FakePaymentService(),
+        api_client=FakeApiClient(fail=True),
+        settings=DesktopSettings(
+            connection_mode="auto",
+        ),
+        api_available=True,
+    )
+
+    payments = service.list_repair_payments("RPR000100")
+
+    assert payments[0]["payment_id"] == ("LOCAL_PAYMENT")
+
+
+def test_remote_payment_summary_uses_api() -> None:
+    service = ReadService(
+        local_service=FakeLocalService(),
+        local_payment_service=FakePaymentService(),
+        api_client=FakeApiClient(),
+        settings=DesktopSettings(
+            connection_mode="auto",
+        ),
+        api_available=True,
+    )
+
+    summary = service.payment_summary("RPR000100")
+
+    assert summary["source"] == "remote"
+    assert summary["amount_paid"] == 60.0
+    assert summary["balance_due"] == 40.0
+
+
+def test_auto_payment_summary_failure_falls_back_local() -> None:
+    service = ReadService(
+        local_service=FakeLocalService(),
+        local_payment_service=FakePaymentService(),
+        api_client=FakeApiClient(fail=True),
+        settings=DesktopSettings(
+            connection_mode="auto",
+        ),
+        api_available=True,
+    )
+
+    summary = service.payment_summary("RPR000100")
+
+    assert summary["source"] == "local"
+    assert summary["amount_paid"] == 25.0
