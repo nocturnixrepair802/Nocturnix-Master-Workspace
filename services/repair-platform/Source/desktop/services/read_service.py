@@ -44,6 +44,17 @@ class LocalReadProvider(Protocol):
         repair_id: str,
     ) -> list[dict[str, Any]]: ...
 
+class LocalPaymentReadProvider(Protocol):
+    def list_repair_payments(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]: ...
+
+    def payment_summary(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]: ...
+
 
 class ApiReadProvider(Protocol):
     def dashboard(
@@ -68,6 +79,16 @@ class ApiReadProvider(Protocol):
         repair_id: str,
     ) -> dict[str, Any]: ...
 
+    def list_repair_payments(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]: ...
+
+    def repair_payment_summary(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]: ...
+
 
 class ReadServiceUnavailable(RuntimeError):
     pass
@@ -75,14 +96,18 @@ class ReadServiceUnavailable(RuntimeError):
 
 class ReadService:
     def __init__(
-        self,
-        *,
-        local_service: LocalReadProvider,
-        api_client: ApiReadProvider,
-        settings: DesktopSettings,
-        api_available: bool,
-    ) -> None:
+    self,
+    *,
+    local_service: LocalReadProvider,
+    local_payment_service: LocalPaymentReadProvider,
+    api_client: ApiReadProvider,
+    settings: DesktopSettings,
+    api_available: bool,
+) -> None:
         self.local_service = local_service
+        self.local_payment_service = (
+            local_payment_service
+        )
         self.api_client = api_client
         self.settings = settings
         self.api_available = api_available
@@ -308,6 +333,63 @@ class ReadService:
             raise ReadServiceUnavailable(str(exc)) from exc
 
         return [self._normalize_checkin(checkin)]
+
+    def list_repair_payments(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        if not self._should_use_api():
+            return (
+                self.local_payment_service
+                .list_repair_payments(
+                    repair_id
+                )
+            )
+
+        try:
+            payments = (
+                self.api_client
+                .list_repair_payments(
+                    repair_id
+                )
+            )
+
+        except ApiRequestError as exc:
+            if self._fallback_allowed():
+                return (
+                    self.local_payment_service
+                    .list_repair_payments(
+                        repair_id
+                    )
+                )
+
+            raise ReadServiceUnavailable(
+                str(exc)
+            ) from exc
+
+        return [
+            dict(payment)
+            for payment in payments
+        ]
+
+
+    def payment_summary(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]:
+        if not self._should_use_api():
+            return self.local_payment_service.payment_summary(repair_id)
+
+        try:
+            summary = self.api_client.repair_payment_summary(repair_id)
+
+        except ApiRequestError as exc:
+            if self._fallback_allowed():
+                return self.local_payment_service.payment_summary(repair_id)
+
+            raise ReadServiceUnavailable(str(exc)) from exc
+
+        return dict(summary)
 
     @staticmethod
     def _normalize_queue_item(

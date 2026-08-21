@@ -216,3 +216,46 @@ class ApiClient:
             )
 
         return dict(payload)
+
+    def list_repair_payments(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        payload = self.get_json(f"/api/repairs/{repair_id}/payments")
+
+        if not isinstance(
+            payload,
+            list,
+        ):
+            raise ApiRequestError("Repair payments endpoint did not " "return a list.")
+
+        payments: list[dict[str, Any]] = []
+
+        for item in payload:
+            if not isinstance(
+                item,
+                dict,
+            ):
+                raise ApiRequestError(
+                    "Repair payments endpoint " "contained an invalid record."
+                )
+
+            payments.append(dict(item))
+
+        return payments
+
+    def repair_payment_summary(
+        self,
+        repair_id: str,
+    ) -> dict[str, Any]:
+        payload = self.get_json(f"/api/repairs/{repair_id}/payments/summary")
+
+        if not isinstance(
+            payload,
+            dict,
+        ):
+            raise ApiRequestError(
+                "Repair payment summary endpoint " "did not return an object."
+            )
+
+        return dict(payload)

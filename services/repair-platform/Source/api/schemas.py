@@ -288,3 +288,33 @@ class WPFormsIntakeResponse(BaseModel):
     repair_id: str
     checkin_id: str
     duplicate: bool = False
+
+
+class RepairPaymentResponse(BaseModel):
+    payment_id: str
+    repair_id: str
+    payment_status: str = ""
+    payment_method: str = ""
+    amount: float = 0.0
+    currency: str = "USD"
+    payment_timestamp: str = ""
+    reference_number: str = ""
+    square_payment_id: str = ""
+    square_order_id: str = ""
+    square_terminal_checkout_id: str = ""
+    square_receipt_url: str = ""
+    square_refund_id: str = ""
+    refunded_square_payment_id: str = ""
+    notes: str = ""
+    created_at: str = ""
+    created_by: str = ""
+
+
+class RepairPaymentSummaryResponse(BaseModel):
+    repair_id: str
+    repair_status: str = ""
+    final_cost: float = 0.0
+    amount_paid: float = 0.0
+    balance_due: float = 0.0
+    payment_status: str = ""
+    currency: str = "USD"

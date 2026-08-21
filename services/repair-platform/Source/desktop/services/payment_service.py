@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from config.database import OPERATIONS_DATABASE
 from desktop.services.settings_service import SettingsService
 
 
@@ -31,20 +32,16 @@ class PaymentService:
     # DATABASE
     # ---------------------------------------------------------
 
-    def _resolve_database_path(self) -> Path:
+
+    def _resolve_database_path(
+        self,
+    ) -> Path:
         configured_path = self.settings.database_path.strip()
 
         if configured_path:
             return Path(configured_path).expanduser()
 
-        service_root = Path(__file__).resolve().parents[3]
-
-        local_database = service_root / "data" / "nocturnix_operations.local.sqlite3"
-
-        if local_database.exists():
-            return local_database
-
-        return service_root / "data" / "nocturnix_operations.sqlite3"
+        return OPERATIONS_DATABASE
 
     def connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(

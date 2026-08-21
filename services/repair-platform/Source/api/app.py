@@ -35,6 +35,8 @@ from api.schemas import (
     RepairCheckinUpdateRequest,
     RepairCreateRequest,
     RepairEventResponse,
+    RepairPaymentResponse,
+    RepairPaymentSummaryResponse,
     RepairQueueItemResponse,
     RepairResponse,
     RepairUpdateRequest,
@@ -645,6 +647,188 @@ def repair_queue_response(
                 "",
             )
             or ""
+        ),
+    )
+
+
+def repair_payment_response(
+    record: dict[str, Any],
+) -> RepairPaymentResponse:
+    return RepairPaymentResponse(
+        payment_id=str(
+            record.get(
+                "payment_id",
+                "",
+            )
+            or ""
+        ),
+        repair_id=str(
+            record.get(
+                "repair_id",
+                "",
+            )
+            or ""
+        ),
+        payment_status=str(
+            record.get(
+                "payment_status",
+                "",
+            )
+            or ""
+        ),
+        payment_method=str(
+            record.get(
+                "payment_method",
+                "",
+            )
+            or ""
+        ),
+        amount=float(
+            record.get(
+                "amount",
+                0.0,
+            )
+            or 0.0
+        ),
+        currency=str(
+            record.get(
+                "currency",
+                "USD",
+            )
+            or "USD"
+        ),
+        payment_timestamp=str(
+            record.get(
+                "payment_timestamp",
+                "",
+            )
+            or ""
+        ),
+        reference_number=str(
+            record.get(
+                "reference_number",
+                "",
+            )
+            or ""
+        ),
+        square_payment_id=str(
+            record.get(
+                "square_payment_id",
+                "",
+            )
+            or ""
+        ),
+        square_order_id=str(
+            record.get(
+                "square_order_id",
+                "",
+            )
+            or ""
+        ),
+        square_terminal_checkout_id=str(
+            record.get(
+                "square_terminal_checkout_id",
+                "",
+            )
+            or ""
+        ),
+        square_receipt_url=str(
+            record.get(
+                "square_receipt_url",
+                "",
+            )
+            or ""
+        ),
+        square_refund_id=str(
+            record.get(
+                "square_refund_id",
+                "",
+            )
+            or ""
+        ),
+        refunded_square_payment_id=str(
+            record.get(
+                "refunded_square_payment_id",
+                "",
+            )
+            or ""
+        ),
+        notes=str(
+            record.get(
+                "notes",
+                "",
+            )
+            or ""
+        ),
+        created_at=str(
+            record.get(
+                "created_at",
+                "",
+            )
+            or ""
+        ),
+        created_by=str(
+            record.get(
+                "created_by",
+                "",
+            )
+            or ""
+        ),
+    )
+
+
+def repair_payment_summary_response(
+    record: dict[str, Any],
+) -> RepairPaymentSummaryResponse:
+    return RepairPaymentSummaryResponse(
+        repair_id=str(
+            record.get(
+                "repair_id",
+                "",
+            )
+            or ""
+        ),
+        repair_status=str(
+            record.get(
+                "repair_status",
+                "",
+            )
+            or ""
+        ),
+        final_cost=float(
+            record.get(
+                "final_cost",
+                0.0,
+            )
+            or 0.0
+        ),
+        amount_paid=float(
+            record.get(
+                "amount_paid",
+                0.0,
+            )
+            or 0.0
+        ),
+        balance_due=float(
+            record.get(
+                "balance_due",
+                0.0,
+            )
+            or 0.0
+        ),
+        payment_status=str(
+            record.get(
+                "payment_status",
+                "",
+            )
+            or ""
+        ),
+        currency=str(
+            record.get(
+                "currency",
+                "USD",
+            )
+            or "USD"
         ),
     )
 
@@ -1681,6 +1865,47 @@ def get_repair_workspace(
         customer,
         device,
     )
+
+
+@app.get(
+    "/api/repairs/{repair_id}/payments",
+    response_model=list[RepairPaymentResponse],
+)
+def list_repair_payments(
+    repair_id: str,
+) -> list[RepairPaymentResponse]:
+    database = get_database()
+
+    if database.get_repair(repair_id) is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Repair ticket not found.",
+        )
+
+    return [
+        repair_payment_response(record)
+        for record in database.list_repair_payments(repair_id)
+    ]
+
+
+@app.get(
+    "/api/repairs/{repair_id}/payments/summary",
+    response_model=RepairPaymentSummaryResponse,
+)
+def get_repair_payment_summary(
+    repair_id: str,
+) -> RepairPaymentSummaryResponse:
+    database = get_database()
+
+    summary = database.repair_payment_summary(repair_id)
+
+    if summary is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Repair ticket not found.",
+        )
+
+    return repair_payment_summary_response(summary)
 
 
 @app.patch(

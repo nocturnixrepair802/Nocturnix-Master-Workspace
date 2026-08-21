@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 from desktop.services.api_client import (
     ApiClient,
 )
+from desktop.services.payment_service import PaymentService
 from desktop.services.read_service import ReadService
 from desktop.services.repair_service import RepairService
 from desktop.services.settings_service import (
@@ -62,9 +63,11 @@ class MainWindow(QMainWindow):
         self.api_health = (
             self.api_client.health()
         )
+        self.payment_service = PaymentService()
 
         self.read_service = ReadService(
             local_service=self.repair_service,
+            local_payment_service=self.payment_service,
             api_client=self.api_client,
             settings=self.settings,
             api_available=self.api_health.available,
@@ -140,6 +143,7 @@ class MainWindow(QMainWindow):
         self.repair_queue_view = RepairQueueView(
             service=self.repair_service,
             read_service=self.read_service,
+            payment_service=self.payment_service,
         )
 
         self.checkin_view = CheckinView(service=self.repair_service)
