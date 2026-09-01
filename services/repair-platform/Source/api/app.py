@@ -9,6 +9,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import (
+    Depends,
     FastAPI,
     Header,
     HTTPException,
@@ -32,6 +33,12 @@ from api.schemas import (
     CustomerDeviceResponse,
     CustomerResponse,
     DashboardResponse,
+    IFixitAttributionResponse,
+    IFixitDeviceResultResponse,
+    IFixitDeviceSearchResponse,
+    IFixitGuideMetadataResponse,
+    IFixitGuideResponse,
+    IFixitGuideSearchResponse,
     RepairCheckinCreateRequest,
     RepairCheckinResponse,
     RepairCheckinUpdateRequest,
@@ -50,6 +57,7 @@ from config.database import (
     CATALOG_DATABASE,
     OPERATIONS_DATABASE,
 )
+from integrations.ifixit import IFixitApiError, IFixitClient
 from integrations.mobilesentrix import (
     MobileSentrixApiError,
     MobileSentrixClient,
@@ -2652,3 +2660,121 @@ def mobilesentrix_product_search(
         "returned_items": len(items),
         "items": items,
     }
+
+
+# ======================================================
+# iFixit Technical Guide Metadata
+# ======================================================
+
+
+def get_ifixit_client() -> IFixitClient:
+    base_url = os.getenv(
+        "NOCTURNIX_IFIXIT_BASE_URL",
+        IFixitClient.DEFAULT_BASE_URL,
+    )
+    timeout_value = os.getenv(
+        "NOCTURNIX_IFIXIT_TIMEOUT_SECONDS",
+        str(IFixitClient.DEFAULT_TIMEOUT_SECONDS),
+    )
+
+    try:
+        timeout_seconds = float(timeout_value)
+    except ValueError as exc:
+        raise RuntimeError(
+            "NOCTURNIX_IFIXIT_TIMEOUT_SECONDS must be a number."
+        ) from exc
+
+    return IFixitClient(base_url=base_url, timeout_seconds=timeout_seconds)
+
+
+def ifixit_attribution() -> IFixitAttributionResponse:
+    return IFixitAttributionResponse()
+
+
+def ifixit_upstream_error(exc: IFixitApiError) -> HTTPException:
+    if exc.timed_out:
+        status_code = 504
+    elif exc.status_code == 429:
+        status_code = 503
+    else:
+        status_code = 502
+
+    return HTTPException(status_code=status_code, detail=str(exc))
+
+
+@app.get(
+    "/api/v1/integrations/ifixit/devices/search",
+    response_model=IFixitDeviceSearchResponse,
+)
+def ifixit_device_search(
+    q: str = Query(..., min_length=1, max_length=200),
+    client: IFixitClient = Depends(get_ifixit_client),
+) -> IFixitDeviceSearchResponse:
+    try:
+        results = client.search_devices(query=q)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except IFixitApiError as exc:
+        raise ifixit_upstream_error(exc) from exc
+
+    items = [
+        IFixitDeviceResultResponse.model_validate(item.to_api_dict())
+        for item in results
+    ]
+    return IFixitDeviceSearchResponse(
+        query=q,
+        returned_items=len(items),
+        items=items,
+        attribution=ifixit_attribution(),
+    )
+
+
+@app.get(
+    "/api/v1/integrations/ifixit/guides/search",
+    response_model=IFixitGuideSearchResponse,
+)
+def ifixit_guide_search(
+    q: str = Query(..., min_length=1, max_length=200),
+    client: IFixitClient = Depends(get_ifixit_client),
+) -> IFixitGuideSearchResponse:
+    try:
+        results = client.search_guides(query=q)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except IFixitApiError as exc:
+        raise ifixit_upstream_error(exc) from exc
+
+    items = [
+        IFixitGuideMetadataResponse.model_validate(item.to_api_dict())
+        for item in results
+    ]
+    return IFixitGuideSearchResponse(
+        query=q,
+        returned_items=len(items),
+        items=items,
+        attribution=ifixit_attribution(),
+    )
+
+
+@app.get(
+    "/api/v1/integrations/ifixit/guides/{guide_id}",
+    response_model=IFixitGuideResponse,
+)
+def get_ifixit_guide(
+    guide_id: int,
+    client: IFixitClient = Depends(get_ifixit_client),
+) -> IFixitGuideResponse:
+    try:
+        guide = client.get_guide_metadata(guide_id=guide_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except IFixitApiError as exc:
+        raise ifixit_upstream_error(exc) from exc
+
+    if guide is None:
+        raise HTTPException(status_code=404, detail="iFixit guide was not found.")
+
+    return IFixitGuideResponse(
+        guide=IFixitGuideMetadataResponse.model_validate(guide.to_api_dict()),
+        attribution=ifixit_attribution(),
+    )
