@@ -33,3 +33,28 @@ git_review.txt
 
 data/desktop_settings.local.json
 Data/repair_photos/
+
+.env.backup-*
+
+.env
+
+# Generated MobileSentrix workbook safety backups
+/Data/*.before-*.xlsm
+
+# Generated MobileSentrix investigation and synchronization reports
+/Data/reports/
+
+# Local MobileSentrix runtime logs and resumable checkpoints
+/Data/logs/
+/Data/mobilesentrix_sync_checkpoint*.json
+/Data/mobilesentrix_sync_checkpoint*.bak
+
+# Local catalog workbooks
+/Data/*.xlsm
+
+# Python-generated files
+__pycache__/
+*.py[cod]
+
+# Local source safety copies
+*.bak

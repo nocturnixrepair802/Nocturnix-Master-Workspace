@@ -7,6 +7,7 @@ from pathlib import Path
 from secrets import compare_digest
 from typing import Any
 
+from dotenv import load_dotenv
 from fastapi import (
     FastAPI,
     Header,
@@ -16,6 +17,7 @@ from fastapi import (
 from fastapi.middleware.cors import (
     CORSMiddleware,
 )
+from fastapi.responses import RedirectResponse
 
 from api.operations import RepairApiOperations
 from api.schemas import (
@@ -48,12 +50,31 @@ from config.database import (
     CATALOG_DATABASE,
     OPERATIONS_DATABASE,
 )
+from integrations.mobilesentrix import (
+    MobileSentrixApiError,
+    MobileSentrixClient,
+    MobileSentrixOAuthError,
+    MobileSentrixOAuthService,
+    MobileSentrixProduct,
+)
 from integrations.wpforms import (
     WPFormsMapper,
     WPFormsMappingError,
 )
 from persistence.catalog_db import CatalogDatabase
 from persistence.operations_db import OperationsDatabase
+
+# ======================================================
+# Environment Configuration
+# ======================================================
+
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+
+load_dotenv(
+    dotenv_path=ENV_FILE,
+    override=False,
+)
+
 
 # ======================================================
 # Application Configuration
@@ -2480,3 +2501,154 @@ def catalog_pricing(
     )
 
     return [CatalogPricingResponse(**record) for record in records]
+# ======================================================
+# Mobile Sentrix OAuth Integration
+# ======================================================
+
+
+def get_mobilesentrix_oauth() -> MobileSentrixOAuthService:
+    return MobileSentrixOAuthService()
+
+
+@app.get(
+    "/api/v1/integrations/mobilesentrix/oauth/status",
+)
+def mobilesentrix_oauth_status() -> dict[str, object]:
+    oauth = get_mobilesentrix_oauth()
+
+    return oauth.status()
+
+
+@app.get(
+    "/api/v1/integrations/mobilesentrix/oauth/start",
+)
+def mobilesentrix_oauth_start() -> RedirectResponse:
+    oauth = get_mobilesentrix_oauth()
+
+    try:
+        authorization_url = oauth.build_authorization_url()
+
+    except MobileSentrixOAuthError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=str(exc),
+        ) from exc
+
+    return RedirectResponse(
+        url=authorization_url,
+        status_code=302,
+    )
+
+
+@app.get(
+    "/api/v1/integrations/mobilesentrix/oauth/callback",
+)
+def mobilesentrix_oauth_callback(
+    oauth_token: str = Query(...),
+    oauth_verifier: str = Query(...),
+) -> dict[str, object]:
+    oauth = get_mobilesentrix_oauth()
+
+    try:
+        result = oauth.exchange_token(
+            oauth_token=oauth_token,
+            oauth_verifier=oauth_verifier,
+        )
+
+    except MobileSentrixOAuthError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=str(exc),
+        ) from exc
+
+    return {
+        **result,
+        "message": (
+            "Mobile Sentrix authorization completed. "
+            "Access credentials were stored securely."
+        ),
+    }
+# ======================================================
+# Mobile Sentrix Product Search
+# ======================================================
+
+
+def get_mobilesentrix_client() -> MobileSentrixClient:
+    return MobileSentrixClient()
+
+
+@app.get(
+    "/api/v1/integrations/mobilesentrix/products/search",
+)
+def mobilesentrix_product_search(
+    q: str = Query(
+        ...,
+        min_length=1,
+        max_length=200,
+    ),
+    max_results: int = Query(
+        default=10,
+        ge=1,
+        le=100,
+    ),
+    start_index: int = Query(
+        default=0,
+        ge=0,
+    ),
+) -> dict[str, object]:
+    client = get_mobilesentrix_client()
+
+    try:
+        result = client.search_products(
+            query=q,
+            max_results=max_results,
+            start_index=start_index,
+        )
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except MobileSentrixApiError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=str(exc),
+        ) from exc
+
+    data = result.get("data") or {}
+
+    if not isinstance(data, dict):
+        return {
+            "query": q,
+            "total_items": 0,
+            "items": [],
+        }
+
+    raw_items = data.get("items") or []
+
+    items: list[dict[str, object]] = []
+
+    if isinstance(raw_items, list):
+        for item in raw_items:
+            if not isinstance(item, dict):
+                continue
+
+            product = MobileSentrixProduct.from_api_item(
+                item
+            )
+
+            items.append(
+                product.to_api_dict()
+            )
+    return {
+        "query": q,
+        "environment": (client.oauth.status()["environment"]),
+        "total_items": data.get(
+            "total_items",
+            len(items),
+        ),
+        "returned_items": len(items),
+        "items": items,
+    }
