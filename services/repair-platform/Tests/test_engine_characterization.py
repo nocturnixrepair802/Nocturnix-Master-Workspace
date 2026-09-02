@@ -185,25 +185,40 @@ class TestCurrentKnownFailures:
         with pytest.raises(KeyError, match="Quantity"):
             engine.available("SKU-1", 1)
 
-    def test_pricing_without_hourly_rate_raises_key_error(self) -> None:
-        database = {
-            "labor_rates": pd.DataFrame([{"Labor Price": 100.0}]),
-            "retail_pricing": pd.DataFrame([{"Markup": 1.5}]),
-        }
-        engine = PricingEngine(database)
 
-        with pytest.raises(KeyError, match="Hourly Rate"):
+    def test_legacy_positional_pricing_contract_is_rejected(
+        self,
+    ) -> None:
+        engine = PricingEngine(pricing_database())
+
+        with pytest.raises(TypeError):
             engine.calculate(1.0, 25.0)
 
-    def test_pricing_without_markup_raises_key_error(self) -> None:
-        database = {
-            "labor_rates": pd.DataFrame([{"Hourly Rate": 100.0}]),
-            "retail_pricing": pd.DataFrame([{"Retail": 0.0}]),
-        }
-        engine = PricingEngine(database)
 
-        with pytest.raises(KeyError, match="Markup"):
-            engine.calculate(1.0, 25.0)
+    def test_pricing_engine_no_longer_depends_on_legacy_pricing_tables(
+        self,
+    ) -> None:
+        engine = PricingEngine({})
+
+        result = engine.calculate(
+            part_cost=25.00,
+            default_labor_hours=1.00,
+            hourly_rate=100.00,
+            minimum_charge=85.00,
+            shipping=0,
+            consumables=5.00,
+            overhead_rate=0.12,
+            warranty_rate=0.03,
+            risk_rate=0.04,
+            processing_rate=0.03,
+            target_margin=0.30,
+            minimum_margin=0.20,
+        )
+
+        assert result["part_cost"] == Decimal("25.00")
+        assert result["billable_labor_cost"] == Decimal("100.00")
+        assert result["base_direct_cost"] == Decimal("130.00")
+        assert result["pricing_status"] == "READY"
 
     def test_quote_fails_through_invalid_compatibility_schema(self) -> None:
         database = {
