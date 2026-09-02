@@ -22,6 +22,7 @@ from integrations.mobilesentrix.models import (
     MobileSentrixDetailedProduct,
 )
 
+type ExcelCellValue = str | int | float | bool | datetime | None
 # ============================================================
 # SAFETY CONFIGURATION
 # ============================================================
@@ -179,18 +180,17 @@ def set_cell_value(
     worksheet: Any,
     row: int,
     column: int,
-    value: object,
+    value: ExcelCellValue,
 ) -> None:
     """
-    Safely write a value to a normal workbook cell.
+    Safely write a supported value to a normal workbook cell.
 
-    openpyxl's type definitions allow worksheet.cell() to be
-    interpreted as Cell | MergedCell. MergedCell objects are
-    placeholders and cannot be written to.
+    openpyxl may represent cells inside merged ranges as
+    MergedCell objects. Those cells are placeholders and
+    cannot be written to.
 
-    The Nocturnix catalog data columns are expected to contain
-    normal writable cells. Refuse to continue if an approved
-    replacement unexpectedly targets something else.
+    This helper also restricts values to the scalar types
+    written by the Mobile Sentrix replacement process.
     """
 
     cell = worksheet.cell(
