@@ -65,12 +65,34 @@ LATEST_LOG_PATH = LOG_DIR / "mobilesentrix_sync_latest.log"
 STATE_PATH = LOG_DIR / "mobilesentrix_sync_runner_state.json"
 
 
+# ============================================================
+# Retry/history status names
+# ============================================================
+
+STATUS_PENDING = "pending"
+
+STATUS_UNMATCHED = "unmatched"
+
+STATUS_EXHAUSTED = "exhausted"
+
+STATUS_RESOLVED_SAME_SKU = "resolved_same_sku"
+
+STATUS_RESOLVED_REPLACEMENT = "resolved_replacement"
+
+STATUS_SUPPLIER_UNRESOLVED = "supplier_unresolved"
+
+
+# ============================================================
+# Tee output
+# ============================================================
+
+
 class Tee:
     """
     Write output to multiple streams.
 
-    This keeps normal terminal output while also writing
-    the same output to persistent log files.
+    Terminal output continues normally while the same
+    information is persisted to the run log and latest log.
     """
 
     def __init__(
@@ -85,13 +107,21 @@ class Tee:
     ) -> int:
         for stream in self.streams:
             stream.write(data)
+
             stream.flush()
 
         return len(data)
 
-    def flush(self) -> None:
+    def flush(
+        self,
+    ) -> None:
         for stream in self.streams:
             stream.flush()
+
+
+# ============================================================
+# General helpers
+# ============================================================
 
 
 def utc_now() -> str:
@@ -102,22 +132,46 @@ def get_int(
     value: object,
     default: int = 0,
 ) -> int:
-    if isinstance(value, bool):
+    if isinstance(
+        value,
+        bool,
+    ):
         return int(value)
 
-    if isinstance(value, int):
+    if isinstance(
+        value,
+        int,
+    ):
         return value
 
-    if isinstance(value, float):
+    if isinstance(
+        value,
+        float,
+    ):
         return int(value)
 
-    if isinstance(value, str):
+    if isinstance(
+        value,
+        str,
+    ):
         try:
             return int(value)
+
         except ValueError:
             return default
 
     return default
+
+
+def normalize_status(
+    value: object,
+) -> str:
+    return str(value or "").strip().lower()
+
+
+# ============================================================
+# Retry/history helpers
+# ============================================================
 
 
 def get_retry_count(
@@ -139,14 +193,25 @@ def get_retry_count(
 
 def get_retry_status_counts(
     checkpoint: dict[str, object],
-) -> tuple[int, int, int, int]:
+) -> tuple[
+    int,
+    int,
+    int,
+    int,
+    int,
+    int,
+    int,
+]:
     """
-    Return retry-state counts in this order:
+    Return retry/history counts in this order:
 
-    pending,
-    unmatched,
-    exhausted,
-    other.
+        pending
+        unmatched
+        exhausted
+        resolved_same_sku
+        resolved_replacement
+        supplier_unresolved
+        other
     """
 
     retry_items = checkpoint.get(
@@ -158,11 +223,28 @@ def get_retry_status_counts(
         retry_items,
         list,
     ):
-        return 0, 0, 0, 0
+        return (
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
 
     pending = 0
+
     unmatched = 0
+
     exhausted = 0
+
+    resolved_same_sku = 0
+
+    resolved_replacement = 0
+
+    supplier_unresolved = 0
+
     other = 0
 
     for item in retry_items:
@@ -173,25 +255,25 @@ def get_retry_status_counts(
             other += 1
             continue
 
-        status = (
-            str(
-                item.get(
-                    "status",
-                    "",
-                )
-            )
-            .strip()
-            .lower()
-        )
+        status = normalize_status(item.get("status"))
 
-        if status == "pending":
+        if status == STATUS_PENDING:
             pending += 1
 
-        elif status == "unmatched":
+        elif status == STATUS_UNMATCHED:
             unmatched += 1
 
-        elif status == "exhausted":
+        elif status == STATUS_EXHAUSTED:
             exhausted += 1
+
+        elif status == STATUS_RESOLVED_SAME_SKU:
+            resolved_same_sku += 1
+
+        elif status == STATUS_RESOLVED_REPLACEMENT:
+            resolved_replacement += 1
+
+        elif status == STATUS_SUPPLIER_UNRESOLVED:
+            supplier_unresolved += 1
 
         else:
             other += 1
@@ -200,15 +282,55 @@ def get_retry_status_counts(
         pending,
         unmatched,
         exhausted,
+        resolved_same_sku,
+        resolved_replacement,
+        supplier_unresolved,
         other,
     )
+
+
+def get_actionable_retry_count(
+    checkpoint: dict[str, object],
+) -> int:
+    (
+        pending,
+        unmatched,
+        exhausted,
+        _resolved_same_sku,
+        _resolved_replacement,
+        _supplier_unresolved,
+        _other,
+    ) = get_retry_status_counts(checkpoint)
+
+    return pending + unmatched + exhausted
+
+
+def get_pending_retry_count(
+    checkpoint: dict[str, object],
+) -> int:
+    (
+        pending,
+        _unmatched,
+        _exhausted,
+        _resolved_same_sku,
+        _resolved_replacement,
+        _supplier_unresolved,
+        _other,
+    ) = get_retry_status_counts(checkpoint)
+
+    return pending
+
+
+# ============================================================
+# Dedicated-IP helpers
+# ============================================================
 
 
 def get_public_ip() -> str:
     request = Request(
         PUBLIC_IP_CHECK_URL,
         headers={
-            "Accept": "text/plain",
+            "Accept": ("text/plain"),
             "User-Agent": ("Nocturnix-MobileSentrix-Sync/1.0"),
         },
         method="GET",
@@ -216,7 +338,7 @@ def get_public_ip() -> str:
 
     with urlopen(
         request,
-        timeout=PUBLIC_IP_TIMEOUT_SECONDS,
+        timeout=(PUBLIC_IP_TIMEOUT_SECONDS),
     ) as response:
         value = response.read().decode(
             "utf-8",
@@ -229,16 +351,21 @@ def get_public_ip() -> str:
 def verify_public_ip(
     *,
     batch_number: int | None = None,
-) -> tuple[bool, str | None]:
+) -> tuple[
+    bool,
+    str | None,
+]:
     print()
     print("VPN / Dedicated IP Check")
     print("------------------------")
 
     if batch_number is not None:
         print(
-            "Preparing batch:",
+            "Batch:",
             batch_number,
         )
+
+    public_ip: str | None = None
 
     for attempt in range(
         1,
@@ -252,7 +379,7 @@ def verify_public_ip(
             TimeoutError,
             OSError,
         ) as exc:
-            print(f"Attempt {attempt}: " "unable to determine public IP.")
+            print(f"Attempt {attempt}: " "unable to determine " "public IP.")
 
             print(
                 "Reason:",
@@ -315,6 +442,11 @@ def verify_public_ip(
     )
 
 
+# ============================================================
+# Runner-state persistence
+# ============================================================
+
+
 def write_state_snapshot(
     *,
     sync: MobileSentrixWorkbookSyncService,
@@ -325,24 +457,14 @@ def write_state_snapshot(
     try:
         checkpoint = sync.get_sync_checkpoint()
 
-        (
-            pending_count,
-            unmatched_count,
-            exhausted_count,
-            other_count,
-        ) = get_retry_status_counts(checkpoint)
-
-        snapshot: dict[str, object] = {
-            "timestamp": utc_now(),
-            "event": event,
-            "batch_number": batch_number,
-            "checkpoint": checkpoint,
-            "retry_status": {
-                "pending": pending_count,
-                "unmatched": unmatched_count,
-                "exhausted": exhausted_count,
-                "other": other_count,
-            },
+        snapshot: dict[
+            str,
+            object,
+        ] = {
+            "timestamp": (utc_now()),
+            "event": (event),
+            "batch_number": (batch_number),
+            "checkpoint": (checkpoint),
         }
 
         if extra:
@@ -366,6 +488,11 @@ def write_state_snapshot(
         print("WARNING: Unable to write " "runner state snapshot.")
 
         traceback.print_exc()
+
+
+# ============================================================
+# Terminal reporting
+# ============================================================
 
 
 def print_header() -> None:
@@ -448,16 +575,17 @@ def print_header() -> None:
 
 
 def print_checkpoint(
-    sync: MobileSentrixWorkbookSyncService,
+    checkpoint: dict[str, object],
 ) -> None:
-    checkpoint = sync.get_sync_checkpoint()
-
     retry_count = get_retry_count(checkpoint)
 
     (
         pending_count,
         unmatched_count,
         exhausted_count,
+        resolved_same_sku_count,
+        resolved_replacement_count,
+        supplier_unresolved_count,
         other_count,
     ) = get_retry_status_counts(checkpoint)
 
@@ -476,9 +604,11 @@ def print_checkpoint(
     )
 
     print(
-        "Retry count:",
+        "Retry/history records:",
         retry_count,
     )
+
+    print()
 
     print(
         "Pending retries:",
@@ -495,11 +625,29 @@ def print_checkpoint(
         exhausted_count,
     )
 
-    if other_count:
-        print(
-            "Other retry states:",
-            other_count,
-        )
+    print()
+
+    print(
+        "Resolved same SKU:",
+        resolved_same_sku_count,
+    )
+
+    print(
+        "Resolved replacement:",
+        resolved_replacement_count,
+    )
+
+    print(
+        "Supplier unresolved:",
+        supplier_unresolved_count,
+    )
+
+    print(
+        "Other states:",
+        other_count,
+    )
+
+    print()
 
     print(
         "Cycle complete:",
@@ -507,6 +655,49 @@ def print_checkpoint(
     )
 
     print()
+
+
+def print_sync_completion_summary(
+    checkpoint: dict[str, object],
+) -> None:
+    (
+        pending_count,
+        unmatched_count,
+        exhausted_count,
+        resolved_same_sku_count,
+        resolved_replacement_count,
+        supplier_unresolved_count,
+        other_count,
+    ) = get_retry_status_counts(checkpoint)
+
+    actionable_count = pending_count + unmatched_count + exhausted_count
+
+    historical_count = (
+        resolved_same_sku_count + resolved_replacement_count + supplier_unresolved_count
+    )
+
+    print("Synchronization cycle is already complete.")
+
+    if actionable_count == 0:
+        print("No actionable retry items remain.")
+
+    else:
+        print(
+            "Actionable retry/history " "items remain:",
+            actionable_count,
+        )
+
+    if historical_count > 0:
+        print(
+            "Historical resolution records " "remain preserved:",
+            historical_count,
+        )
+
+    if other_count > 0:
+        print(
+            "Unrecognized retry/history states:",
+            other_count,
+        )
 
 
 def print_batch_result(
@@ -568,7 +759,10 @@ def print_batch_result(
         ),
     ]
 
-    for label, key in fields:
+    for (
+        label,
+        key,
+    ) in fields:
         print(
             f"{label}:",
             result.get(key),
@@ -584,21 +778,44 @@ def print_batch_result(
         and errors
     ):
         print()
-        print("Items recorded for review/retry:")
+        print("Items queued for retry:")
 
         for error in errors:
             print(error)
 
 
+# ============================================================
+# Retry processing
+# ============================================================
+
+
 def run_retry_pass(
     sync: MobileSentrixWorkbookSyncService,
 ) -> dict[str, object]:
+    checkpoint = sync.get_sync_checkpoint()
+
+    pending_before = get_pending_retry_count(checkpoint)
+
+    if pending_before <= 0:
+        print()
+        print("Retry pass skipped: " "no pending retry items remain.")
+
+        return {
+            "retry_items_processed": 0,
+            "recovered": 0,
+            "still_pending": 0,
+            "unmatched": 0,
+            "exhausted": 0,
+            "api_errors": 0,
+            "retry_count": (get_retry_count(checkpoint)),
+        }
+
     print()
     print("Running retry pass...")
 
     try:
         result = sync.retry_failed_items(
-            max_items=RETRY_MAX_ITEMS,
+            max_items=(RETRY_MAX_ITEMS),
             request_delay_seconds=(REQUEST_DELAY_SECONDS),
         )
 
@@ -622,10 +839,10 @@ def run_retry_pass(
 
         write_state_snapshot(
             sync=sync,
-            event="retry_pass_exception",
+            event=("retry_pass_exception"),
             extra={
                 "exception_type": (type(exc).__name__),
-                "exception": str(exc),
+                "exception": (str(exc)),
             },
         )
 
@@ -633,40 +850,66 @@ def run_retry_pass(
 
     print(
         "Retry items processed:",
-        result.get("retry_items_processed"),
+        result.get(
+            "retry_items_processed",
+            0,
+        ),
     )
 
     print(
         "Recovered:",
-        result.get("recovered"),
+        result.get(
+            "recovered",
+            0,
+        ),
     )
 
     print(
         "Still pending:",
-        result.get("still_pending"),
+        result.get(
+            "still_pending",
+            0,
+        ),
     )
 
     print(
         "Unmatched:",
-        result.get("unmatched"),
+        result.get(
+            "unmatched",
+            0,
+        ),
     )
 
     print(
         "Exhausted:",
-        result.get("exhausted"),
+        result.get(
+            "exhausted",
+            0,
+        ),
     )
 
     print(
         "Retry API errors:",
-        result.get("api_errors"),
+        result.get(
+            "api_errors",
+            0,
+        ),
     )
 
     print(
         "Retry count remaining:",
-        result.get("retry_count"),
+        result.get(
+            "retry_count",
+            0,
+        ),
     )
 
     return result
+
+
+# ============================================================
+# Main runner
+# ============================================================
 
 
 def run() -> int:
@@ -680,15 +923,25 @@ def run() -> int:
 
     print()
 
-    print_checkpoint(sync)
-
     checkpoint = sync.get_sync_checkpoint()
+
+    print_checkpoint(checkpoint)
+
+    # ========================================================
+    # Already-complete cycle
+    #
+    # Do this before making any external IP request.
+    # Final historical statuses are not retry work.
+    # ========================================================
 
     (
         pending_count,
         unmatched_count,
         exhausted_count,
-        other_count,
+        _resolved_same_sku_count,
+        _resolved_replacement_count,
+        _supplier_unresolved_count,
+        _other_count,
     ) = get_retry_status_counts(checkpoint)
 
     next_start_row = checkpoint.get("next_start_row")
@@ -700,39 +953,22 @@ def run() -> int:
         )
     )
 
-    # ========================================================
-    # Completed-cycle handling
-    # ========================================================
-
-    if cycle_complete and next_start_row is None and pending_count == 0:
-        print("Synchronization cycle is already complete.")
-
-        if unmatched_count > 0:
-            print(
-                "Unmatched/manual-review items " "remain recorded:",
-                unmatched_count,
-            )
-
-        if exhausted_count > 0:
-            print(
-                "Exhausted/manual-review items " "remain recorded:",
-                exhausted_count,
-            )
-
-        if other_count > 0:
-            print(
-                "Other retry-state items " "remain recorded:",
-                other_count,
-            )
+    if (
+        cycle_complete
+        and next_start_row is None
+        and pending_count == 0
+        and unmatched_count == 0
+        and exhausted_count == 0
+    ):
+        print_sync_completion_summary(checkpoint)
 
         write_state_snapshot(
             sync=sync,
-            event="already_complete",
+            event=("already_complete"),
             extra={
                 "pending_retries": (pending_count),
                 "unmatched_retries": (unmatched_count),
                 "exhausted_retries": (exhausted_count),
-                "other_retry_states": (other_count),
             },
         )
 
@@ -740,6 +976,8 @@ def run() -> int:
 
     # ========================================================
     # Initial Dedicated IP verification
+    #
+    # Required only if API work may actually be performed.
     # ========================================================
 
     ip_ok, public_ip = verify_public_ip()
@@ -775,171 +1013,11 @@ def run() -> int:
 
     write_state_snapshot(
         sync=sync,
-        event="runner_started",
+        event=("runner_started"),
         extra={
-            "public_ip": public_ip,
+            "public_ip": (public_ip),
         },
     )
-
-    checkpoint = sync.get_sync_checkpoint()
-
-    (
-        pending_count,
-        unmatched_count,
-        exhausted_count,
-        other_count,
-    ) = get_retry_status_counts(checkpoint)
-
-    next_start_row = checkpoint.get("next_start_row")
-
-    # ========================================================
-    # Primary scan already finished
-    # ========================================================
-
-    if next_start_row is None:
-        if pending_count > 0:
-            print()
-            print("Primary scan is complete.")
-
-            print(
-                "Pending retry items remain:",
-                pending_count,
-            )
-
-            retry_result = run_retry_pass(sync)
-
-            checkpoint = sync.get_sync_checkpoint()
-
-            (
-                pending_count,
-                unmatched_count,
-                exhausted_count,
-                other_count,
-            ) = get_retry_status_counts(checkpoint)
-
-            if pending_count == 0:
-                print()
-                print("No pending retries remain.")
-
-                if unmatched_count > 0:
-                    print(
-                        "Unmatched/manual-review " "items remain recorded:",
-                        unmatched_count,
-                    )
-
-                if exhausted_count > 0:
-                    print(
-                        "Exhausted/manual-review " "items remain recorded:",
-                        exhausted_count,
-                    )
-
-                if other_count > 0:
-                    print(
-                        "Other retry-state items " "remain recorded:",
-                        other_count,
-                    )
-
-                print("Primary synchronization " "work is complete.")
-
-                write_state_snapshot(
-                    sync=sync,
-                    event=("primary_complete_" "no_pending_retries"),
-                    extra={
-                        "pending_retries": (pending_count),
-                        "unmatched_retries": (unmatched_count),
-                        "exhausted_retries": (exhausted_count),
-                        "other_retry_states": (other_count),
-                        "retry_api_errors": (retry_result.get("api_errors")),
-                    },
-                )
-
-            else:
-                print()
-                print("Retry items remain pending.")
-
-                print(
-                    "Stopping this runner so " "they are not retried " "continuously."
-                )
-
-                write_state_snapshot(
-                    sync=sync,
-                    event=("primary_complete_" "pending_retries"),
-                    extra={
-                        "pending_retries": (pending_count),
-                        "unmatched_retries": (unmatched_count),
-                        "exhausted_retries": (exhausted_count),
-                        "other_retry_states": (other_count),
-                    },
-                )
-
-            print()
-            print("=" * 72)
-
-            print("Mobile Sentrix runner stopped")
-
-            print("=" * 72)
-
-            print(
-                "Stopped:",
-                utc_now(),
-            )
-
-            print(
-                "Batches completed this run:",
-                0,
-            )
-
-            print()
-
-            print_checkpoint(sync)
-
-            write_state_snapshot(
-                sync=sync,
-                event="runner_stopped_normally",
-                extra={
-                    "batches_completed": 0,
-                },
-            )
-
-            return 0
-
-        print()
-        print("Primary scan is complete.")
-
-        print("No pending retries remain.")
-
-        if unmatched_count > 0:
-            print(
-                "Unmatched/manual-review " "items remain recorded:",
-                unmatched_count,
-            )
-
-        if exhausted_count > 0:
-            print(
-                "Exhausted/manual-review " "items remain recorded:",
-                exhausted_count,
-            )
-
-        if other_count > 0:
-            print(
-                "Other retry-state items " "remain recorded:",
-                other_count,
-            )
-
-        print("Primary synchronization " "work is complete.")
-
-        write_state_snapshot(
-            sync=sync,
-            event=("primary_complete_" "no_pending_retries"),
-            extra={
-                "pending_retries": (pending_count),
-                "unmatched_retries": (unmatched_count),
-                "exhausted_retries": (exhausted_count),
-                "other_retry_states": (other_count),
-            },
-        )
-
-        return 0
 
     batches_completed = 0
 
@@ -952,6 +1030,9 @@ def run() -> int:
             pending_count,
             unmatched_count,
             exhausted_count,
+            resolved_same_sku_count,
+            resolved_replacement_count,
+            supplier_unresolved_count,
             other_count,
         ) = get_retry_status_counts(checkpoint)
 
@@ -961,6 +1042,32 @@ def run() -> int:
 
         if next_start_row is None:
             if pending_count > 0:
+                print()
+                print("Primary scan is complete.")
+
+                print(f"{pending_count} pending " "retry item(s) remain.")
+
+                # Verify dedicated IP again immediately
+                # before making retry API requests.
+                ip_ok, public_ip = verify_public_ip()
+
+                if not ip_ok:
+                    print()
+                    print("STOPPING:")
+
+                    print(
+                        "Dedicated public IP "
+                        "could not be verified "
+                        "before retry processing."
+                    )
+
+                    write_state_snapshot(
+                        sync=sync,
+                        event=("retry_public_ip_" "safety_stop"),
+                    )
+
+                    return 2
+
                 retry_result = run_retry_pass(sync)
 
                 checkpoint = sync.get_sync_checkpoint()
@@ -969,6 +1076,9 @@ def run() -> int:
                     pending_count,
                     unmatched_count,
                     exhausted_count,
+                    resolved_same_sku_count,
+                    resolved_replacement_count,
+                    supplier_unresolved_count,
                     other_count,
                 ) = get_retry_status_counts(checkpoint)
 
@@ -976,42 +1086,31 @@ def run() -> int:
                     print()
                     print("No pending retries remain.")
 
-                    if unmatched_count > 0:
-                        print(
-                            "Unmatched/manual-review " "items remain recorded:",
-                            unmatched_count,
-                        )
+                    if unmatched_count > 0 or exhausted_count > 0:
+                        print("Manual-review retry " "states remain recorded.")
 
-                    if exhausted_count > 0:
-                        print(
-                            "Exhausted/manual-review " "items remain recorded:",
-                            exhausted_count,
-                        )
-
-                    if other_count > 0:
-                        print(
-                            "Other retry-state items " "remain recorded:",
-                            other_count,
-                        )
-
-                    print("Primary synchronization " "work is complete.")
+                    else:
+                        print("Primary synchronization " "work is complete.")
 
                     write_state_snapshot(
                         sync=sync,
-                        event=("primary_complete_" "no_pending_retries"),
+                        event=("primary_scan_" "retry_processing_complete"),
                         extra={
                             "pending_retries": (pending_count),
                             "unmatched_retries": (unmatched_count),
                             "exhausted_retries": (exhausted_count),
-                            "other_retry_states": (other_count),
-                            "retry_api_errors": (retry_result.get("api_errors")),
+                            "resolved_same_sku": (resolved_same_sku_count),
+                            "resolved_replacement": (resolved_replacement_count),
+                            "supplier_unresolved": (supplier_unresolved_count),
+                            "other_states": (other_count),
+                            "retry_result": (retry_result),
                         },
                     )
 
                     break
 
                 print()
-                print("Retry items remain pending.")
+                print("Pending retry items remain.")
 
                 print(
                     "Stopping this runner so " "they are not retried " "continuously."
@@ -1022,9 +1121,37 @@ def run() -> int:
                     event=("primary_complete_" "pending_retries"),
                     extra={
                         "pending_retries": (pending_count),
+                    },
+                )
+
+                break
+
+            # There are no pending retries. Unmatched/exhausted
+            # records require review, not continuous retries.
+            if unmatched_count > 0 or exhausted_count > 0:
+                print()
+                print("Primary scan is complete.")
+
+                if unmatched_count > 0:
+                    print(
+                        "Unmatched retry items " "remain for investigation:",
+                        unmatched_count,
+                    )
+
+                if exhausted_count > 0:
+                    print(
+                        "Exhausted retry items " "remain for manual review:",
+                        exhausted_count,
+                    )
+
+                print("No automatic retry work " "will be performed.")
+
+                write_state_snapshot(
+                    sync=sync,
+                    event=("primary_complete_" "manual_review_required"),
+                    extra={
                         "unmatched_retries": (unmatched_count),
                         "exhausted_retries": (exhausted_count),
-                        "other_retry_states": (other_count),
                     },
                 )
 
@@ -1033,36 +1160,37 @@ def run() -> int:
             print()
             print("Primary scan is complete.")
 
-            print("No pending retries remain.")
+            print("No actionable retry items remain.")
 
-            if unmatched_count > 0:
-                print(
-                    "Unmatched/manual-review " "items remain recorded:",
-                    unmatched_count,
-                )
+            historical_count = (
+                resolved_same_sku_count
+                + resolved_replacement_count
+                + supplier_unresolved_count
+            )
 
-            if exhausted_count > 0:
+            if historical_count > 0:
                 print(
-                    "Exhausted/manual-review " "items remain recorded:",
-                    exhausted_count,
+                    "Historical resolution " "records remain preserved:",
+                    historical_count,
                 )
 
             if other_count > 0:
                 print(
-                    "Other retry-state items " "remain recorded:",
+                    "Unrecognized retry/history " "states remain:",
                     other_count,
                 )
 
-            print("Primary synchronization " "work is complete.")
-
             write_state_snapshot(
                 sync=sync,
-                event=("primary_complete_" "no_pending_retries"),
+                event=("primary_scan_complete"),
                 extra={
                     "pending_retries": (pending_count),
                     "unmatched_retries": (unmatched_count),
                     "exhausted_retries": (exhausted_count),
-                    "other_retry_states": (other_count),
+                    "resolved_same_sku": (resolved_same_sku_count),
+                    "resolved_replacement": (resolved_replacement_count),
+                    "supplier_unresolved": (supplier_unresolved_count),
+                    "other_states": (other_count),
                 },
             )
 
@@ -1071,11 +1199,11 @@ def run() -> int:
         batch_number = batches_completed + 1
 
         # ==================================================
-        # Verify VPN / Dedicated IP before every batch
+        # Verify VPN / Dedicated IP BEFORE every batch
         # ==================================================
 
         ip_ok, public_ip = verify_public_ip(
-            batch_number=batch_number,
+            batch_number=(batch_number),
         )
 
         if not ip_ok:
@@ -1099,7 +1227,7 @@ def run() -> int:
             write_state_snapshot(
                 sync=sync,
                 event=("public_ip_safety_stop"),
-                batch_number=batch_number,
+                batch_number=(batch_number),
                 extra={
                     "expected_public_ip": (EXPECTED_PUBLIC_IP),
                     "received_public_ip": (public_ip),
@@ -1115,7 +1243,8 @@ def run() -> int:
 
         print()
         print(
-            f"Starting batch {batch_number} "
+            f"Starting batch "
+            f"{batch_number} "
             f"from workbook row "
             f"{next_start_row}..."
         )
@@ -1127,8 +1256,8 @@ def run() -> int:
 
         write_state_snapshot(
             sync=sync,
-            event="batch_starting",
-            batch_number=batch_number,
+            event=("batch_starting"),
+            batch_number=(batch_number),
             extra={
                 "start_row": (next_start_row),
                 "public_ip": (public_ip),
@@ -1137,7 +1266,7 @@ def run() -> int:
 
         try:
             result = sync.sync_next_batch(
-                batch_size=BATCH_SIZE,
+                batch_size=(BATCH_SIZE),
                 request_delay_seconds=(REQUEST_DELAY_SECONDS),
             )
 
@@ -1150,8 +1279,8 @@ def run() -> int:
 
             write_state_snapshot(
                 sync=sync,
-                event="keyboard_interrupt",
-                batch_number=batch_number,
+                event=("keyboard_interrupt"),
+                batch_number=(batch_number),
             )
 
             return 130
@@ -1192,8 +1321,8 @@ def run() -> int:
 
             write_state_snapshot(
                 sync=sync,
-                event="batch_exception",
-                batch_number=batch_number,
+                event=("batch_exception"),
+                batch_number=(batch_number),
                 extra={
                     "start_row": (next_start_row),
                     "public_ip": (public_ip),
@@ -1207,33 +1336,20 @@ def run() -> int:
         batches_completed += 1
 
         print_batch_result(
-            batch_number=batch_number,
+            batch_number=(batch_number),
             result=result,
         )
 
-        checkpoint = sync.get_sync_checkpoint()
-
-        (
-            pending_count,
-            unmatched_count,
-            exhausted_count,
-            other_count,
-        ) = get_retry_status_counts(checkpoint)
-
         write_state_snapshot(
             sync=sync,
-            event="batch_completed",
-            batch_number=batch_number,
+            event=("batch_completed"),
+            batch_number=(batch_number),
             extra={
                 "public_ip": (public_ip),
                 "products_processed": (result.get("products_processed")),
                 "exact_matches": (result.get("exact_matches")),
                 "api_errors": (result.get("api_errors")),
-                "retry_count": (get_retry_count(checkpoint)),
-                "pending_retries": (pending_count),
-                "unmatched_retries": (unmatched_count),
-                "exhausted_retries": (exhausted_count),
-                "other_retry_states": (other_count),
+                "retry_count": (result.get("retry_count")),
                 "next_start_row": (result.get("next_start_row")),
             },
         )
@@ -1255,7 +1371,7 @@ def run() -> int:
             write_state_snapshot(
                 sync=sync,
                 event=("api_error_safety_stop"),
-                batch_number=batch_number,
+                batch_number=(batch_number),
                 extra={
                     "api_errors": (api_errors),
                 },
@@ -1271,43 +1387,29 @@ def run() -> int:
 
             write_state_snapshot(
                 sync=sync,
-                event=("zero_products_safety_stop"),
-                batch_number=batch_number,
+                event=("zero_products_" "safety_stop"),
+                batch_number=(batch_number),
             )
 
             break
 
         # ==================================================
-        # Retry queue status
+        # Retry queue observation
+        #
+        # Historical and finalized records do not trigger
+        # a queue-size safety stop.
         # ==================================================
 
-        print()
-        print("Retry queue status:")
+        checkpoint = sync.get_sync_checkpoint()
 
-        print(
-            "  Pending:",
-            pending_count,
-        )
+        current_pending = get_pending_retry_count(checkpoint)
 
-        print(
-            "  Unmatched:",
-            unmatched_count,
-        )
-
-        print(
-            "  Exhausted:",
-            exhausted_count,
-        )
-
-        if other_count:
+        if current_pending > 0:
+            print()
             print(
-                "  Other:",
-                other_count,
+                "Pending retry items:",
+                current_pending,
             )
-
-        print(
-            "Retained unmatched/manual-review " "records do not stop the primary scan."
-        )
 
         # ==================================================
         # Periodic retry processing
@@ -1316,22 +1418,35 @@ def run() -> int:
         if batches_completed % RETRY_EVERY_BATCHES == 0:
             checkpoint = sync.get_sync_checkpoint()
 
-            (
-                pending_count,
-                unmatched_count,
-                exhausted_count,
-                other_count,
-            ) = get_retry_status_counts(checkpoint)
+            pending_before_retry = get_pending_retry_count(checkpoint)
 
-            if pending_count > 0:
+            if pending_before_retry > 0:
+                ip_ok, public_ip = verify_public_ip()
+
+                if not ip_ok:
+                    print()
+                    print("STOPPING:")
+
+                    print(
+                        "Dedicated IP could "
+                        "not be verified before "
+                        "retry processing."
+                    )
+
+                    write_state_snapshot(
+                        sync=sync,
+                        event=("periodic_retry_" "public_ip_stop"),
+                        batch_number=(batch_number),
+                    )
+
+                    return 2
+
                 retry_result = run_retry_pass(sync)
-
-                retry_api_errors = get_int(retry_result.get("api_errors"))
 
                 write_state_snapshot(
                     sync=sync,
                     event=("retry_pass_completed"),
-                    batch_number=batch_number,
+                    batch_number=(batch_number),
                     extra={
                         "retry_items_processed": (
                             retry_result.get("retry_items_processed")
@@ -1340,35 +1455,9 @@ def run() -> int:
                         "still_pending": (retry_result.get("still_pending")),
                         "unmatched": (retry_result.get("unmatched")),
                         "exhausted": (retry_result.get("exhausted")),
-                        "api_errors": (retry_api_errors),
                         "retry_count": (retry_result.get("retry_count")),
                     },
                 )
-
-                if retry_api_errors >= MAX_BATCH_API_ERRORS:
-                    print()
-                    print("STOPPING:")
-
-                    print(
-                        "The retry pass reached " "the API error safety " "threshold."
-                    )
-
-                    write_state_snapshot(
-                        sync=sync,
-                        event=("retry_api_error_" "safety_stop"),
-                        batch_number=batch_number,
-                        extra={
-                            "retry_api_errors": (retry_api_errors),
-                        },
-                    )
-
-                    break
-
-            else:
-                print()
-                print("Periodic retry pass skipped:")
-
-                print("No pending retry items remain.")
 
         # ==================================================
         # Check whether primary scan finished
@@ -1382,6 +1471,9 @@ def run() -> int:
             pending_count,
             unmatched_count,
             exhausted_count,
+            resolved_same_sku_count,
+            resolved_replacement_count,
+            supplier_unresolved_count,
             other_count,
         ) = get_retry_status_counts(checkpoint)
 
@@ -1391,7 +1483,7 @@ def run() -> int:
 
             if unmatched_count > 0:
                 print(
-                    "Unmatched items remain " "for manual review:",
+                    "Unmatched retry items " "remain for investigation:",
                     unmatched_count,
                 )
 
@@ -1401,24 +1493,39 @@ def run() -> int:
                     exhausted_count,
                 )
 
-            if other_count > 0:
+            if unmatched_count == 0 and exhausted_count == 0:
+                print("No actionable retry " "items remain.")
+
+            historical_count = (
+                resolved_same_sku_count
+                + resolved_replacement_count
+                + supplier_unresolved_count
+            )
+
+            if historical_count > 0:
                 print(
-                    "Nonstandard retry records " "remain for manual review:",
-                    other_count,
+                    "Historical resolution " "records remain preserved:",
+                    historical_count,
                 )
 
-            if unmatched_count == 0 and exhausted_count == 0 and other_count == 0:
-                print("No retry work remains.")
+            if other_count > 0:
+                print(
+                    "Unrecognized retry/history " "states:",
+                    other_count,
+                )
 
             write_state_snapshot(
                 sync=sync,
                 event=("primary_scan_complete"),
-                batch_number=batch_number,
+                batch_number=(batch_number),
                 extra={
                     "pending_retries": (pending_count),
                     "unmatched_retries": (unmatched_count),
                     "exhausted_retries": (exhausted_count),
-                    "other_retry_states": (other_count),
+                    "resolved_same_sku": (resolved_same_sku_count),
+                    "resolved_replacement": (resolved_replacement_count),
+                    "supplier_unresolved": (supplier_unresolved_count),
+                    "other_states": (other_count),
                 },
             )
 
@@ -1437,6 +1544,10 @@ def run() -> int:
             )
 
             time.sleep(PAUSE_BETWEEN_BATCHES_SECONDS)
+
+    # ========================================================
+    # Normal runner stop
+    # ========================================================
 
     print()
     print("=" * 72)
@@ -1457,17 +1568,24 @@ def run() -> int:
 
     print()
 
-    print_checkpoint(sync)
+    final_checkpoint = sync.get_sync_checkpoint()
+
+    print_checkpoint(final_checkpoint)
 
     write_state_snapshot(
         sync=sync,
-        event="runner_stopped_normally",
+        event=("runner_stopped_normally"),
         extra={
             "batches_completed": (batches_completed),
         },
     )
 
     return 0
+
+
+# ============================================================
+# Process entrypoint / logging
+# ============================================================
 
 
 def main() -> int:
@@ -1477,6 +1595,7 @@ def main() -> int:
     )
 
     original_stdout = sys.stdout
+
     original_stderr = sys.stderr
 
     with LOG_PATH.open(
@@ -1502,6 +1621,7 @@ def main() -> int:
             )
 
             sys.stdout = tee_stdout
+
             sys.stderr = tee_stderr
 
             try:
@@ -1519,6 +1639,7 @@ def main() -> int:
             except BaseException as exc:
                 print()
                 print()
+
                 print("=" * 72)
 
                 print("UNHANDLED RUNNER FAILURE")
@@ -1551,6 +1672,7 @@ def main() -> int:
                 sys.stderr.flush()
 
                 sys.stdout = original_stdout
+
                 sys.stderr = original_stderr
 
 
