@@ -318,3 +318,85 @@ class RepairPaymentSummaryResponse(BaseModel):
     balance_due: float = 0.0
     payment_status: str = ""
     currency: str = "USD"
+
+
+# ======================================================
+# iFixit Read-Only Metadata
+# ======================================================
+
+
+class IFixitAttributionResponse(BaseModel):
+    provider: str = "iFixit"
+    provider_url: str = "https://www.ifixit.com/"
+    api_version: str = "2.0"
+    license_name: str = "CC BY-NC-SA 3.0"
+    license_url: str = "https://creativecommons.org/licenses/by-nc-sa/3.0/"
+
+
+class IFixitDeviceResultResponse(BaseModel):
+    title: str
+    result_type: str
+    category: str | None = None
+    url: str | None = None
+
+
+class IFixitGuideMetadataResponse(BaseModel):
+    guide_id: int | None = None
+    title: str
+    category: str | None = None
+    subject: str | None = None
+    guide_type: str | None = None
+    url: str | None = None
+    locale: str | None = None
+    author: str | None = None
+    revision_id: int | None = None
+    modified_date: float | None = None
+    time_required_min: int | None = None
+    time_required_max: int | None = None
+    difficulty: str | None = None
+
+
+class IFixitDeviceSearchResponse(BaseModel):
+    query: str
+    returned_items: int
+    items: list[IFixitDeviceResultResponse]
+    attribution: IFixitAttributionResponse
+
+
+class IFixitGuideSearchResponse(BaseModel):
+    query: str
+    returned_items: int
+    items: list[IFixitGuideMetadataResponse]
+    attribution: IFixitAttributionResponse
+
+
+class IFixitGuideResponse(BaseModel):
+    guide: IFixitGuideMetadataResponse
+    attribution: IFixitAttributionResponse
+
+
+class IFixitNormalizedDeviceResponse(BaseModel):
+    manufacturer: str
+    model: str
+    search_query: str
+
+
+class IFixitRankedCandidateResponse(BaseModel):
+    title: str
+    result_type: str
+    category: str | None = None
+    url: str | None = None
+    confidence: float
+    classification: str
+    reasons: list[str]
+
+
+class IFixitDeviceGuideMatchResponse(BaseModel):
+    normalized_device: IFixitNormalizedDeviceResponse
+    candidates: list[IFixitRankedCandidateResponse]
+    selected_candidate: IFixitRankedCandidateResponse | None = None
+    match_classification: str
+    confidence: float
+    guide_summaries: list[IFixitGuideMetadataResponse]
+    override_applied: bool
+    attribution: IFixitAttributionResponse
