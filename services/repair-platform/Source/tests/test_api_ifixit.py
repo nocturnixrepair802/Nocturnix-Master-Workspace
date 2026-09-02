@@ -29,7 +29,7 @@ GUIDE = IFixitGuideMetadata(
 
 class FakeIFixitClient:
     def search_devices(self, *, query: str) -> list[IFixitDeviceResult]:
-        assert query == "iPhone 15"
+        assert query in {"iPhone 15", "Apple iPhone 15"}
         return [
             IFixitDeviceResult(
                 title="iPhone 15",
@@ -40,7 +40,7 @@ class FakeIFixitClient:
         ]
 
     def search_guides(self, *, query: str) -> list[IFixitGuideMetadata]:
-        assert query == "iPhone 15 screen"
+        assert query in {"iPhone 15 screen", "iPhone 15"}
         return [GUIDE]
 
     def get_guide_metadata(self, *, guide_id: int) -> IFixitGuideMetadata | None:
@@ -130,6 +130,56 @@ def test_search_query_validation_happens_before_upstream_call(
 ) -> None:
     response = client.get(
         "/api/v1/integrations/ifixit/devices/search", params={"q": ""}
+    )
+
+    assert response.status_code == 422
+
+
+def test_device_guide_match_combines_ranked_candidate_and_summaries(
+    client: TestClient,
+) -> None:
+    response = client.get(
+        "/api/v1/integrations/ifixit/device-guide-match",
+        params={"manufacturer": "Apple", "model": "Apple iPhone-15"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["normalized_device"] == {
+        "manufacturer": "Apple",
+        "model": "iPhone 15",
+        "search_query": "Apple iPhone 15",
+    }
+    assert payload["match_classification"] == "exact"
+    assert payload["confidence"] == 1.0
+    assert payload["selected_candidate"]["title"] == "iPhone 15"
+    assert payload["guide_summaries"][0]["guide_id"] == 123
+    assert payload["attribution"]["provider"] == "iFixit"
+    assert "steps" not in payload["guide_summaries"][0]
+
+
+def test_device_guide_match_maps_upstream_timeout(client: TestClient) -> None:
+    class FailingClient(FakeIFixitClient):
+        def search_devices(self, *, query: str) -> list[IFixitDeviceResult]:
+            del query
+            raise IFixitApiError("iFixit API request timed out.", timed_out=True)
+
+    api_app.app.dependency_overrides[api_app.get_ifixit_client] = FailingClient
+    response = client.get(
+        "/api/v1/integrations/ifixit/device-guide-match",
+        params={"manufacturer": "Apple", "model": "iPhone 15"},
+    )
+
+    assert response.status_code == 504
+    assert response.json() == {"detail": "iFixit API request timed out."}
+
+
+def test_device_guide_match_requires_manufacturer_and_model(
+    client: TestClient,
+) -> None:
+    response = client.get(
+        "/api/v1/integrations/ifixit/device-guide-match",
+        params={"manufacturer": "Apple"},
     )
 
     assert response.status_code == 422
