@@ -320,6 +320,126 @@ class RepairPaymentSummaryResponse(BaseModel):
     currency: str = "USD"
 
 
+class ProcurementCreateRequest(BaseModel):
+    supplier: str = "Mobile Sentrix"
+    requested_by: str = ""
+    notes: str = ""
+
+
+class ProcurementItemCreateRequest(BaseModel):
+    supplier: str = "Mobile Sentrix"
+    supplier_product_id: str = ""
+    supplier_sku: str = ""
+    product_name: str = ""
+    product_url: str = ""
+    quantity: int = 1
+    unit_cost: float | None = None
+    supplier_in_stock: bool | None = None
+    supplier_stock_quantity: int | None = None
+    supplier_observed_at: str = ""
+    notes: str = ""
+    created_by: str = ""
+
+
+class ProcurementDecisionRequest(BaseModel):
+    actor: str = ""
+    reason: str = ""
+
+
+class ProcurementOrderRequest(BaseModel):
+    supplier_order_id: str
+    actual_supplier_cost: float | None = None
+    ordered_by: str = ""
+    supplier_order_date: str = ""
+
+
+class ProcurementReceiveRequest(BaseModel):
+    received_by: str = ""
+
+
+class ProcurementItemResponse(BaseModel):
+    procurement_item_id: str
+    procurement_id: str
+    repair_id: str
+
+    supplier: str = "Mobile Sentrix"
+
+    supplier_product_id: str | None = None
+    supplier_sku: str | None = None
+
+    product_name: str = ""
+    product_url: str | None = None
+
+    quantity: int = 1
+    unit_cost: float | None = None
+    estimated_line_total: float | None = None
+
+    supplier_in_stock: bool | None = None
+    supplier_stock_quantity: int | None = None
+    supplier_observed_at: str | None = None
+
+    received_quantity: int = 0
+
+    notes: str = ""
+    created_at: str
+    created_by: str = ""
+    updated_at: str
+
+
+class ProcurementResponse(BaseModel):
+    procurement_id: str
+    repair_id: str
+
+    supplier: str = "Mobile Sentrix"
+    procurement_status: str
+
+    requested_at: str
+    requested_by: str = ""
+
+    approved_at: str | None = None
+    approved_by: str | None = None
+
+    rejected_at: str | None = None
+    rejected_by: str | None = None
+    rejection_reason: str | None = None
+
+    ready_for_order_at: str | None = None
+
+    supplier_order_id: str | None = None
+    supplier_order_date: str | None = None
+
+    actual_supplier_cost: float | None = None
+
+    ordered_at: str | None = None
+    ordered_by: str | None = None
+
+    received_at: str | None = None
+    received_by: str | None = None
+
+    cancelled_at: str | None = None
+    cancelled_by: str | None = None
+    cancellation_reason: str | None = None
+
+    notes: str = ""
+
+    created_at: str
+    created_by: str = ""
+    updated_at: str
+
+
+class ProcurementSummaryResponse(BaseModel):
+    procurement_id: str
+    repair_id: str
+    supplier: str
+    procurement_status: str
+    item_count: int
+    requested_units: int
+    received_units: int
+    estimated_total: float
+    actual_supplier_cost: float | None = None
+    supplier_order_id: str | None = None
+
+
 # ======================================================
 # iFixit Read-Only Metadata
 # ======================================================

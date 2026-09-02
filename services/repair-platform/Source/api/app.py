@@ -40,6 +40,14 @@ from api.schemas import (
     IFixitGuideMetadataResponse,
     IFixitGuideResponse,
     IFixitGuideSearchResponse,
+    ProcurementCreateRequest,
+    ProcurementDecisionRequest,
+    ProcurementItemCreateRequest,
+    ProcurementItemResponse,
+    ProcurementOrderRequest,
+    ProcurementReceiveRequest,
+    ProcurementResponse,
+    ProcurementSummaryResponse,
     RepairCheckinCreateRequest,
     RepairCheckinResponse,
     RepairCheckinUpdateRequest,
@@ -74,6 +82,12 @@ from integrations.wpforms import (
 from persistence.catalog_db import CatalogDatabase
 from persistence.operations_db import OperationsDatabase
 from services.ifixit_device_matching_service import IFixitDeviceMatchingService
+from services.procurement_service import (
+    ProcurementNotFoundError,
+    ProcurementService,
+    ProcurementStateError,
+    ProcurementValidationError,
+)
 
 # ======================================================
 # Environment Configuration
@@ -154,6 +168,8 @@ def get_wpforms_mapper() -> WPFormsMapper:
 
     return _wpforms_mapper
 
+def get_procurement_service() -> ProcurementService:
+    return ProcurementService()
 
 # ======================================================
 # Date / Time
@@ -1918,6 +1934,343 @@ def list_repair_payments(
         repair_payment_response(record)
         for record in database.list_repair_payments(repair_id)
     ]
+
+
+@app.post(
+    "/api/repairs/{repair_id}/procurements",
+    response_model=ProcurementResponse,
+    status_code=201,
+)
+def create_repair_procurement(
+    repair_id: str,
+    payload: ProcurementCreateRequest,
+    service: ProcurementService = Depends(get_procurement_service),
+) -> ProcurementResponse:
+    try:
+        record = service.create_procurement(
+            repair_id,
+            payload.model_dump(),
+        )
+    except ProcurementNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+    except ProcurementValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    return ProcurementResponse(**record)
+
+
+@app.get(
+    "/api/repairs/{repair_id}/procurements",
+    response_model=list[ProcurementResponse],
+)
+def list_repair_procurements(
+    repair_id: str,
+    service: ProcurementService = Depends(get_procurement_service),
+) -> list[ProcurementResponse]:
+    try:
+        records = service.list_repair_procurements(repair_id)
+    except ProcurementNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    return [ProcurementResponse(**record) for record in records]
+
+
+@app.get(
+    "/api/procurements/{procurement_id}",
+    response_model=ProcurementResponse,
+)
+def get_procurement(
+    procurement_id: str,
+    service: ProcurementService = Depends(get_procurement_service),
+) -> ProcurementResponse:
+    record = service.get_procurement(procurement_id)
+
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Procurement request not found.",
+        )
+
+    return ProcurementResponse(**record)
+
+
+@app.post(
+    "/api/procurements/{procurement_id}/items",
+    response_model=ProcurementItemResponse,
+    status_code=201,
+)
+def add_procurement_item(
+    procurement_id: str,
+    payload: ProcurementItemCreateRequest,
+    service: ProcurementService = Depends(get_procurement_service),
+) -> ProcurementItemResponse:
+    try:
+        record = service.add_item(
+            procurement_id,
+            payload.model_dump(),
+        )
+    except ProcurementNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+    except ProcurementValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+    except ProcurementStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    record = dict(record)
+
+    stock_value = record.get("supplier_in_stock")
+
+    if stock_value is not None:
+        record["supplier_in_stock"] = bool(stock_value)
+
+    return ProcurementItemResponse(**record)
+
+
+@app.get(
+    "/api/procurements/{procurement_id}/items",
+    response_model=list[ProcurementItemResponse],
+)
+def list_procurement_items(
+    procurement_id: str,
+    service: ProcurementService = Depends(get_procurement_service),
+) -> list[ProcurementItemResponse]:
+    try:
+        records = service.list_items(procurement_id)
+    except ProcurementNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    output: list[ProcurementItemResponse] = []
+
+    for record in records:
+        normalized = dict(record)
+
+        stock_value = normalized.get("supplier_in_stock")
+
+        if stock_value is not None:
+            normalized["supplier_in_stock"] = bool(stock_value)
+
+        output.append(ProcurementItemResponse(**normalized))
+
+    return output
+
+
+@app.get(
+    "/api/procurements/{procurement_id}/summary",
+    response_model=ProcurementSummaryResponse,
+)
+def get_procurement_summary(
+    procurement_id: str,
+    service: ProcurementService = Depends(get_procurement_service),
+) -> ProcurementSummaryResponse:
+    try:
+        record = service.procurement_summary(procurement_id)
+    except ProcurementNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    return ProcurementSummaryResponse(**record)
+
+
+@app.post(
+    "/api/procurements/{procurement_id}/approve",
+    response_model=ProcurementResponse,
+)
+def approve_procurement(
+    procurement_id: str,
+    payload: ProcurementDecisionRequest,
+    service: ProcurementService = Depends(get_procurement_service),
+) -> ProcurementResponse:
+    try:
+        record = service.approve(
+            procurement_id,
+            approved_by=payload.actor,
+        )
+    except ProcurementNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+    except ProcurementValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+    except ProcurementStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    return ProcurementResponse(**record)
+
+
+@app.post(
+    "/api/procurements/{procurement_id}/ready",
+    response_model=ProcurementResponse,
+)
+def mark_procurement_ready(
+    procurement_id: str,
+    service: ProcurementService = Depends(get_procurement_service),
+) -> ProcurementResponse:
+    try:
+        record = service.mark_ready_for_order(procurement_id)
+    except ProcurementNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+    except ProcurementStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    return ProcurementResponse(**record)
+
+
+@app.post(
+    "/api/procurements/{procurement_id}/reject",
+    response_model=ProcurementResponse,
+)
+def reject_procurement(
+    procurement_id: str,
+    payload: ProcurementDecisionRequest,
+    service: ProcurementService = Depends(get_procurement_service),
+) -> ProcurementResponse:
+    try:
+        record = service.reject(
+            procurement_id,
+            rejected_by=payload.actor,
+            reason=payload.reason,
+        )
+    except ProcurementNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+    except ProcurementStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    return ProcurementResponse(**record)
+
+
+@app.post(
+    "/api/procurements/{procurement_id}/order",
+    response_model=ProcurementResponse,
+)
+def record_procurement_order(
+    procurement_id: str,
+    payload: ProcurementOrderRequest,
+    service: ProcurementService = Depends(get_procurement_service),
+) -> ProcurementResponse:
+    try:
+        record = service.record_manual_order(
+            procurement_id,
+            supplier_order_id=(payload.supplier_order_id),
+            actual_supplier_cost=(payload.actual_supplier_cost),
+            ordered_by=payload.ordered_by,
+            supplier_order_date=(payload.supplier_order_date),
+        )
+    except ProcurementNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+    except ProcurementValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+    except ProcurementStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    return ProcurementResponse(**record)
+
+
+@app.post(
+    "/api/procurements/{procurement_id}/receive",
+    response_model=ProcurementResponse,
+)
+def receive_procurement(
+    procurement_id: str,
+    payload: ProcurementReceiveRequest,
+    service: ProcurementService = Depends(get_procurement_service),
+) -> ProcurementResponse:
+    try:
+        record = service.receive(
+            procurement_id,
+            received_by=payload.received_by,
+        )
+    except ProcurementNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+    except ProcurementStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    return ProcurementResponse(**record)
+
+
+@app.post(
+    "/api/procurements/{procurement_id}/cancel",
+    response_model=ProcurementResponse,
+)
+def cancel_procurement(
+    procurement_id: str,
+    payload: ProcurementDecisionRequest,
+    service: ProcurementService = Depends(get_procurement_service),
+) -> ProcurementResponse:
+    try:
+        record = service.cancel(
+            procurement_id,
+            cancelled_by=payload.actor,
+            reason=payload.reason,
+        )
+    except ProcurementNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+    except ProcurementStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    return ProcurementResponse(**record)
 
 
 @app.get(
