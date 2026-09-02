@@ -40,6 +40,17 @@ GET /api/v1/integrations/ifixit/guides/search?q=iPhone%2015%20screen
 GET /api/v1/integrations/ifixit/guides/{guide_id}
 ```
 
+Phase 2 connects a Nocturnix manufacturer/model identity to ranked iFixit
+device candidates and guide summaries without writing the selection:
+
+```text
+GET /api/v1/integrations/ifixit/device-guide-match?manufacturer=Apple&model=iPhone%2015
+```
+
+An exact category can be selected for the request with the optional
+`ifixit_device_override` query parameter. Responses explain candidate confidence
+and classify the result as `exact`, `likely`, `uncertain`, or `no_match`.
+
 The integration returns attribution, metadata, and links to original iFixit pages.
 It does not persist or reproduce guide steps, manuals, or images. iFixit API content
 is not approved for AI ingestion or training, and commercial use requires licensing

@@ -34,6 +34,7 @@ from api.schemas import (
     CustomerResponse,
     DashboardResponse,
     IFixitAttributionResponse,
+    IFixitDeviceGuideMatchResponse,
     IFixitDeviceResultResponse,
     IFixitDeviceSearchResponse,
     IFixitGuideMetadataResponse,
@@ -71,6 +72,7 @@ from integrations.wpforms import (
 )
 from persistence.catalog_db import CatalogDatabase
 from persistence.operations_db import OperationsDatabase
+from services.ifixit_device_matching_service import IFixitDeviceMatchingService
 
 # ======================================================
 # Environment Configuration
@@ -2687,6 +2689,12 @@ def get_ifixit_client() -> IFixitClient:
     return IFixitClient(base_url=base_url, timeout_seconds=timeout_seconds)
 
 
+def get_ifixit_matching_service(
+    client: IFixitClient = Depends(get_ifixit_client),
+) -> IFixitDeviceMatchingService:
+    return IFixitDeviceMatchingService(client)
+
+
 def ifixit_attribution() -> IFixitAttributionResponse:
     return IFixitAttributionResponse()
 
@@ -2778,3 +2786,33 @@ def get_ifixit_guide(
         guide=IFixitGuideMetadataResponse.model_validate(guide.to_api_dict()),
         attribution=ifixit_attribution(),
     )
+
+
+@app.get(
+    "/api/v1/integrations/ifixit/device-guide-match",
+    response_model=IFixitDeviceGuideMatchResponse,
+)
+def match_ifixit_device_guides(
+    manufacturer: str = Query(..., min_length=1, max_length=100),
+    model: str = Query(..., min_length=1, max_length=200),
+    ifixit_device_override: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=200,
+    ),
+    service: IFixitDeviceMatchingService = Depends(get_ifixit_matching_service),
+) -> IFixitDeviceGuideMatchResponse:
+    try:
+        result = service.match_device(
+            manufacturer=manufacturer,
+            model=model,
+            ifixit_device_override=ifixit_device_override,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except IFixitApiError as exc:
+        raise ifixit_upstream_error(exc) from exc
+
+    payload = result.to_api_dict()
+    payload["attribution"] = ifixit_attribution().model_dump()
+    return IFixitDeviceGuideMatchResponse.model_validate(payload)

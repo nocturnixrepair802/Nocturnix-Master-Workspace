@@ -373,3 +373,30 @@ class IFixitGuideSearchResponse(BaseModel):
 class IFixitGuideResponse(BaseModel):
     guide: IFixitGuideMetadataResponse
     attribution: IFixitAttributionResponse
+
+
+class IFixitNormalizedDeviceResponse(BaseModel):
+    manufacturer: str
+    model: str
+    search_query: str
+
+
+class IFixitRankedCandidateResponse(BaseModel):
+    title: str
+    result_type: str
+    category: str | None = None
+    url: str | None = None
+    confidence: float
+    classification: str
+    reasons: list[str]
+
+
+class IFixitDeviceGuideMatchResponse(BaseModel):
+    normalized_device: IFixitNormalizedDeviceResponse
+    candidates: list[IFixitRankedCandidateResponse]
+    selected_candidate: IFixitRankedCandidateResponse | None = None
+    match_classification: str
+    confidence: float
+    guide_summaries: list[IFixitGuideMetadataResponse]
+    override_applied: bool
+    attribution: IFixitAttributionResponse
