@@ -3,6 +3,7 @@
     MobileSentrixClient,
 )
 from integrations.mobilesentrix.models import (
+    MobileSentrixDetailedProduct,
     MobileSentrixProduct,
 )
 from integrations.mobilesentrix.oauth import (
@@ -17,6 +18,7 @@ from integrations.mobilesentrix.workbook_sync import (
 __all__ = [
     "MobileSentrixApiError",
     "MobileSentrixClient",
+    "MobileSentrixDetailedProduct",
     "MobileSentrixOAuthError",
     "MobileSentrixOAuthService",
     "MobileSentrixProduct",

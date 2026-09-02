@@ -62,6 +62,7 @@ from integrations.ifixit import IFixitApiError, IFixitClient
 from integrations.mobilesentrix import (
     MobileSentrixApiError,
     MobileSentrixClient,
+    MobileSentrixDetailedProduct,
     MobileSentrixOAuthError,
     MobileSentrixOAuthService,
     MobileSentrixProduct,
@@ -2579,12 +2580,55 @@ def mobilesentrix_oauth_callback(
         ),
     }
 # ======================================================
-# Mobile Sentrix Product Search
+# Mobile Sentrix Product Search and Detail
 # ======================================================
 
 
 def get_mobilesentrix_client() -> MobileSentrixClient:
     return MobileSentrixClient()
+
+
+def raise_mobilesentrix_http_error(
+    exc: MobileSentrixApiError,
+) -> None:
+    """
+    Translate structured Mobile Sentrix supplier failures into
+    stable Nocturnix API responses.
+
+    Supplier authentication details remain an internal integration
+    concern and are therefore exposed to API consumers as an
+    upstream-service failure rather than a Nocturnix authentication
+    failure.
+    """
+
+    if exc.not_found:
+        status_code = 404
+        detail = "Mobile Sentrix product was not found."
+
+    elif exc.timed_out:
+        status_code = 504
+        detail = "Mobile Sentrix did not respond " "before the request timed out."
+
+    elif exc.rate_limited:
+        status_code = 503
+        detail = "Mobile Sentrix is temporarily " "rate limiting requests."
+
+    elif exc.authentication_failed:
+        status_code = 502
+        detail = "Mobile Sentrix authentication " "failed."
+
+    elif exc.connection_failed:
+        status_code = 503
+        detail = "Mobile Sentrix is currently " "unreachable."
+
+    else:
+        status_code = 502
+        detail = "Mobile Sentrix returned an " "upstream service error."
+
+    raise HTTPException(
+        status_code=status_code,
+        detail=detail,
+    ) from exc
 
 
 @app.get(
@@ -2606,6 +2650,14 @@ def mobilesentrix_product_search(
         ge=0,
     ),
 ) -> dict[str, object]:
+    """
+    Search the Mobile Sentrix supplier catalog.
+
+    Mobile Sentrix remains the source of truth for supplier-specific
+    products, SKUs, pricing, and availability. Search results are
+    normalized before they are exposed through the Nocturnix API.
+    """
+
     client = get_mobilesentrix_client()
 
     try:
@@ -2622,17 +2674,21 @@ def mobilesentrix_product_search(
         ) from exc
 
     except MobileSentrixApiError as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=str(exc),
-        ) from exc
+        raise_mobilesentrix_http_error(
+            exc
+        )
 
     data = result.get("data") or {}
 
-    if not isinstance(data, dict):
+    if not isinstance(
+        data,
+        dict,
+    ):
         return {
             "query": q,
+            "environment": client.oauth.status()["environment"],
             "total_items": 0,
+            "returned_items": 0,
             "items": [],
         }
 
@@ -2640,21 +2696,24 @@ def mobilesentrix_product_search(
 
     items: list[dict[str, object]] = []
 
-    if isinstance(raw_items, list):
+    if isinstance(
+        raw_items,
+        list,
+    ):
         for item in raw_items:
-            if not isinstance(item, dict):
+            if not isinstance(
+                item,
+                dict,
+            ):
                 continue
 
-            product = MobileSentrixProduct.from_api_item(
-                item
-            )
+            product = MobileSentrixProduct.from_api_item(item)
 
-            items.append(
-                product.to_api_dict()
-            )
+            items.append(product.to_api_dict())
+
     return {
         "query": q,
-        "environment": (client.oauth.status()["environment"]),
+        "environment": client.oauth.status()["environment"],
         "total_items": data.get(
             "total_items",
             len(items),
@@ -2662,6 +2721,61 @@ def mobilesentrix_product_search(
         "returned_items": len(items),
         "items": items,
     }
+
+
+@app.get(
+    "/api/v1/integrations/mobilesentrix/products/{product_id}",
+)
+def mobilesentrix_product_detail(
+    product_id: str,
+) -> dict[str, object]:
+    """
+    Retrieve one Mobile Sentrix product by supplier product/entity ID.
+
+    The raw Mobile Sentrix response is normalized before it is
+    returned through the Nocturnix API.
+    """
+
+    normalized_product_id = product_id.strip()
+
+    if not normalized_product_id:
+        raise HTTPException(
+            status_code=422,
+            detail=("Mobile Sentrix product_id " "must not be empty."),
+        )
+
+    client = get_mobilesentrix_client()
+
+    try:
+        result = client.get_product(
+            product_id=normalized_product_id,
+        )
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except MobileSentrixApiError as exc:
+        raise_mobilesentrix_http_error(
+            exc
+        )
+
+    if not isinstance(
+        result,
+        dict,
+    ):
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "Mobile Sentrix returned an " "unexpected product detail response."
+            ),
+        )
+
+    product = MobileSentrixDetailedProduct.from_api_item(result)
+
+    return product.to_api_dict()
 
 
 # ======================================================

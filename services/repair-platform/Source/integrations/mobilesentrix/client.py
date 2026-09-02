@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import secrets
+import socket
 import time
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -14,7 +15,43 @@ from integrations.mobilesentrix.oauth import (
 
 
 class MobileSentrixApiError(RuntimeError):
-    """Raised when a Mobile Sentrix API request fails."""
+    """
+    Raised when a Mobile Sentrix API request fails.
+
+    Structured error metadata allows callers such as the Nocturnix
+    FastAPI layer to distinguish supplier HTTP failures, authentication
+    problems, rate limiting, timeouts, and general connectivity errors
+    without parsing the human-readable error message.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int | None = None,
+        timed_out: bool = False,
+        connection_failed: bool = False,
+    ) -> None:
+        super().__init__(message)
+
+        self.status_code = status_code
+        self.timed_out = timed_out
+        self.connection_failed = connection_failed
+
+    @property
+    def authentication_failed(self) -> bool:
+        return self.status_code in {
+            401,
+            403,
+        }
+
+    @property
+    def rate_limited(self) -> bool:
+        return self.status_code == 429
+
+    @property
+    def not_found(self) -> bool:
+        return self.status_code == 404
 
 
 class MobileSentrixClient:
@@ -101,6 +138,7 @@ class MobileSentrixClient:
     # Shared request handling
     # ---------------------------------------------------------
 
+
     def _request_json(
         self,
         *,
@@ -111,8 +149,8 @@ class MobileSentrixClient:
         Send an authenticated Mobile Sentrix request and return
         a JSON object.
 
-        This centralizes HTTP, authentication, connection, and
-        JSON response handling for all Mobile Sentrix endpoints.
+        This centralizes HTTP, authentication, timeout, connection,
+        and JSON response handling for all Mobile Sentrix endpoints.
         """
 
         normalized_path = path.strip()
@@ -154,14 +192,41 @@ class MobileSentrixClient:
             )
 
             raise MobileSentrixApiError(
-                "Mobile Sentrix API request failed "
-                f"with HTTP {exc.code}: "
-                f"{response_body[:500]}"
+                (
+                    "Mobile Sentrix API request "
+                    f"failed with HTTP {exc.code}: "
+                    f"{response_body[:500]}"
+                ),
+                status_code=exc.code,
             ) from exc
 
         except URLError as exc:
+            reason = exc.reason
+
+            if isinstance(
+                reason,
+                (
+                    socket.timeout,
+                    TimeoutError,
+                ),
+            ):
+                raise MobileSentrixApiError(
+                    ("Mobile Sentrix API request " "timed out."),
+                    timed_out=True,
+                ) from exc
+
             raise MobileSentrixApiError(
-                "Unable to connect to " "Mobile Sentrix: " f"{exc.reason}"
+                ("Unable to connect to " f"Mobile Sentrix: {reason}"),
+                connection_failed=True,
+            ) from exc
+
+        except (
+            socket.timeout,
+            TimeoutError,
+        ) as exc:
+            raise MobileSentrixApiError(
+                ("Mobile Sentrix API request " "timed out."),
+                timed_out=True,
             ) from exc
 
         try:
@@ -169,7 +234,7 @@ class MobileSentrixClient:
 
         except json.JSONDecodeError as exc:
             raise MobileSentrixApiError(
-                "Mobile Sentrix returned " "a non-JSON response."
+                ("Mobile Sentrix returned " "a non-JSON response.")
             ) from exc
 
         if not isinstance(
@@ -177,11 +242,10 @@ class MobileSentrixClient:
             dict,
         ):
             raise MobileSentrixApiError(
-                "Mobile Sentrix returned " "an unexpected response."
+                ("Mobile Sentrix returned " "an unexpected response.")
             )
 
         return result
-
     # ---------------------------------------------------------
     # Product search
     # ---------------------------------------------------------

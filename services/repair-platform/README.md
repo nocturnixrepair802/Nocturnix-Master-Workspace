@@ -58,3 +58,26 @@ confirmation from iFixit.
 
 The public endpoints need no credentials. Optional runtime configuration is shown in
 `.env.example`; do not commit local `.env` files.
+## Mobile Sentrix supplier integration
+
+Nocturnix integrates with Mobile Sentrix as a supplier source for product,
+SKU, pricing, availability, and detailed supplier-product metadata.
+
+Provider responsibilities remain intentionally separated:
+
+- **Mobile Sentrix** supplies products, supplier SKUs, pricing, and availability.
+- **iFixit** supplies device identification and technical-guide discovery.
+- **Nocturnix** connects supplier products and technical information to internal
+  devices, repairs, and operational workflows.
+
+### API endpoints
+
+The current read-only Mobile Sentrix API surface is:
+
+```text
+GET /api/v1/integrations/mobilesentrix/oauth/status
+GET /api/v1/integrations/mobilesentrix/oauth/start
+GET /api/v1/integrations/mobilesentrix/oauth/callback
+
+GET /api/v1/integrations/mobilesentrix/products/search?q=iPhone%2015
+GET /api/v1/integrations/mobilesentrix/products/{product_id}
