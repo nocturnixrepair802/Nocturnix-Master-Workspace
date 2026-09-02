@@ -115,14 +115,21 @@ def to_float(
     if value is None:
         return None
 
-    try:
-        return float(value)
-
-    except (
-        TypeError,
-        ValueError,
+    if isinstance(
+        value,
+        (
+            int,
+            float,
+            str,
+        ),
     ):
-        return None
+        try:
+            return float(value)
+
+        except ValueError:
+            return None
+
+    return None
 
 
 def to_int(
