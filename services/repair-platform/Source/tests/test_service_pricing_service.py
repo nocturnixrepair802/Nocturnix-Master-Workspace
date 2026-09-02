@@ -7,6 +7,7 @@ from integrations.mobilesentrix.models import (
     MobileSentrixProduct,
 )
 from models.service_pricing import ServicePricingRule
+from services.pricing_rule_provider import PricingRuleProvider
 from services.service_pricing_service import (
     ServicePricingNotFoundError,
     ServicePricingService,
@@ -56,6 +57,17 @@ def screen_rule() -> ServicePricingRule:
     )
 
 
+def pricing_service() -> ServicePricingService:
+    return ServicePricingService(
+        FakeCatalogDatabase(),
+        PricingRuleProvider(
+            [
+                screen_rule(),
+            ]
+        ),
+    )
+
+
 def detailed_screen_product() -> MobileSentrixDetailedProduct:
     return MobileSentrixDetailedProduct.from_api_item(
         {
@@ -84,11 +96,11 @@ def search_screen_product() -> MobileSentrixProduct:
 
 
 def test_preview_from_detailed_product() -> None:
-    service = ServicePricingService(FakeCatalogDatabase())
+    service = pricing_service()
 
     result = service.preview(
         device_id="DEV000093",
-        rule=screen_rule(),
+        service_type_id="STY000001",
         product=detailed_screen_product(),
         shipping=Decimal("10.00"),
         consumables=Decimal("5.00"),
@@ -108,17 +120,38 @@ def test_preview_from_detailed_product() -> None:
     assert result.supplier_in_stock is True
     assert result.supplier_stock_qty == 3
 
+    assert result.default_labor_hours == Decimal("1.00")
+    assert result.labor_profile_id == "LAB000002"
+    assert result.labor_tier == "L2 Standard"
+
+    assert result.hourly_rate == Decimal("100.00")
+    assert result.minimum_charge == Decimal("85.00")
+
     assert result.calculated_labor_cost == Decimal("100.00")
     assert result.billable_labor_cost == Decimal("100.00")
 
+    assert result.shipping == Decimal("10.00")
+    assert result.consumables == Decimal("5.00")
+
     assert result.base_direct_cost == Decimal("230.40")
 
+    assert result.overhead_rate == Decimal("0.12")
     assert result.overhead_reserve == Decimal("27.65")
+
+    assert result.warranty_rate == Decimal("0.05")
     assert result.warranty_reserve == Decimal("11.52")
+
+    assert result.risk_rate == Decimal("0.04")
     assert result.risk_reserve == Decimal("9.22")
+
+    assert result.processing_rate == Decimal("0.03")
     assert result.processing_reserve == Decimal("6.91")
 
     assert result.total_internal_cost == Decimal("285.70")
+
+    assert result.target_margin == Decimal("0.30")
+    assert result.minimum_margin == Decimal("0.20")
+
     assert result.raw_retail_price == Decimal("408.14")
     assert result.recommended_retail_price == Decimal("408.99")
 
@@ -127,11 +160,11 @@ def test_preview_from_detailed_product() -> None:
 
 
 def test_search_product_preserves_binary_availability() -> None:
-    service = ServicePricingService(FakeCatalogDatabase())
+    service = pricing_service()
 
     result = service.preview(
         device_id="DEV000093",
-        rule=screen_rule(),
+        service_type_id="STY000001",
         product=search_screen_product(),
     )
 
@@ -140,11 +173,11 @@ def test_search_product_preserves_binary_availability() -> None:
 
 
 def test_detailed_product_preserves_literal_stock_quantity() -> None:
-    service = ServicePricingService(FakeCatalogDatabase())
+    service = pricing_service()
 
     result = service.preview(
         device_id="DEV000093",
-        rule=screen_rule(),
+        service_type_id="STY000001",
         product=detailed_screen_product(),
     )
 
@@ -153,7 +186,7 @@ def test_detailed_product_preserves_literal_stock_quantity() -> None:
 
 
 def test_unknown_device_is_rejected() -> None:
-    service = ServicePricingService(FakeCatalogDatabase())
+    service = pricing_service()
 
     with pytest.raises(
         ServicePricingNotFoundError,
@@ -161,13 +194,13 @@ def test_unknown_device_is_rejected() -> None:
     ):
         service.preview(
             device_id="DEV999999",
-            rule=screen_rule(),
+            service_type_id="STY000001",
             product=detailed_screen_product(),
         )
 
 
 def test_blank_device_id_is_rejected() -> None:
-    service = ServicePricingService(FakeCatalogDatabase())
+    service = pricing_service()
 
     with pytest.raises(
         ServicePricingValidationError,
@@ -175,7 +208,7 @@ def test_blank_device_id_is_rejected() -> None:
     ):
         service.preview(
             device_id=" ",
-            rule=screen_rule(),
+            service_type_id="STY000001",
             product=detailed_screen_product(),
         )
 
@@ -192,24 +225,7 @@ def test_blank_device_id_is_rejected() -> None:
 def test_non_governed_service_type_id_is_rejected(
     service_type_id: str,
 ) -> None:
-    service = ServicePricingService(FakeCatalogDatabase())
-
-    rule = ServicePricingRule(
-        service_type_id=service_type_id,
-        service_type="Screen Replacement",
-        service_category_id="SC000010",
-        default_labor_hours=Decimal("1.00"),
-        labor_profile_id="LAB000002",
-        labor_tier="L2 Standard",
-        hourly_rate=Decimal("100.00"),
-        minimum_charge=Decimal("85.00"),
-        target_margin=Decimal("0.30"),
-        minimum_margin=Decimal("0.20"),
-        overhead_rate=Decimal("0.12"),
-        warranty_rate=Decimal("0.05"),
-        risk_rate=Decimal("0.04"),
-        processing_rate=Decimal("0.03"),
-    )
+    service = pricing_service()
 
     with pytest.raises(
         ServicePricingValidationError,
@@ -217,7 +233,24 @@ def test_non_governed_service_type_id_is_rejected(
     ):
         service.preview(
             device_id="DEV000093",
-            rule=rule,
+            service_type_id=service_type_id,
+            product=detailed_screen_product(),
+        )
+
+
+def test_missing_pricing_rule_is_rejected() -> None:
+    service = ServicePricingService(
+        FakeCatalogDatabase(),
+        PricingRuleProvider(),
+    )
+
+    with pytest.raises(
+        LookupError,
+        match="STY000001",
+    ):
+        service.preview(
+            device_id="DEV000093",
+            service_type_id="STY000001",
             product=detailed_screen_product(),
         )
 
@@ -231,7 +264,7 @@ def test_detailed_product_requires_price() -> None:
         }
     )
 
-    service = ServicePricingService(FakeCatalogDatabase())
+    service = pricing_service()
 
     with pytest.raises(
         ServicePricingValidationError,
@@ -239,7 +272,7 @@ def test_detailed_product_requires_price() -> None:
     ):
         service.preview(
             device_id="DEV000093",
-            rule=screen_rule(),
+            service_type_id="STY000001",
             product=product,
         )
 
@@ -253,7 +286,7 @@ def test_detailed_product_requires_entity_id() -> None:
         }
     )
 
-    service = ServicePricingService(FakeCatalogDatabase())
+    service = pricing_service()
 
     with pytest.raises(
         ServicePricingValidationError,
@@ -261,7 +294,7 @@ def test_detailed_product_requires_entity_id() -> None:
     ):
         service.preview(
             device_id="DEV000093",
-            rule=screen_rule(),
+            service_type_id="STY000001",
             product=product,
         )
 
@@ -275,7 +308,7 @@ def test_detailed_product_requires_sku() -> None:
         }
     )
 
-    service = ServicePricingService(FakeCatalogDatabase())
+    service = pricing_service()
 
     with pytest.raises(
         ServicePricingValidationError,
@@ -283,6 +316,75 @@ def test_detailed_product_requires_sku() -> None:
     ):
         service.preview(
             device_id="DEV000093",
-            rule=screen_rule(),
+            service_type_id="STY000001",
+            product=product,
+        )
+
+
+def test_search_product_requires_unit_cost() -> None:
+    product = MobileSentrixProduct.from_api_item(
+        {
+            "product_id": "249690",
+            "product_code": "107082080528",
+            "name": "Screen",
+            "quantity": 1,
+        }
+    )
+
+    service = pricing_service()
+
+    with pytest.raises(
+        ServicePricingValidationError,
+        match="unit_cost",
+    ):
+        service.preview(
+            device_id="DEV000093",
+            service_type_id="STY000001",
+            product=product,
+        )
+
+
+def test_search_product_requires_supplier_product_id() -> None:
+    product = MobileSentrixProduct.from_api_item(
+        {
+            "product_code": "107082080528",
+            "name": "Screen",
+            "price": "115.40",
+            "quantity": 1,
+        }
+    )
+
+    service = pricing_service()
+
+    with pytest.raises(
+        ServicePricingValidationError,
+        match="supplier_product_id",
+    ):
+        service.preview(
+            device_id="DEV000093",
+            service_type_id="STY000001",
+            product=product,
+        )
+
+
+def test_search_product_requires_supplier_sku() -> None:
+    product = MobileSentrixProduct.from_api_item(
+        {
+            "product_id": "249690",
+            "name": "Screen",
+            "price": "115.40",
+            "quantity": 1,
+        }
+    )
+
+    service = pricing_service()
+
+    with pytest.raises(
+        ServicePricingValidationError,
+        match="supplier_sku",
+    ):
+        service.preview(
+            device_id="DEV000093",
+            service_type_id="STY000001",
             product=product,
         )

@@ -12,6 +12,7 @@ from models.service_pricing import (
     ServicePricingPreview,
     ServicePricingRule,
 )
+from services.pricing_rule_provider import PricingRuleProvider
 
 
 class ServicePricingValidationError(ValueError):
@@ -45,18 +46,20 @@ class ServicePricingService:
     """
 
     def __init__(
-        self,
-        catalog_database: Any,
-        pricing_engine: PricingEngine | None = None,
+      self,
+      catalog_database: Any,
+      pricing_rule_provider: PricingRuleProvider,
+      pricing_engine: PricingEngine | None = None,
     ) -> None:
-        self.catalog_database = catalog_database
-        self.pricing_engine = pricing_engine or PricingEngine()
+      self.catalog_database = catalog_database
+      self.pricing_rule_provider = pricing_rule_provider
+      self.pricing_engine = pricing_engine or PricingEngine()
 
     def preview(
         self,
         *,
         device_id: str,
-        rule: ServicePricingRule,
+        service_type_id: str,
         product: MobileSentrixProduct | MobileSentrixDetailedProduct,
         shipping: Decimal | float | int | str = Decimal("0.00"),
         consumables: Decimal | float | int | str = Decimal("5.00"),
@@ -70,7 +73,11 @@ class ServicePricingService:
         if not resolved_device_id:
             raise ServicePricingValidationError("device_id is required.")
 
-        self._validate_service_type_id(rule.service_type_id)
+        self._validate_service_type_id(service_type_id)
+
+        rule = self.pricing_rule_provider.get(
+            service_type_id
+        )
 
         device = self.catalog_database.get_device(resolved_device_id)
 
@@ -214,4 +221,3 @@ class ServicePricingService:
         raise ServicePricingValidationError(
             "product must be a normalized Mobile Sentrix product."
         )
-
