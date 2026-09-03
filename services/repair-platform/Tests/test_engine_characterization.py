@@ -1,6 +1,6 @@
 from dataclasses import fields, is_dataclass
 from decimal import Decimal
-from typing import get_type_hints
+from typing import Any, get_type_hints
 
 import pandas as pd
 import pytest
@@ -141,11 +141,17 @@ class TestCurrentVerifiedBehavior:
 
         assert engine.available("UNKNOWN", 1) is False
 
+
     def test_malformed_labor_hours_raise_type_error(self) -> None:
         engine = PricingEngine(pricing_database())
 
+        legacy_calculate: Any = engine.calculate
+
         with pytest.raises(TypeError):
-            engine.calculate("not-a-number", 25.0)
+            legacy_calculate(
+                "not-a-number",
+                25.0,
+            )
 
     def test_repair_manager_validate_part_forwards_to_service_compatibility(self) -> None:
         database = {
@@ -191,9 +197,13 @@ class TestCurrentKnownFailures:
     ) -> None:
         engine = PricingEngine(pricing_database())
 
-        with pytest.raises(TypeError):
-            engine.calculate(1.0, 25.0)
+        legacy_calculate: Any = engine.calculate
 
+        with pytest.raises(TypeError):
+            legacy_calculate(
+                1.0,
+                25.0,
+            )
 
     def test_pricing_engine_no_longer_depends_on_legacy_pricing_tables(
         self,
@@ -255,6 +265,7 @@ class TestApprovedTargetBehaviorNotImplemented:
 
         assert engine.validate("PHN", "SVC000001").supported is False
 
+
     @pytest.mark.xfail(
         strict=True,
         reason="Target pricing contract rejects negative inputs; validation is pending.",
@@ -262,8 +273,13 @@ class TestApprovedTargetBehaviorNotImplemented:
     def test_negative_pricing_inputs_are_rejected(self) -> None:
         engine = PricingEngine(pricing_database())
 
+        legacy_calculate: Any = engine.calculate
+
         with pytest.raises(ValueError, match="nonnegative"):
-            engine.calculate(-1.0, -25.0)
+            legacy_calculate(
+                -1.0,
+                -25.0,
+            )
 
     def test_repair_manager_exposes_validate_service_contract(self) -> None:
         database = {

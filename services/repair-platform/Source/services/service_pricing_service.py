@@ -8,10 +8,7 @@ from integrations.mobilesentrix.models import (
     MobileSentrixDetailedProduct,
     MobileSentrixProduct,
 )
-from models.service_pricing import (
-    ServicePricingPreview,
-    ServicePricingRule,
-)
+from models.service_pricing import ServicePricingPreview
 from services.pricing_rule_provider import PricingRuleProvider
 
 
@@ -30,7 +27,7 @@ class ServicePricingService:
     Responsibilities:
 
     - Resolve the Nocturnix device.
-    - Accept a governed canonical Service Type pricing rule.
+    - Resolve a supplied Service Type ID through PricingRuleProvider.
     - Accept a user-selected normalized Mobile Sentrix product.
     - Preserve supplier product identifiers.
     - Delegate pricing mathematics to PricingEngine.
@@ -46,14 +43,14 @@ class ServicePricingService:
     """
 
     def __init__(
-      self,
-      catalog_database: Any,
-      pricing_rule_provider: PricingRuleProvider,
-      pricing_engine: PricingEngine | None = None,
+        self,
+        catalog_database: Any,
+        pricing_rule_provider: PricingRuleProvider,
+        pricing_engine: PricingEngine | None = None,
     ) -> None:
-      self.catalog_database = catalog_database
-      self.pricing_rule_provider = pricing_rule_provider
-      self.pricing_engine = pricing_engine or PricingEngine()
+        self.catalog_database = catalog_database
+        self.pricing_rule_provider = pricing_rule_provider
+        self.pricing_engine = pricing_engine or PricingEngine()
 
     def preview(
         self,
@@ -75,9 +72,7 @@ class ServicePricingService:
 
         self._validate_service_type_id(service_type_id)
 
-        rule = self.pricing_rule_provider.get(
-            service_type_id
-        )
+        rule = self.pricing_rule_provider.get(service_type_id)
 
         device = self.catalog_database.get_device(resolved_device_id)
 
@@ -88,13 +83,16 @@ class ServicePricingService:
 
         supplier_data = self._supplier_data(product)
 
+        resolved_shipping = Decimal(str(shipping))
+        resolved_consumables = Decimal(str(consumables))
+
         calculation = self.pricing_engine.calculate(
             part_cost=supplier_data["part_cost"],
             default_labor_hours=rule.default_labor_hours,
             hourly_rate=rule.hourly_rate,
             minimum_charge=rule.minimum_charge,
-            shipping=shipping,
-            consumables=consumables,
+            shipping=resolved_shipping,
+            consumables=resolved_consumables,
             overhead_rate=rule.overhead_rate,
             warranty_rate=rule.warranty_rate,
             risk_rate=rule.risk_rate,

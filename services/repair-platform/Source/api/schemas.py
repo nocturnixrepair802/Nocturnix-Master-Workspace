@@ -520,3 +520,80 @@ class IFixitDeviceGuideMatchResponse(BaseModel):
     guide_summaries: list[IFixitGuideMetadataResponse]
     override_applied: bool
     attribution: IFixitAttributionResponse
+
+# ======================================================
+# Service Pricing Preview
+# ======================================================
+
+
+class ServicePricingPreviewRequest(BaseModel):
+    device_id: str
+    service_type_id: str
+    supplier_product_id: str
+    shipping: float = 0.0
+    consumables: float = 5.0
+
+
+class ServicePricingPreviewResponse(BaseModel):
+    device_id: str
+    device_model: str
+    manufacturer_id: str
+    manufacturer: str
+
+    service_type_id: str
+    service_type: str
+    service_category_id: str
+
+    supplier: str
+    supplier_product_id: str
+    supplier_sku: str
+    part_name: str
+    part_cost: float
+
+    supplier_in_stock: bool | None = None
+    supplier_stock_qty: int | None = None
+
+    default_labor_hours: float
+    labor_profile_id: str
+    labor_tier: str
+    hourly_rate: float
+    minimum_charge: float
+
+    calculated_labor_cost: float
+    billable_labor_cost: float
+
+    shipping: float
+    consumables: float
+
+    base_direct_cost: float
+
+    overhead_rate: float
+    overhead_reserve: float
+
+    warranty_rate: float
+    warranty_reserve: float
+
+    risk_rate: float
+    risk_reserve: float
+
+    processing_rate: float
+    processing_reserve: float
+
+    total_internal_cost: float
+
+    target_margin: float
+    minimum_margin: float
+
+    raw_retail_price: float
+    recommended_retail_price: float
+
+    gross_profit: float
+    gross_margin: float
+
+    pricing_status: str
+
+    market_low: float | None = None
+    market_average: float | None = None
+    market_high: float | None = None
+    market_sample_count: int | None = None
+    market_position: str | None = None
