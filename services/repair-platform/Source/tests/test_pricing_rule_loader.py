@@ -371,3 +371,33 @@ def test_duplicate_same_service_type_and_variant_is_rejected(
         match="STY000055.*ADVANCED_DIAGNOSTIC",
     ):
         PricingRuleLoader(path).load()
+
+
+def test_approved_artifact_allows_additional_governance_metadata(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    payload = {
+        "schema_version": "1.0",
+        "rule_set_id": "PRSET000001",
+        "status": "APPROVED",
+        "approval": {
+            "candidate_sha256": "abc123",
+            "approved_by": "test-approver",
+            "approved_at": "2026-09-03T18:00:00Z",
+        },
+        "rules": [
+            valid_rule(),
+        ],
+    }
+
+    path.write_text(
+        json.dumps(payload),
+        encoding="utf-8",
+    )
+
+    rules = PricingRuleLoader(path).load()
+
+    assert len(rules) == 1
+    assert rules[0].service_type_id == "STY000001"
