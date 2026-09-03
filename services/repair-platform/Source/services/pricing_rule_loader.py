@@ -63,7 +63,7 @@ class PricingRuleLoader:
             )
 
         rules: list[ServicePricingRule] = []
-        seen_service_type_ids: set[str] = set()
+        seen_rule_identities: set[tuple[str, str]] = set()
 
         for index, raw_rule in enumerate(
             raw_rules,
@@ -79,12 +79,19 @@ class PricingRuleLoader:
                 index=index,
             )
 
-            if rule.service_type_id in seen_service_type_ids:
+            identity = (
+                rule.service_type_id,
+                rule.variant_key.strip().upper() or "BASE",
+            )
+
+            if identity in seen_rule_identities:
                 raise PricingRuleFormatError(
-                    f"Duplicate pricing rule for Service Type: {rule.service_type_id}"
+                    "Duplicate pricing rule for "
+                    f"Service Type {identity[0]} "
+                    f"variant {identity[1]}"
                 )
 
-            seen_service_type_ids.add(rule.service_type_id)
+            seen_rule_identities.add(identity)
 
             rules.append(rule)
 

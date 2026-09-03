@@ -83,6 +83,9 @@ def test_load_approved_artifact(
     assert rule.risk_rate == Decimal("0.04")
     assert rule.processing_rate == Decimal("0.03")
 
+    assert rule.variant_key == "BASE"
+    assert rule.variant_name is None
+
 
 def test_missing_artifact_is_rejected(
     tmp_path: Path,
@@ -147,7 +150,7 @@ def test_unsupported_schema_version_is_rejected(
         PricingRuleLoader(path).load()
 
 
-def test_duplicate_service_type_is_rejected(
+def test_duplicate_base_service_type_is_rejected(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "pricing_rules.json"
@@ -270,3 +273,101 @@ def test_empty_rule_set_is_allowed(
     rules = PricingRuleLoader(path).load()
 
     assert rules == ()
+
+
+def test_load_pricing_variant(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    rule = valid_rule()
+    rule["service_type_id"] = "STY000055"
+    rule["service_type"] = "Diagnostic"
+    rule["service_category_id"] = "SC000009"
+    rule["variant_key"] = "ADVANCED_DIAGNOSTIC"
+    rule["variant_name"] = "Advanced Diagnostic"
+
+    write_artifact(
+        path,
+        rules=[rule],
+    )
+
+    rules = PricingRuleLoader(path).load()
+
+    assert len(rules) == 1
+
+    loaded = rules[0]
+
+    assert loaded.service_type_id == "STY000055"
+    assert loaded.variant_key == "ADVANCED_DIAGNOSTIC"
+    assert loaded.variant_name == "Advanced Diagnostic"
+
+
+def test_base_and_variant_for_same_service_type_can_load(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    base = valid_rule()
+    base["service_type_id"] = "STY000055"
+    base["service_type"] = "Diagnostic"
+    base["service_category_id"] = "SC000009"
+
+    variant = valid_rule()
+    variant["service_type_id"] = "STY000055"
+    variant["service_type"] = "Diagnostic"
+    variant["service_category_id"] = "SC000009"
+    variant["variant_key"] = "ADVANCED_DIAGNOSTIC"
+    variant["variant_name"] = "Advanced Diagnostic"
+    variant["default_labor_hours"] = "1.50"
+    variant["labor_profile_id"] = "LAB000003"
+    variant["labor_tier"] = "L3 Advanced"
+    variant["hourly_rate"] = "125.00"
+    variant["minimum_charge"] = "110.00"
+
+    write_artifact(
+        path,
+        rules=[
+            base,
+            variant,
+        ],
+    )
+
+    rules = PricingRuleLoader(path).load()
+
+    assert len(rules) == 2
+
+    assert rules[0].service_type_id == "STY000055"
+    assert rules[0].variant_key == "BASE"
+
+    assert rules[1].service_type_id == "STY000055"
+    assert rules[1].variant_key == "ADVANCED_DIAGNOSTIC"
+    assert rules[1].variant_name == "Advanced Diagnostic"
+
+
+def test_duplicate_same_service_type_and_variant_is_rejected(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    first = valid_rule()
+    first["service_type_id"] = "STY000055"
+    first["variant_key"] = "ADVANCED_DIAGNOSTIC"
+
+    second = valid_rule()
+    second["service_type_id"] = "STY000055"
+    second["variant_key"] = "advanced_diagnostic"
+
+    write_artifact(
+        path,
+        rules=[
+            first,
+            second,
+        ],
+    )
+
+    with pytest.raises(
+        PricingRuleFormatError,
+        match="STY000055.*ADVANCED_DIAGNOSTIC",
+    ):
+        PricingRuleLoader(path).load()

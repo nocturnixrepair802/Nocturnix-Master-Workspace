@@ -20,7 +20,6 @@ class ServicePricingRule:
     service_type: str
     service_category_id: str
 
-
     default_labor_hours: Decimal
     labor_profile_id: str
     labor_tier: str
@@ -112,4 +111,3 @@ class ServicePricingPreview:
     market_high: Decimal | None = None
     market_sample_count: int | None = None
     market_position: str | None = None
-
