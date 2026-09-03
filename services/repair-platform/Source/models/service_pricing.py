@@ -104,6 +104,7 @@ class ServicePricingPreview:
 
     processing_rate: Decimal
     processing_reserve: Decimal
+    rounding_rule: str
 
     total_internal_cost: Decimal
 

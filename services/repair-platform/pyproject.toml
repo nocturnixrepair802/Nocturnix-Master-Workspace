@@ -55,7 +55,7 @@ exclude = [
     "Source/legacy_ui",
     "Source/tests",
 ]
-extraPaths = ["Source"]
+extraPaths = ["Source", "."]
 pythonVersion = "3.14"
 typeCheckingMode = "basic"
 
