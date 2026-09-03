@@ -73,7 +73,7 @@ def detailed_screen_product() -> MobileSentrixDetailedProduct:
         {
             "entity_id": "249690",
             "sku": "107082080528",
-            "name": ("OLED Assembly For iPhone 13 Pro " "(Refurbished)"),
+            "name": ("OLED Assembly For iPhone 13 Pro (Refurbished)"),
             "customer_price": "115.40",
             "status": "1",
             "is_saleable": True,
@@ -88,7 +88,7 @@ def search_screen_product() -> MobileSentrixProduct:
         {
             "product_id": "249690",
             "product_code": "107082080528",
-            "name": ("OLED Assembly For iPhone 13 Pro " "(Refurbished)"),
+            "name": ("OLED Assembly For iPhone 13 Pro (Refurbished)"),
             "price": "115.40",
             "quantity": 1,
         }

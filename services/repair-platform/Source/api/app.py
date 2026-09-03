@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from decimal import Decimal
 from pathlib import Path
 from secrets import compare_digest
 from typing import Any
@@ -59,6 +60,9 @@ from api.schemas import (
     RepairResponse,
     RepairUpdateRequest,
     RepairWorkspaceResponse,
+    ServicePricingCatalogApprovalRequest,
+    ServicePricingCatalogResponse,
+    ServicePricingCatalogSaveRequest,
     ServicePricingPreviewRequest,
     ServicePricingPreviewResponse,
     WPFormsIntakeRequest,
@@ -97,6 +101,12 @@ from services.procurement_service import (
     ProcurementService,
     ProcurementStateError,
     ProcurementValidationError,
+)
+from services.service_pricing_catalog_service import (
+    ServicePricingCatalogApprovalError,
+    ServicePricingCatalogNotFoundError,
+    ServicePricingCatalogService,
+    ServicePricingCatalogValidationError,
 )
 from services.service_pricing_service import (
     ServicePricingNotFoundError,
@@ -183,8 +193,10 @@ def get_wpforms_mapper() -> WPFormsMapper:
 
     return _wpforms_mapper
 
+
 def get_procurement_service() -> ProcurementService:
     return ProcurementService()
+
 
 # ======================================================
 # Date / Time
@@ -2739,6 +2751,7 @@ def dashboard() -> DashboardResponse:
         repairs_by_status=(counts["repairs_by_status"]),
     )
 
+
 # ======================================================
 # Catalog
 # ======================================================
@@ -2980,11 +2993,11 @@ def raise_mobilesentrix_http_error(
 
     elif exc.timed_out:
         status_code = 504
-        detail = "Mobile Sentrix did not respond " "before the request timed out."
+        detail = "Mobile Sentrix did not respond before the request timed out."
 
     elif exc.rate_limited:
         status_code = 503
-        detail = "Mobile Sentrix is temporarily " "rate limiting requests."
+        detail = "Mobile Sentrix is temporarily rate limiting requests."
 
     elif exc.authentication_failed:
         status_code = 502
@@ -2996,7 +3009,7 @@ def raise_mobilesentrix_http_error(
 
     else:
         status_code = 502
-        detail = "Mobile Sentrix returned an " "upstream service error."
+        detail = "Mobile Sentrix returned an upstream service error."
 
     raise HTTPException(
         status_code=status_code,
@@ -3103,7 +3116,7 @@ def mobilesentrix_product_detail(
     if not normalized_product_id:
         raise HTTPException(
             status_code=422,
-            detail=("Mobile Sentrix product_id " "must not be empty."),
+            detail=("Mobile Sentrix product_id must not be empty."),
         )
 
     client = get_mobilesentrix_client()
@@ -3125,9 +3138,7 @@ def mobilesentrix_product_detail(
     if not isinstance(result, dict):
         raise HTTPException(
             status_code=502,
-            detail=(
-                "Mobile Sentrix returned an unexpected " "product detail response."
-            ),
+            detail=("Mobile Sentrix returned an unexpected product detail response."),
         )
 
     product = MobileSentrixDetailedProduct.from_api_item(result)
@@ -3171,10 +3182,24 @@ def get_pricing_rule_provider() -> PricingRuleProvider:
 
     except PricingRuleLoadError as exc:
         raise RuntimeError(
-            "Configured runtime pricing rules could not be loaded: " f"{exc}"
+            f"Configured runtime pricing rules could not be loaded: {exc}"
         ) from exc
 
     return PricingRuleProvider(rules)
+
+
+def get_service_pricing_catalog_service() -> ServicePricingCatalogService:
+    """
+    Build the governed service-pricing catalog persistence service.
+
+    Catalog pricing snapshots are stored in the writable Nocturnix
+    operations database. The read-only catalog database remains
+    unchanged.
+    """
+
+    return ServicePricingCatalogService(
+        operations_database=get_database(),
+    )
 
 
 def get_service_pricing_service() -> ServicePricingService:
@@ -3192,6 +3217,57 @@ def get_service_pricing_service() -> ServicePricingService:
     return ServicePricingService(
         catalog_database=get_catalog_database(),
         pricing_rule_provider=get_pricing_rule_provider(),
+    )
+
+
+def service_pricing_catalog_response(
+    record: Any,
+) -> ServicePricingCatalogResponse:
+    return ServicePricingCatalogResponse(
+        pricing_record_id=record.pricing_record_id,
+        catalog_device_id=record.catalog_device_id,
+        service_type_id=record.service_type_id,
+        service_type=record.service_type,
+        service_category_id=record.service_category_id,
+        variant_key=record.variant_key,
+        variant_name=record.variant_name,
+        supplier=record.supplier,
+        supplier_product_id=record.supplier_product_id,
+        supplier_sku=record.supplier_sku,
+        part_name=record.part_name,
+        part_cost=float(record.part_cost),
+        supplier_in_stock=record.supplier_in_stock,
+        supplier_stock_qty=record.supplier_stock_qty,
+        supplier_observed_at=record.supplier_observed_at,
+        default_labor_hours=float(record.default_labor_hours),
+        labor_profile_id=record.labor_profile_id,
+        labor_tier=record.labor_tier,
+        hourly_rate=float(record.hourly_rate),
+        minimum_charge=float(record.minimum_charge),
+        target_margin=float(record.target_margin),
+        minimum_margin=float(record.minimum_margin),
+        overhead_rate=float(record.overhead_rate),
+        warranty_rate=float(record.warranty_rate),
+        risk_rate=float(record.risk_rate),
+        processing_rate=float(record.processing_rate),
+        rounding_rule=record.rounding_rule,
+        billable_labor_cost=float(record.billable_labor_cost),
+        shipping=float(record.shipping),
+        consumables=float(record.consumables),
+        base_direct_cost=float(record.base_direct_cost),
+        total_internal_cost=float(record.total_internal_cost),
+        recommended_price=float(record.recommended_price),
+        gross_profit=float(record.gross_profit),
+        gross_margin=float(record.gross_margin),
+        pricing_status=record.pricing_status,
+        approved_price=(
+            None if record.approved_price is None else float(record.approved_price)
+        ),
+        approval_status=record.approval_status,
+        approved_at=record.approved_at,
+        approved_by=record.approved_by,
+        created_at=record.created_at,
+        updated_at=record.updated_at,
     )
 
 
@@ -3223,7 +3299,7 @@ def service_pricing_preview(
     if not supplier_product_id:
         raise HTTPException(
             status_code=422,
-            detail=("Mobile Sentrix supplier_product_id " "must not be empty."),
+            detail=("Mobile Sentrix supplier_product_id must not be empty."),
         )
 
     client = get_mobilesentrix_client()
@@ -3245,9 +3321,7 @@ def service_pricing_preview(
     if not isinstance(raw_product, dict):
         raise HTTPException(
             status_code=502,
-            detail=(
-                "Mobile Sentrix returned an unexpected " "product detail response."
-            ),
+            detail=("Mobile Sentrix returned an unexpected product detail response."),
         )
 
     product = MobileSentrixDetailedProduct.from_api_item(raw_product)
@@ -3342,6 +3416,231 @@ def service_pricing_preview(
         market_sample_count=preview.market_sample_count,
         market_position=preview.market_position,
     )
+
+
+# ======================================================
+# Service Pricing Catalog
+# ======================================================
+
+
+@app.post(
+    "/api/v1/pricing/catalog",
+    response_model=ServicePricingCatalogResponse,
+)
+def save_service_pricing_catalog(
+    request: ServicePricingCatalogSaveRequest,
+    catalog_service: ServicePricingCatalogService = Depends(
+        get_service_pricing_catalog_service
+    ),
+) -> ServicePricingCatalogResponse:
+    """
+    Calculate and persist a governed service-pricing snapshot.
+
+    The caller provides only pricing inputs and the selected supplier
+    product identity. Supplier data and governed pricing policy are
+    resolved internally before the resulting snapshot is persisted.
+
+    Repeated saves for the same catalog identity refresh the existing
+    DRAFT pricing record rather than creating a duplicate PRC record.
+
+    Approved pricing records are frozen and cannot be refreshed.
+    """
+
+    supplier_product_id = request.supplier_product_id.strip()
+
+    if not supplier_product_id:
+        raise HTTPException(
+            status_code=422,
+            detail=("Mobile Sentrix supplier_product_id must not be empty."),
+        )
+
+    client = get_mobilesentrix_client()
+
+    try:
+        raw_product = client.get_product(
+            product_id=supplier_product_id,
+        )
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except MobileSentrixApiError as exc:
+        raise_mobilesentrix_http_error(exc)
+
+    if not isinstance(
+        raw_product,
+        dict,
+    ):
+        raise HTTPException(
+            status_code=502,
+            detail=("Mobile Sentrix returned an unexpected product detail response."),
+        )
+
+    product = MobileSentrixDetailedProduct.from_api_item(raw_product)
+
+    pricing_service = get_service_pricing_service()
+
+    try:
+        preview = pricing_service.preview(
+            device_id=request.device_id,
+            service_type_id=request.service_type_id,
+            variant_key=request.variant_key,
+            product=product,
+            shipping=request.shipping,
+            consumables=request.consumables,
+        )
+
+        timestamp = datetime.now(UTC)
+
+        record = catalog_service.save_from_preview(
+            preview,
+            supplier_observed_at=timestamp,
+            now=timestamp,
+        )
+
+    except ServicePricingValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except ServicePricingNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except PricingRuleNotFoundError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "No approved runtime pricing rule "
+                "is available for "
+                f"{request.service_type_id.strip()}."
+            ),
+        ) from exc
+
+    except ServicePricingCatalogValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except ServicePricingCatalogApprovalError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    return service_pricing_catalog_response(record)
+
+
+@app.get(
+    "/api/v1/pricing/catalog",
+    response_model=list[ServicePricingCatalogResponse],
+)
+def list_service_pricing_catalog(
+    catalog_device_id: str | None = Query(
+        default=None,
+    ),
+    service_type_id: str | None = Query(
+        default=None,
+    ),
+    variant_key: str | None = Query(
+        default=None,
+    ),
+    approval_status: str | None = Query(
+        default=None,
+    ),
+    catalog_service: ServicePricingCatalogService = Depends(
+        get_service_pricing_catalog_service
+    ),
+) -> list[ServicePricingCatalogResponse]:
+    try:
+        records = catalog_service.list_records(
+            catalog_device_id=catalog_device_id,
+            service_type_id=service_type_id,
+            variant_key=variant_key,
+            approval_status=approval_status,
+        )
+
+    except ServicePricingCatalogValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    return [service_pricing_catalog_response(record) for record in records]
+
+
+@app.get(
+    "/api/v1/pricing/catalog/{pricing_record_id}",
+    response_model=ServicePricingCatalogResponse,
+)
+def get_service_pricing_catalog_record(
+    pricing_record_id: str,
+    catalog_service: ServicePricingCatalogService = Depends(
+        get_service_pricing_catalog_service
+    ),
+) -> ServicePricingCatalogResponse:
+    try:
+        record = catalog_service.get(pricing_record_id)
+
+    except ServicePricingCatalogValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Service pricing record not found.",
+        )
+
+    return service_pricing_catalog_response(record)
+
+
+@app.post(
+    ("/api/v1/pricing/catalog/{pricing_record_id}/approve"),
+    response_model=ServicePricingCatalogResponse,
+)
+def approve_service_pricing_catalog_record(
+    pricing_record_id: str,
+    request: ServicePricingCatalogApprovalRequest,
+    catalog_service: ServicePricingCatalogService = Depends(
+        get_service_pricing_catalog_service
+    ),
+) -> ServicePricingCatalogResponse:
+    try:
+        record = catalog_service.approve(
+            pricing_record_id,
+            approved_price=Decimal(str(request.approved_price)),
+            approved_by=request.approved_by,
+        )
+
+    except ServicePricingCatalogNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except ServicePricingCatalogValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except ServicePricingCatalogApprovalError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    return service_pricing_catalog_response(record)
 
 
 # ======================================================

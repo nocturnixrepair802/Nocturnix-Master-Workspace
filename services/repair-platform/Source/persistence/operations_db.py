@@ -321,13 +321,110 @@ class OperationsDatabase:
                         ON DELETE CASCADE
                 );
 
-                CREATE INDEX IF NOT EXISTS
+                                CREATE INDEX IF NOT EXISTS
                     idx_repair_events_repair_id
                     ON repair_events(repair_id);
 
                 CREATE INDEX IF NOT EXISTS
                     idx_repair_events_created_at
                     ON repair_events(created_at);
+
+
+                CREATE TABLE IF NOT EXISTS service_pricing_catalog (
+                    pricing_record_id TEXT PRIMARY KEY,
+
+                    catalog_device_id TEXT NOT NULL,
+
+                    service_type_id TEXT NOT NULL,
+                    service_type TEXT NOT NULL,
+                    service_category_id TEXT NOT NULL,
+
+                    variant_key TEXT NOT NULL DEFAULT 'BASE',
+                    variant_name TEXT,
+
+                    supplier TEXT NOT NULL,
+                    supplier_product_id TEXT NOT NULL,
+                    supplier_sku TEXT NOT NULL,
+                    part_name TEXT NOT NULL DEFAULT '',
+
+                    part_cost_cents INTEGER NOT NULL,
+
+                    supplier_in_stock INTEGER,
+                    supplier_stock_qty INTEGER,
+                    supplier_observed_at TEXT,
+
+                    default_labor_hours TEXT NOT NULL,
+                    labor_profile_id TEXT NOT NULL,
+                    labor_tier TEXT NOT NULL,
+                    hourly_rate_cents INTEGER NOT NULL,
+                    minimum_charge_cents INTEGER NOT NULL,
+
+                    target_margin TEXT NOT NULL,
+                    minimum_margin TEXT NOT NULL,
+
+                    overhead_rate TEXT NOT NULL,
+                    warranty_rate TEXT NOT NULL,
+                    risk_rate TEXT NOT NULL,
+                    processing_rate TEXT NOT NULL,
+
+                    rounding_rule TEXT NOT NULL DEFAULT 'End in .99',
+
+                    billable_labor_cost_cents INTEGER NOT NULL,
+                    shipping_cents INTEGER NOT NULL,
+                    consumables_cents INTEGER NOT NULL,
+
+                    base_direct_cost_cents INTEGER NOT NULL,
+                    total_internal_cost_cents INTEGER NOT NULL,
+
+                    recommended_price_cents INTEGER NOT NULL,
+
+                    gross_profit_cents INTEGER NOT NULL,
+                    gross_margin TEXT NOT NULL,
+
+                    pricing_status TEXT NOT NULL,
+
+                    approved_price_cents INTEGER,
+                    approval_status TEXT NOT NULL DEFAULT 'DRAFT',
+                    approved_at TEXT,
+                    approved_by TEXT,
+
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+
+                    UNIQUE (
+                        catalog_device_id,
+                        service_type_id,
+                        variant_key,
+                        supplier,
+                        supplier_product_id
+                    )
+                );
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_service_pricing_catalog_device
+                    ON service_pricing_catalog(
+                        catalog_device_id
+                    );
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_service_pricing_catalog_service
+                    ON service_pricing_catalog(
+                        service_type_id,
+                        variant_key
+                    );
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_service_pricing_catalog_supplier_product
+                    ON service_pricing_catalog(
+                        supplier,
+                        supplier_product_id
+                    );
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_service_pricing_catalog_approval
+                    ON service_pricing_catalog(
+                        approval_status
+                    );
                 """)
 
             self._migrate_customer_devices(connection)
@@ -424,6 +521,7 @@ class OperationsDatabase:
             ("repair_checkins", "checkin_id"),
             ("repair_events", "event_id"),
             ("wpforms_submissions", "submission_id"),
+            ("service_pricing_catalog", "pricing_record_id"),
         }
 
         if (table, column) not in allowed_targets:
@@ -844,7 +942,7 @@ class OperationsDatabase:
         else:
             try:
                 final_cost = float(final_cost_value)
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 final_cost = 0.0
 
         final_cost = round(
@@ -1189,6 +1287,312 @@ class OperationsDatabase:
             ).fetchall()
 
         return [dict(row) for row in rows]
+
+    def create_service_pricing_record(
+        self,
+        record: dict[str, Any],
+    ) -> dict[str, Any]:
+        with self.connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO service_pricing_catalog (
+                    pricing_record_id,
+                    catalog_device_id,
+                    service_type_id,
+                    service_type,
+                    service_category_id,
+                    variant_key,
+                    variant_name,
+                    supplier,
+                    supplier_product_id,
+                    supplier_sku,
+                    part_name,
+                    part_cost_cents,
+                    supplier_in_stock,
+                    supplier_stock_qty,
+                    supplier_observed_at,
+                    default_labor_hours,
+                    labor_profile_id,
+                    labor_tier,
+                    hourly_rate_cents,
+                    minimum_charge_cents,
+                    target_margin,
+                    minimum_margin,
+                    overhead_rate,
+                    warranty_rate,
+                    risk_rate,
+                    processing_rate,
+                    rounding_rule,
+                    billable_labor_cost_cents,
+                    shipping_cents,
+                    consumables_cents,
+                    base_direct_cost_cents,
+                    total_internal_cost_cents,
+                    recommended_price_cents,
+                    gross_profit_cents,
+                    gross_margin,
+                    pricing_status,
+                    approved_price_cents,
+                    approval_status,
+                    approved_at,
+                    approved_by,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    :pricing_record_id,
+                    :catalog_device_id,
+                    :service_type_id,
+                    :service_type,
+                    :service_category_id,
+                    :variant_key,
+                    :variant_name,
+                    :supplier,
+                    :supplier_product_id,
+                    :supplier_sku,
+                    :part_name,
+                    :part_cost_cents,
+                    :supplier_in_stock,
+                    :supplier_stock_qty,
+                    :supplier_observed_at,
+                    :default_labor_hours,
+                    :labor_profile_id,
+                    :labor_tier,
+                    :hourly_rate_cents,
+                    :minimum_charge_cents,
+                    :target_margin,
+                    :minimum_margin,
+                    :overhead_rate,
+                    :warranty_rate,
+                    :risk_rate,
+                    :processing_rate,
+                    :rounding_rule,
+                    :billable_labor_cost_cents,
+                    :shipping_cents,
+                    :consumables_cents,
+                    :base_direct_cost_cents,
+                    :total_internal_cost_cents,
+                    :recommended_price_cents,
+                    :gross_profit_cents,
+                    :gross_margin,
+                    :pricing_status,
+                    :approved_price_cents,
+                    :approval_status,
+                    :approved_at,
+                    :approved_by,
+                    :created_at,
+                    :updated_at
+                )
+                """,
+                record,
+            )
+
+        return record.copy()
+
+    def get_service_pricing_record(
+        self,
+        pricing_record_id: str,
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM service_pricing_catalog
+                WHERE pricing_record_id = ?
+                """,
+                (pricing_record_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def get_service_pricing_record_by_identity(
+        self,
+        *,
+        catalog_device_id: str,
+        service_type_id: str,
+        variant_key: str,
+        supplier: str,
+        supplier_product_id: str,
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM service_pricing_catalog
+                WHERE catalog_device_id = ?
+                  AND service_type_id = ?
+                  AND variant_key = ?
+                  AND supplier = ?
+                  AND supplier_product_id = ?
+                """,
+                (
+                    catalog_device_id,
+                    service_type_id,
+                    variant_key.strip().upper(),
+                    supplier,
+                    supplier_product_id,
+                ),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def list_service_pricing_records(
+        self,
+        *,
+        catalog_device_id: str | None = None,
+        service_type_id: str | None = None,
+        variant_key: str | None = None,
+        approval_status: str | None = None,
+    ) -> list[dict[str, Any]]:
+        conditions: list[str] = []
+        parameters: list[Any] = []
+
+        if catalog_device_id:
+            conditions.append("catalog_device_id = ?")
+            parameters.append(catalog_device_id)
+
+        if service_type_id:
+            conditions.append("service_type_id = ?")
+            parameters.append(service_type_id)
+
+        if variant_key:
+            conditions.append("variant_key = ?")
+            parameters.append(variant_key.strip().upper())
+
+        if approval_status:
+            conditions.append("approval_status = ?")
+            parameters.append(approval_status.strip().upper())
+
+        where_clause = ""
+
+        if conditions:
+            where_clause = "WHERE " + " AND ".join(conditions)
+
+        with self.connect() as connection:
+            rows = connection.execute(
+                f"""
+                SELECT *
+                FROM service_pricing_catalog
+                {where_clause}
+                ORDER BY
+                    catalog_device_id,
+                    service_type_id,
+                    variant_key,
+                    supplier,
+                    supplier_product_id
+                """,
+                parameters,
+            ).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def update_service_pricing_record(
+        self,
+        pricing_record_id: str,
+        updates: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        allowed_columns = {
+            "service_type",
+            "service_category_id",
+            "variant_name",
+            "supplier_sku",
+            "part_name",
+            "part_cost_cents",
+            "supplier_in_stock",
+            "supplier_stock_qty",
+            "supplier_observed_at",
+            "default_labor_hours",
+            "labor_profile_id",
+            "labor_tier",
+            "hourly_rate_cents",
+            "minimum_charge_cents",
+            "target_margin",
+            "minimum_margin",
+            "overhead_rate",
+            "warranty_rate",
+            "risk_rate",
+            "processing_rate",
+            "rounding_rule",
+            "billable_labor_cost_cents",
+            "shipping_cents",
+            "consumables_cents",
+            "base_direct_cost_cents",
+            "total_internal_cost_cents",
+            "recommended_price_cents",
+            "gross_profit_cents",
+            "gross_margin",
+            "pricing_status",
+            "updated_at",
+        }
+
+        filtered_updates = {
+            key: value for key, value in updates.items() if key in allowed_columns
+        }
+
+        if not filtered_updates:
+            return self.get_service_pricing_record(pricing_record_id)
+
+        assignments = ", ".join(f"{column} = ?" for column in filtered_updates)
+
+        parameters = list(filtered_updates.values())
+
+        parameters.append(pricing_record_id)
+
+        with self.connect() as connection:
+            cursor = connection.execute(
+                f"""
+                UPDATE service_pricing_catalog
+                SET {assignments}
+                WHERE pricing_record_id = ?
+                """,
+                parameters,
+            )
+
+            if cursor.rowcount == 0:
+                return None
+
+        return self.get_service_pricing_record(pricing_record_id)
+
+    def approve_service_pricing_record(
+        self,
+        pricing_record_id: str,
+        *,
+        approved_price_cents: int,
+        approved_at: str,
+        approved_by: str,
+        updated_at: str,
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            cursor = connection.execute(
+                """
+                UPDATE service_pricing_catalog
+                SET approved_price_cents = ?,
+                    approval_status = 'APPROVED',
+                    approved_at = ?,
+                    approved_by = ?,
+                    updated_at = ?
+                WHERE pricing_record_id = ?
+                  AND approval_status = 'DRAFT'
+                """,
+                (
+                    approved_price_cents,
+                    approved_at,
+                    approved_by,
+                    updated_at,
+                    pricing_record_id,
+                ),
+            )
+
+            if cursor.rowcount == 0:
+                return None
+
+        return self.get_service_pricing_record(pricing_record_id)
 
     def counts(
         self,

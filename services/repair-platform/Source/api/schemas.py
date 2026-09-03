@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel
@@ -521,6 +522,7 @@ class IFixitDeviceGuideMatchResponse(BaseModel):
     override_applied: bool
     attribution: IFixitAttributionResponse
 
+
 # ======================================================
 # Service Pricing Preview
 # ======================================================
@@ -600,3 +602,77 @@ class ServicePricingPreviewResponse(BaseModel):
     market_high: float | None = None
     market_sample_count: int | None = None
     market_position: str | None = None
+
+
+class ServicePricingCatalogSaveRequest(ServicePricingPreviewRequest):
+    """
+    Request to calculate and persist a governed pricing snapshot.
+
+    Pricing calculations are reconstructed internally from the
+    selected supplier product and approved Nocturnix pricing rule.
+    """
+
+
+class ServicePricingCatalogApprovalRequest(BaseModel):
+    approved_price: float
+    approved_by: str
+
+
+class ServicePricingCatalogResponse(BaseModel):
+    pricing_record_id: str
+
+    catalog_device_id: str
+
+    service_type_id: str
+    service_type: str
+    service_category_id: str
+
+    variant_key: str
+    variant_name: str | None
+
+    supplier: str
+    supplier_product_id: str
+    supplier_sku: str
+    part_name: str
+
+    part_cost: float
+
+    supplier_in_stock: bool | None
+    supplier_stock_qty: int | None
+    supplier_observed_at: datetime | None
+
+    default_labor_hours: float
+    labor_profile_id: str
+    labor_tier: str
+    hourly_rate: float
+    minimum_charge: float
+
+    target_margin: float
+    minimum_margin: float
+
+    overhead_rate: float
+    warranty_rate: float
+    risk_rate: float
+    processing_rate: float
+
+    rounding_rule: str
+
+    billable_labor_cost: float
+    shipping: float
+    consumables: float
+
+    base_direct_cost: float
+    total_internal_cost: float
+    recommended_price: float
+    gross_profit: float
+    gross_margin: float
+
+    pricing_status: str
+
+    approved_price: float | None
+    approval_status: str
+    approved_at: datetime | None
+    approved_by: str | None
+
+    created_at: datetime
+    updated_at: datetime

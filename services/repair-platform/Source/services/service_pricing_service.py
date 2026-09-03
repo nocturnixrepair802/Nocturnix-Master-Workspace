@@ -140,6 +140,7 @@ class ServicePricingService:
             risk_reserve=calculation["risk_reserve"],
             processing_rate=calculation["processing_rate"],
             processing_reserve=calculation["processing_reserve"],
+            rounding_rule=rule.rounding_rule,
             total_internal_cost=calculation["total_internal_cost"],
             target_margin=calculation["target_margin"],
             minimum_margin=calculation["minimum_margin"],
@@ -158,7 +159,7 @@ class ServicePricingService:
 
         if len(value) != 9 or not value.startswith("STY") or not value[3:].isdigit():
             raise ServicePricingValidationError(
-                "service_type_id must use the governed " "STY###### format."
+                "service_type_id must use the governed STY###### format."
             )
 
     @staticmethod
@@ -180,7 +181,7 @@ class ServicePricingService:
 
             if product.sku is None:
                 raise ServicePricingValidationError(
-                    "Selected Mobile Sentrix detailed product " "does not contain sku."
+                    "Selected Mobile Sentrix detailed product does not contain sku."
                 )
 
             return {
@@ -196,8 +197,7 @@ class ServicePricingService:
         if isinstance(product, MobileSentrixProduct):
             if product.unit_cost is None:
                 raise ServicePricingValidationError(
-                    "Selected Mobile Sentrix search product "
-                    "does not contain unit_cost."
+                    "Selected Mobile Sentrix search product does not contain unit_cost."
                 )
 
             if product.supplier_product_id is None:
