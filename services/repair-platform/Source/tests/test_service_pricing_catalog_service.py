@@ -10,6 +10,8 @@ import pytest
 from models.service_pricing import ServicePricingPreview
 from persistence.operations_db import OperationsDatabase
 from services.service_pricing_catalog_service import (
+    ServicePricingCatalogApprovalError,
+    ServicePricingCatalogNotFoundError,
     ServicePricingCatalogService,
     ServicePricingCatalogValidationError,
 )
@@ -429,3 +431,204 @@ def test_multiple_records_receive_sequential_ids(
 
     assert first.pricing_record_id == "PRC000001"
     assert second.pricing_record_id == "PRC000002"
+
+
+def test_approve_sets_explicit_business_price(
+    tmp_path: Path,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    created = service.save_from_preview(
+        pricing_preview(),
+        now=datetime(
+            2026,
+            9,
+            3,
+            19,
+            0,
+            tzinfo=UTC,
+        ),
+    )
+
+    approved = service.approve(
+        created.pricing_record_id,
+        approved_price=Decimal("259.99"),
+        approved_by="Ryan Brown",
+        approved_at=datetime(
+            2026,
+            9,
+            3,
+            20,
+            0,
+            tzinfo=UTC,
+        ),
+    )
+
+    assert approved.pricing_record_id == "PRC000001"
+    assert approved.approval_status == "APPROVED"
+    assert approved.approved_price == Decimal("259.99")
+    assert approved.approved_by == "Ryan Brown"
+
+    assert approved.approved_at == datetime(
+        2026,
+        9,
+        3,
+        20,
+        0,
+        tzinfo=UTC,
+    )
+
+    assert approved.updated_at == datetime(
+        2026,
+        9,
+        3,
+        20,
+        0,
+        tzinfo=UTC,
+    )
+
+
+def test_approve_requires_existing_record(
+    tmp_path: Path,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    with pytest.raises(ServicePricingCatalogNotFoundError):
+        service.approve(
+            "PRC999999",
+            approved_price=Decimal("259.99"),
+            approved_by="Ryan Brown",
+            approved_at=datetime(
+                2026,
+                9,
+                3,
+                20,
+                0,
+                tzinfo=UTC,
+            ),
+        )
+
+
+def test_approve_rejects_second_approval(
+    tmp_path: Path,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    created = service.save_from_preview(
+        pricing_preview(),
+        now=datetime(
+            2026,
+            9,
+            3,
+            19,
+            0,
+            tzinfo=UTC,
+        ),
+    )
+
+    service.approve(
+        created.pricing_record_id,
+        approved_price=Decimal("259.99"),
+        approved_by="Ryan Brown",
+        approved_at=datetime(
+            2026,
+            9,
+            3,
+            20,
+            0,
+            tzinfo=UTC,
+        ),
+    )
+
+    with pytest.raises(ServicePricingCatalogApprovalError):
+        service.approve(
+            created.pricing_record_id,
+            approved_price=Decimal("249.99"),
+            approved_by="Ryan Brown",
+            approved_at=datetime(
+                2026,
+                9,
+                3,
+                21,
+                0,
+                tzinfo=UTC,
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    "approved_price",
+    [
+        Decimal("0"),
+        Decimal("-1.00"),
+        Decimal("NaN"),
+        Decimal("Infinity"),
+    ],
+)
+def test_approve_rejects_invalid_price(
+    tmp_path: Path,
+    approved_price: Decimal,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    created = service.save_from_preview(pricing_preview())
+
+    with pytest.raises(ServicePricingCatalogValidationError):
+        service.approve(
+            created.pricing_record_id,
+            approved_price=approved_price,
+            approved_by="Ryan Brown",
+            approved_at=datetime(
+                2026,
+                9,
+                3,
+                20,
+                0,
+                tzinfo=UTC,
+            ),
+        )
+
+
+def test_approve_requires_approver(
+    tmp_path: Path,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    created = service.save_from_preview(pricing_preview())
+
+    with pytest.raises(ServicePricingCatalogValidationError):
+        service.approve(
+            created.pricing_record_id,
+            approved_price=Decimal("259.99"),
+            approved_by="   ",
+            approved_at=datetime(
+                2026,
+                9,
+                3,
+                20,
+                0,
+                tzinfo=UTC,
+            ),
+        )
+
+
+def test_approve_rejects_naive_timestamp(
+    tmp_path: Path,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    created = service.save_from_preview(pricing_preview())
+
+    with pytest.raises(ServicePricingCatalogValidationError):
+        service.approve(
+            created.pricing_record_id,
+            approved_price=Decimal("259.99"),
+            approved_by="Ryan Brown",
+            approved_at=datetime(
+                2026,
+                9,
+                3,
+                20,
+                0,
+            ),
+        )

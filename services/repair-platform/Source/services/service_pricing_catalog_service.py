@@ -12,6 +12,14 @@ class ServicePricingCatalogValidationError(ValueError):
     """Raised when a pricing snapshot cannot be persisted safely."""
 
 
+class ServicePricingCatalogNotFoundError(LookupError):
+    """Raised when a pricing catalog record does not exist."""
+
+
+class ServicePricingCatalogApprovalError(RuntimeError):
+    """Raised when a pricing catalog record cannot be approved."""
+
+
 class ServicePricingCatalogService:
     """
     Persist calculated service-pricing snapshots.
@@ -204,6 +212,68 @@ class ServicePricingCatalogService:
         if stored is None:
             raise ServicePricingCatalogValidationError(
                 "Existing pricing record disappeared during refresh."
+            )
+
+        return self._record_from_storage(stored)
+
+    def approve(
+        self,
+        pricing_record_id: str,
+        *,
+        approved_price: Decimal,
+        approved_by: str,
+        approved_at: datetime | None = None,
+    ) -> ServicePricingCatalogRecord:
+        record_id = pricing_record_id.strip()
+
+        if not record_id:
+            raise ServicePricingCatalogValidationError("pricing_record_id is required.")
+
+        approver = approved_by.strip()
+
+        if not approver:
+            raise ServicePricingCatalogValidationError("approved_by is required.")
+
+        if not approved_price.is_finite():
+            raise ServicePricingCatalogValidationError("approved_price must be finite.")
+
+        if approved_price <= Decimal("0"):
+            raise ServicePricingCatalogValidationError(
+                "approved_price must be greater than zero."
+            )
+
+        timestamp = approved_at if approved_at is not None else datetime.now(UTC)
+
+        if timestamp.tzinfo is None:
+            raise ServicePricingCatalogValidationError(
+                "approved_at must be timezone-aware."
+            )
+
+        existing = self.operations_database.get_service_pricing_record(record_id)
+
+        if existing is None:
+            raise ServicePricingCatalogNotFoundError(
+                f"Pricing record {record_id!r} was not found."
+            )
+
+        if existing["approval_status"] != "DRAFT":
+            raise ServicePricingCatalogApprovalError(
+                f"Pricing record {record_id!r} is not in DRAFT status."
+            )
+
+        timestamp_text = self._datetime_to_text(timestamp)
+
+        stored = self.operations_database.approve_service_pricing_record(
+            record_id,
+            approved_price_cents=(self._money_to_cents(approved_price)),
+            approved_at=timestamp_text,
+            approved_by=approver,
+            updated_at=timestamp_text,
+        )
+
+        if stored is None:
+            raise ServicePricingCatalogApprovalError(
+                f"Pricing record {record_id!r} could not be approved."
             )
 
         return self._record_from_storage(stored)

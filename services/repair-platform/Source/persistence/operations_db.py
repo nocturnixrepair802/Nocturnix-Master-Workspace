@@ -1559,6 +1559,41 @@ class OperationsDatabase:
 
         return self.get_service_pricing_record(pricing_record_id)
 
+    def approve_service_pricing_record(
+        self,
+        pricing_record_id: str,
+        *,
+        approved_price_cents: int,
+        approved_at: str,
+        approved_by: str,
+        updated_at: str,
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            cursor = connection.execute(
+                """
+                UPDATE service_pricing_catalog
+                SET approved_price_cents = ?,
+                    approval_status = 'APPROVED',
+                    approved_at = ?,
+                    approved_by = ?,
+                    updated_at = ?
+                WHERE pricing_record_id = ?
+                  AND approval_status = 'DRAFT'
+                """,
+                (
+                    approved_price_cents,
+                    approved_at,
+                    approved_by,
+                    updated_at,
+                    pricing_record_id,
+                ),
+            )
+
+            if cursor.rowcount == 0:
+                return None
+
+        return self.get_service_pricing_record(pricing_record_id)
+
     def counts(
         self,
     ) -> dict[str, Any]:
