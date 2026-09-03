@@ -213,6 +213,53 @@ def test_blank_device_id_is_rejected() -> None:
         )
 
 
+def test_preview_uses_requested_pricing_variant() -> None:
+    variant_rule = ServicePricingRule(
+        service_type_id="STY000055",
+        service_type="Diagnostic",
+        service_category_id="SC000009",
+        default_labor_hours=Decimal("1.50"),
+        labor_profile_id="LAB000003",
+        labor_tier="L3 Advanced",
+        hourly_rate=Decimal("125.00"),
+        minimum_charge=Decimal("110.00"),
+        target_margin=Decimal("0.85"),
+        minimum_margin=Decimal("0.65"),
+        overhead_rate=Decimal("0.12"),
+        warranty_rate=Decimal("0.01"),
+        risk_rate=Decimal("0.02"),
+        processing_rate=Decimal("0.03"),
+        variant_key="ADVANCED_DIAGNOSTIC",
+        variant_name="Advanced Diagnostic",
+    )
+
+    service = ServicePricingService(
+        FakeCatalogDatabase(),
+        PricingRuleProvider(
+            [
+                variant_rule,
+            ]
+        ),
+    )
+
+    result = service.preview(
+        device_id="DEV000093",
+        service_type_id="STY000055",
+        variant_key="ADVANCED_DIAGNOSTIC",
+        product=detailed_screen_product(),
+    )
+
+    assert result.service_type_id == "STY000055"
+    assert result.variant_key == "ADVANCED_DIAGNOSTIC"
+    assert result.variant_name == "Advanced Diagnostic"
+
+    assert result.labor_profile_id == "LAB000003"
+    assert result.labor_tier == "L3 Advanced"
+    assert result.default_labor_hours == Decimal("1.50")
+    assert result.hourly_rate == Decimal("125.00")
+    assert result.minimum_charge == Decimal("110.00")
+
+
 @pytest.mark.parametrize(
     "service_type_id",
     [

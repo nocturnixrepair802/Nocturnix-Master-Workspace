@@ -529,6 +529,7 @@ class IFixitDeviceGuideMatchResponse(BaseModel):
 class ServicePricingPreviewRequest(BaseModel):
     device_id: str
     service_type_id: str
+    variant_key: str = "BASE"
     supplier_product_id: str
     shipping: float = 0.0
     consumables: float = 5.0
@@ -543,6 +544,8 @@ class ServicePricingPreviewResponse(BaseModel):
     service_type_id: str
     service_type: str
     service_category_id: str
+    variant_key: str
+    variant_name: str | None = None
 
     supplier: str
     supplier_product_id: str

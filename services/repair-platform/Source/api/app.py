@@ -84,6 +84,10 @@ from integrations.wpforms import (
 from persistence.catalog_db import CatalogDatabase
 from persistence.operations_db import OperationsDatabase
 from services.ifixit_device_matching_service import IFixitDeviceMatchingService
+from services.pricing_rule_loader import (
+    PricingRuleLoader,
+    PricingRuleLoadError,
+)
 from services.pricing_rule_provider import (
     PricingRuleNotFoundError,
     PricingRuleProvider,
@@ -3138,16 +3142,39 @@ def mobilesentrix_product_detail(
 
 def get_pricing_rule_provider() -> PricingRuleProvider:
     """
-    Return the runtime pricing-rule provider.
+    Build the runtime pricing-rule provider.
 
-    The production provider intentionally starts empty.
+    If no runtime artifact path is configured, pricing remains
+    intentionally unavailable and the provider contains zero rules.
 
-    Review-local workbook rules, proposed STY identifiers, and
-    governance artifacts must not be promoted into runtime authority
-    merely by starting the API.
+    If a path is configured, the artifact must load successfully.
+    Invalid, missing, unsupported, or unapproved configured artifacts
+    are treated as deployment/configuration errors rather than silently
+    falling back to an empty provider.
     """
 
-    return PricingRuleProvider()
+    configured_path = os.getenv(
+        "NOCTURNIX_PRICING_RULES_PATH",
+        "",
+    ).strip()
+
+    if not configured_path:
+        return PricingRuleProvider()
+
+    artifact_path = Path(configured_path)
+
+    if not artifact_path.is_absolute():
+        artifact_path = Path(__file__).resolve().parents[2] / artifact_path
+
+    try:
+        rules = PricingRuleLoader(artifact_path).load()
+
+    except PricingRuleLoadError as exc:
+        raise RuntimeError(
+            "Configured runtime pricing rules could not be loaded: " f"{exc}"
+        ) from exc
+
+    return PricingRuleProvider(rules)
 
 
 def get_service_pricing_service() -> ServicePricingService:
@@ -3231,6 +3258,7 @@ def service_pricing_preview(
         preview = pricing_service.preview(
             device_id=request.device_id,
             service_type_id=request.service_type_id,
+            variant_key=request.variant_key,
             product=product,
             shipping=request.shipping,
             consumables=request.consumables,
@@ -3265,6 +3293,8 @@ def service_pricing_preview(
         service_type_id=preview.service_type_id,
         service_type=preview.service_type,
         service_category_id=preview.service_category_id,
+        variant_key=preview.variant_key,
+        variant_name=preview.variant_name,
         supplier=preview.supplier,
         supplier_product_id=preview.supplier_product_id,
         supplier_sku=preview.supplier_sku,

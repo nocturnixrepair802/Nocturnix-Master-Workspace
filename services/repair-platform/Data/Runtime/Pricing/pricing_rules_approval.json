@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "rule_set_id": "PRSET-CANDIDATE-001",
+  "candidate_sha256": "b0f429872a80b64545d19cbae4d0315ff49679a63b740f0d2b4249e562d24bb3",
+  "approved_artifact_sha256": "f0511f53a22e3c8a895457c22b045849a816552566f42f9c5536255cea0928ce",
+  "approved_by": "Ryan Brown",
+  "approved_at": "2026-09-03T18:44:44.381969Z",
+  "rule_count": 83,
+  "candidate_path": "Data\\Pricing\\Runtime Candidate\\pricing_rules_candidate.json",
+  "approved_artifact_path": "Data\\Runtime\\Pricing\\pricing_rules.json"
+}
