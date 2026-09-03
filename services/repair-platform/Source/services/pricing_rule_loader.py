@@ -81,8 +81,7 @@ class PricingRuleLoader:
 
             if rule.service_type_id in seen_service_type_ids:
                 raise PricingRuleFormatError(
-                    "Duplicate pricing rule for Service Type: "
-                    f"{rule.service_type_id}"
+                    f"Duplicate pricing rule for Service Type: {rule.service_type_id}"
                 )
 
             seen_service_type_ids.add(rule.service_type_id)
@@ -94,7 +93,7 @@ class PricingRuleLoader:
     def _read_payload(self) -> dict[str, Any]:
         if not self.artifact_path.exists():
             raise PricingRuleFileNotFoundError(
-                f"Pricing rule artifact not found: " f"{self.artifact_path}"
+                f"Pricing rule artifact not found: {self.artifact_path}"
             )
 
         if not self.artifact_path.is_file():
@@ -144,7 +143,7 @@ class PricingRuleLoader:
 
         if status != APPROVED_STATUS:
             raise PricingRuleApprovalError(
-                "Pricing rule artifact must have " "status APPROVED."
+                "Pricing rule artifact must have status APPROVED."
             )
 
     def _parse_rule(
@@ -267,6 +266,24 @@ class PricingRuleLoader:
                 )
                 or "End in .99"
             ).strip(),
+            variant_key=str(
+                raw_rule.get(
+                    "variant_key",
+                    "BASE",
+                )
+                or "BASE"
+            )
+            .strip()
+            .upper(),
+            variant_name=(
+                str(raw_rule["variant_name"]).strip()
+                if raw_rule.get("variant_name")
+                not in {
+                    None,
+                    "",
+                }
+                else None
+            ),
         )
 
     @staticmethod
@@ -280,7 +297,7 @@ class PricingRuleLoader:
 
         if not value:
             raise PricingRuleFormatError(
-                f"Pricing rule #{index} requires " f"field '{field}'."
+                f"Pricing rule #{index} requires field '{field}'."
             )
 
         return value
@@ -296,19 +313,19 @@ class PricingRuleLoader:
 
         if value is None or value == "":
             raise PricingRuleFormatError(
-                f"Pricing rule #{index} requires " f"field '{field}'."
+                f"Pricing rule #{index} requires field '{field}'."
             )
 
         try:
             decimal_value = Decimal(str(value))
         except (InvalidOperation, ValueError) as exc:
             raise PricingRuleFormatError(
-                f"Pricing rule #{index} field " f"'{field}' must be numeric."
+                f"Pricing rule #{index} field '{field}' must be numeric."
             ) from exc
 
         if not decimal_value.is_finite():
             raise PricingRuleFormatError(
-                f"Pricing rule #{index} field " f"'{field}' must be finite."
+                f"Pricing rule #{index} field '{field}' must be finite."
             )
 
         return decimal_value

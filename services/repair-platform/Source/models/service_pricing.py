@@ -20,6 +20,7 @@ class ServicePricingRule:
     service_type: str
     service_category_id: str
 
+
     default_labor_hours: Decimal
     labor_profile_id: str
     labor_tier: str
@@ -35,6 +36,9 @@ class ServicePricingRule:
     processing_rate: Decimal
 
     rounding_rule: str = "End in .99"
+
+    variant_key: str = "BASE"
+    variant_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

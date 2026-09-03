@@ -111,3 +111,148 @@ def test_duplicate_service_type_rule_is_rejected() -> None:
                 second,
             ]
         )
+
+
+def test_base_and_variant_can_share_canonical_service_type() -> None:
+    base = pricing_rule(
+        service_type_id="STY000055",
+        service_type="Diagnostic",
+    )
+
+    variant = ServicePricingRule(
+        service_type_id="STY000055",
+        service_type="Diagnostic",
+        service_category_id="SC000009",
+        default_labor_hours=Decimal("1.50"),
+        labor_profile_id="LAB000003",
+        labor_tier="L3 Advanced",
+        hourly_rate=Decimal("125.00"),
+        minimum_charge=Decimal("110.00"),
+        target_margin=Decimal("0.85"),
+        minimum_margin=Decimal("0.65"),
+        overhead_rate=Decimal("0.12"),
+        warranty_rate=Decimal("0.01"),
+        risk_rate=Decimal("0.02"),
+        processing_rate=Decimal("0.03"),
+        variant_key="ADVANCED_DIAGNOSTIC",
+        variant_name="Advanced Diagnostic",
+    )
+
+    provider = PricingRuleProvider(
+        [
+            base,
+            variant,
+        ]
+    )
+
+    assert provider.count() == 2
+
+    assert provider.get("STY000055") is base
+
+    assert (
+        provider.get(
+            "STY000055",
+            "ADVANCED_DIAGNOSTIC",
+        )
+        is variant
+    )
+
+
+def test_variant_key_is_case_insensitive() -> None:
+    variant = ServicePricingRule(
+        service_type_id="STY000055",
+        service_type="Diagnostic",
+        service_category_id="SC000009",
+        default_labor_hours=Decimal("1.50"),
+        labor_profile_id="LAB000003",
+        labor_tier="L3 Advanced",
+        hourly_rate=Decimal("125.00"),
+        minimum_charge=Decimal("110.00"),
+        target_margin=Decimal("0.85"),
+        minimum_margin=Decimal("0.65"),
+        overhead_rate=Decimal("0.12"),
+        warranty_rate=Decimal("0.01"),
+        risk_rate=Decimal("0.02"),
+        processing_rate=Decimal("0.03"),
+        variant_key="ADVANCED_DIAGNOSTIC",
+        variant_name="Advanced Diagnostic",
+    )
+
+    provider = PricingRuleProvider([variant])
+
+    assert provider.contains(
+        "STY000055",
+        "advanced_diagnostic",
+    )
+
+
+def test_duplicate_same_service_type_and_variant_is_rejected() -> None:
+    first = pricing_rule(
+        service_type_id="STY000055",
+        service_type="Diagnostic",
+    )
+
+    second = pricing_rule(
+        service_type_id="STY000055",
+        service_type="Diagnostic",
+    )
+
+    with pytest.raises(
+        DuplicatePricingRuleError,
+        match="STY000055",
+    ):
+        PricingRuleProvider(
+            [
+                first,
+                second,
+            ]
+        )
+
+
+def test_same_service_type_with_different_variants_is_not_duplicate() -> None:
+    first = ServicePricingRule(
+        service_type_id="STY000055",
+        service_type="Diagnostic",
+        service_category_id="SC000009",
+        default_labor_hours=Decimal("0.75"),
+        labor_profile_id="LAB000002",
+        labor_tier="L2 Standard",
+        hourly_rate=Decimal("100.00"),
+        minimum_charge=Decimal("85.00"),
+        target_margin=Decimal("0.85"),
+        minimum_margin=Decimal("0.65"),
+        overhead_rate=Decimal("0.12"),
+        warranty_rate=Decimal("0.01"),
+        risk_rate=Decimal("0.02"),
+        processing_rate=Decimal("0.03"),
+        variant_key="BASIC_DIAGNOSTIC",
+        variant_name="Basic Diagnostic",
+    )
+
+    second = ServicePricingRule(
+        service_type_id="STY000055",
+        service_type="Diagnostic",
+        service_category_id="SC000009",
+        default_labor_hours=Decimal("1.50"),
+        labor_profile_id="LAB000003",
+        labor_tier="L3 Advanced",
+        hourly_rate=Decimal("125.00"),
+        minimum_charge=Decimal("110.00"),
+        target_margin=Decimal("0.85"),
+        minimum_margin=Decimal("0.65"),
+        overhead_rate=Decimal("0.12"),
+        warranty_rate=Decimal("0.01"),
+        risk_rate=Decimal("0.02"),
+        processing_rate=Decimal("0.03"),
+        variant_key="ADVANCED_DIAGNOSTIC",
+        variant_name="Advanced Diagnostic",
+    )
+
+    provider = PricingRuleProvider(
+        [
+            first,
+            second,
+        ]
+    )
+
+    assert provider.count() == 2
