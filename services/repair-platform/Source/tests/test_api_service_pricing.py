@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import json
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 
 from api import app as api_app_module
@@ -275,3 +278,113 @@ def test_service_pricing_preview_requires_supplier_product_id() -> None:
     assert response.json()["detail"] == (
         "Mobile Sentrix supplier_product_id " "must not be empty."
     )
+
+
+def approved_runtime_artifact() -> dict[str, object]:
+    return {
+        "schema_version": "1.0",
+        "rule_set_id": "PRSET000001",
+        "status": "APPROVED",
+        "rules": [
+            {
+                "service_type_id": "STY000001",
+                "service_type": "Screen Replacement",
+                "service_category_id": "SC000010",
+                "default_labor_hours": "1.00",
+                "labor_profile_id": "LAB000002",
+                "labor_tier": "L2 Standard",
+                "hourly_rate": "100.00",
+                "minimum_charge": "85.00",
+                "target_margin": "0.30",
+                "minimum_margin": "0.20",
+                "overhead_rate": "0.12",
+                "warranty_rate": "0.05",
+                "risk_rate": "0.04",
+                "processing_rate": "0.03",
+                "rounding_rule": "End in .99",
+            }
+        ],
+    }
+
+
+def test_pricing_rule_provider_is_empty_when_path_not_configured(
+    monkeypatch,
+) -> None:
+    monkeypatch.delenv(
+        "NOCTURNIX_PRICING_RULES_PATH",
+        raising=False,
+    )
+
+    provider = api_app_module.get_pricing_rule_provider()
+
+    assert provider.count() == 0
+
+
+def test_pricing_rule_provider_loads_configured_approved_artifact(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    path.write_text(
+        json.dumps(approved_runtime_artifact()),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv(
+        "NOCTURNIX_PRICING_RULES_PATH",
+        str(path),
+    )
+
+    provider = api_app_module.get_pricing_rule_provider()
+
+    assert provider.count() == 1
+
+    rule = provider.get("STY000001")
+
+    assert rule.service_type == "Screen Replacement"
+    assert rule.hourly_rate == Decimal("100.00")
+
+
+def test_pricing_rule_provider_rejects_configured_missing_artifact(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    missing_path = tmp_path / "missing-pricing-rules.json"
+
+    monkeypatch.setenv(
+        "NOCTURNIX_PRICING_RULES_PATH",
+        str(missing_path),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="could not be loaded",
+    ):
+        api_app_module.get_pricing_rule_provider()
+
+
+def test_pricing_rule_provider_rejects_unapproved_artifact(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    payload = approved_runtime_artifact()
+    payload["status"] = "PENDING REVIEW"
+
+    path.write_text(
+        json.dumps(payload),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv(
+        "NOCTURNIX_PRICING_RULES_PATH",
+        str(path),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="could not be loaded",
+    ):
+        api_app_module.get_pricing_rule_provider()
