@@ -216,6 +216,39 @@ class ServicePricingCatalogService:
 
         return self._record_from_storage(stored)
 
+    def get(
+        self,
+        pricing_record_id: str,
+    ) -> ServicePricingCatalogRecord | None:
+        record_id = pricing_record_id.strip()
+
+        if not record_id:
+            raise ServicePricingCatalogValidationError("pricing_record_id is required.")
+
+        stored = self.operations_database.get_service_pricing_record(record_id)
+
+        if stored is None:
+            return None
+
+        return self._record_from_storage(stored)
+
+    def list_records(
+        self,
+        *,
+        catalog_device_id: str | None = None,
+        service_type_id: str | None = None,
+        variant_key: str | None = None,
+        approval_status: str | None = None,
+    ) -> list[ServicePricingCatalogRecord]:
+        records = self.operations_database.list_service_pricing_records(
+            catalog_device_id=(catalog_device_id),
+            service_type_id=service_type_id,
+            variant_key=variant_key,
+            approval_status=approval_status,
+        )
+
+        return [self._record_from_storage(record) for record in records]
+
     def approve(
         self,
         pricing_record_id: str,
