@@ -14,6 +14,14 @@ class ServicePricingRule:
 
         12% -> Decimal("0.12")
         30% -> Decimal("0.30")
+
+    Canonical/base pricing rules use:
+
+        variant_key = "BASE"
+        variant_name = None
+
+    Governed pricing variants retain the canonical Service Type ID
+    while providing a distinct variant identity.
     """
 
     service_type_id: str
@@ -45,8 +53,9 @@ class ServicePricingPreview:
     """
     Read-only assembled pricing preview.
 
-    This model contains the identities and supplier information
-    surrounding the pure PricingEngine calculation.
+    This model contains the identities, pricing-rule variant,
+    supplier information, and calculated pricing surrounding
+    the pure PricingEngine calculation.
     """
 
     device_id: str
@@ -57,6 +66,9 @@ class ServicePricingPreview:
     service_type_id: str
     service_type: str
     service_category_id: str
+
+    variant_key: str
+    variant_name: str | None
 
     supplier: str
     supplier_product_id: str

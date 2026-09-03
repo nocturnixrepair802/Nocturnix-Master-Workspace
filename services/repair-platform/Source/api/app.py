@@ -3258,6 +3258,7 @@ def service_pricing_preview(
         preview = pricing_service.preview(
             device_id=request.device_id,
             service_type_id=request.service_type_id,
+            variant_key=request.variant_key,
             product=product,
             shipping=request.shipping,
             consumables=request.consumables,
@@ -3292,6 +3293,8 @@ def service_pricing_preview(
         service_type_id=preview.service_type_id,
         service_type=preview.service_type,
         service_category_id=preview.service_category_id,
+        variant_key=preview.variant_key,
+        variant_name=preview.variant_name,
         supplier=preview.supplier,
         supplier_product_id=preview.supplier_product_id,
         supplier_sku=preview.supplier_sku,

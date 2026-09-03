@@ -57,6 +57,7 @@ class ServicePricingService:
         *,
         device_id: str,
         service_type_id: str,
+        variant_key: str = "BASE",
         product: MobileSentrixProduct | MobileSentrixDetailedProduct,
         shipping: Decimal | float | int | str = Decimal("0.00"),
         consumables: Decimal | float | int | str = Decimal("5.00"),
@@ -72,7 +73,10 @@ class ServicePricingService:
 
         self._validate_service_type_id(service_type_id)
 
-        rule = self.pricing_rule_provider.get(service_type_id)
+        rule = self.pricing_rule_provider.get(
+            service_type_id,
+            variant_key,
+        )
 
         device = self.catalog_database.get_device(resolved_device_id)
 
@@ -109,6 +113,8 @@ class ServicePricingService:
             service_type_id=rule.service_type_id,
             service_type=rule.service_type,
             service_category_id=rule.service_category_id,
+            variant_key=rule.variant_key,
+            variant_name=rule.variant_name,
             supplier=supplier_data["supplier"],
             supplier_product_id=supplier_data["supplier_product_id"],
             supplier_sku=supplier_data["supplier_sku"],

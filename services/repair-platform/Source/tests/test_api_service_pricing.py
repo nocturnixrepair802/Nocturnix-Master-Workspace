@@ -60,6 +60,8 @@ def screen_rule() -> ServicePricingRule:
         service_type_id="STY000001",
         service_type="Screen Replacement",
         service_category_id="SC000010",
+        variant_key="BASE",
+        variant_name=None,
         default_labor_hours=Decimal("1.00"),
         labor_profile_id="LAB000002",
         labor_tier="L2 Standard",
@@ -71,6 +73,27 @@ def screen_rule() -> ServicePricingRule:
         warranty_rate=Decimal("0.05"),
         risk_rate=Decimal("0.04"),
         processing_rate=Decimal("0.03"),
+    )
+
+
+def advanced_diagnostic_rule() -> ServicePricingRule:
+    return ServicePricingRule(
+        service_type_id="STY000055",
+        service_type="Diagnostic",
+        service_category_id="SC000009",
+        default_labor_hours=Decimal("1.50"),
+        labor_profile_id="LAB000003",
+        labor_tier="L3 Advanced",
+        hourly_rate=Decimal("125.00"),
+        minimum_charge=Decimal("110.00"),
+        target_margin=Decimal("0.85"),
+        minimum_margin=Decimal("0.65"),
+        overhead_rate=Decimal("0.12"),
+        warranty_rate=Decimal("0.01"),
+        risk_rate=Decimal("0.02"),
+        processing_rate=Decimal("0.03"),
+        variant_key="ADVANCED_DIAGNOSTIC",
+        variant_name="Advanced Diagnostic",
     )
 
 
@@ -193,6 +216,63 @@ def test_service_pricing_preview(
     assert payload["market_high"] is None
     assert payload["market_sample_count"] is None
     assert payload["market_position"] is None
+
+
+def test_service_pricing_preview_uses_requested_variant(
+    monkeypatch,
+) -> None:
+    fake_mobilesentrix = FakeMobileSentrixClient()
+    fake_catalog = FakeCatalogDatabase()
+
+    provider = PricingRuleProvider(
+        [
+            advanced_diagnostic_rule(),
+        ]
+    )
+
+    monkeypatch.setattr(
+        api_app_module,
+        "get_mobilesentrix_client",
+        lambda: fake_mobilesentrix,
+    )
+
+    monkeypatch.setattr(
+        api_app_module,
+        "get_catalog_database",
+        lambda: fake_catalog,
+    )
+
+    monkeypatch.setattr(
+        api_app_module,
+        "get_pricing_rule_provider",
+        lambda: provider,
+    )
+
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/v1/pricing/preview",
+        json={
+            "device_id": "DEV000093",
+            "service_type_id": "STY000055",
+            "variant_key": "ADVANCED_DIAGNOSTIC",
+            "supplier_product_id": "249690",
+        },
+    )
+
+    assert response.status_code == 200
+
+    payload = response.json()
+
+    assert payload["service_type_id"] == "STY000055"
+    assert payload["variant_key"] == "ADVANCED_DIAGNOSTIC"
+    assert payload["variant_name"] == "Advanced Diagnostic"
+
+    assert payload["labor_profile_id"] == "LAB000003"
+    assert payload["labor_tier"] == "L3 Advanced"
+    assert payload["default_labor_hours"] == 1.50
+    assert payload["hourly_rate"] == 125.00
+    assert payload["minimum_charge"] == 110.00
 
 
 def test_service_pricing_preview_fails_closed_without_rule(
