@@ -59,6 +59,8 @@ from api.schemas import (
     RepairResponse,
     RepairUpdateRequest,
     RepairWorkspaceResponse,
+    ServicePricingPreviewRequest,
+    ServicePricingPreviewResponse,
     WPFormsIntakeRequest,
     WPFormsIntakeResponse,
 )
@@ -82,11 +84,20 @@ from integrations.wpforms import (
 from persistence.catalog_db import CatalogDatabase
 from persistence.operations_db import OperationsDatabase
 from services.ifixit_device_matching_service import IFixitDeviceMatchingService
+from services.pricing_rule_provider import (
+    PricingRuleNotFoundError,
+    PricingRuleProvider,
+)
 from services.procurement_service import (
     ProcurementNotFoundError,
     ProcurementService,
     ProcurementStateError,
     ProcurementValidationError,
+)
+from services.service_pricing_service import (
+    ServicePricingNotFoundError,
+    ServicePricingService,
+    ServicePricingValidationError,
 )
 
 # ======================================================
@@ -2724,7 +2735,6 @@ def dashboard() -> DashboardResponse:
         repairs_by_status=(counts["repairs_by_status"]),
     )
 
-
 # ======================================================
 # Catalog
 # ======================================================
@@ -2739,7 +2749,7 @@ def catalog_health() -> CatalogHealthResponse:
 
     return CatalogHealthResponse(
         database=str(catalog.database_path),
-        counts=(catalog.table_counts()),
+        counts=catalog.table_counts(),
     )
 
 
@@ -2750,7 +2760,9 @@ def catalog_health() -> CatalogHealthResponse:
 def catalog_schema() -> CatalogSchemaResponse:
     catalog = get_catalog_database()
 
-    return CatalogSchemaResponse(tables=(catalog.schema()))
+    return CatalogSchemaResponse(
+        tables=catalog.schema(),
+    )
 
 
 @app.get(
@@ -2784,7 +2796,7 @@ def catalog_devices(
 ) -> list[CatalogDeviceResponse]:
     records = get_catalog_database().list_devices(
         search=q,
-        manufacturer_id=(manufacturer_id),
+        manufacturer_id=manufacturer_id,
         limit=limit,
     )
 
@@ -2803,7 +2815,7 @@ def catalog_device(
     if record is None:
         raise HTTPException(
             status_code=404,
-            detail=("Catalog device not found."),
+            detail="Catalog device not found.",
         )
 
     return CatalogDeviceResponse(**record)
@@ -2865,6 +2877,8 @@ def catalog_pricing(
     )
 
     return [CatalogPricingResponse(**record) for record in records]
+
+
 # ======================================================
 # Mobile Sentrix OAuth Integration
 # ======================================================
@@ -2932,6 +2946,8 @@ def mobilesentrix_oauth_callback(
             "Access credentials were stored securely."
         ),
     }
+
+
 # ======================================================
 # Mobile Sentrix Product Search and Detail
 # ======================================================
@@ -2968,11 +2984,11 @@ def raise_mobilesentrix_http_error(
 
     elif exc.authentication_failed:
         status_code = 502
-        detail = "Mobile Sentrix authentication " "failed."
+        detail = "Mobile Sentrix authentication failed."
 
     elif exc.connection_failed:
         status_code = 503
-        detail = "Mobile Sentrix is currently " "unreachable."
+        detail = "Mobile Sentrix is currently unreachable."
 
     else:
         status_code = 502
@@ -3027,16 +3043,11 @@ def mobilesentrix_product_search(
         ) from exc
 
     except MobileSentrixApiError as exc:
-        raise_mobilesentrix_http_error(
-            exc
-        )
+        raise_mobilesentrix_http_error(exc)
 
     data = result.get("data") or {}
 
-    if not isinstance(
-        data,
-        dict,
-    ):
+    if not isinstance(data, dict):
         return {
             "query": q,
             "environment": client.oauth.status()["environment"],
@@ -3049,15 +3060,9 @@ def mobilesentrix_product_search(
 
     items: list[dict[str, object]] = []
 
-    if isinstance(
-        raw_items,
-        list,
-    ):
+    if isinstance(raw_items, list):
         for item in raw_items:
-            if not isinstance(
-                item,
-                dict,
-            ):
+            if not isinstance(item, dict):
                 continue
 
             product = MobileSentrixProduct.from_api_item(item)
@@ -3111,24 +3116,202 @@ def mobilesentrix_product_detail(
         ) from exc
 
     except MobileSentrixApiError as exc:
-        raise_mobilesentrix_http_error(
-            exc
-        )
+        raise_mobilesentrix_http_error(exc)
 
-    if not isinstance(
-        result,
-        dict,
-    ):
+    if not isinstance(result, dict):
         raise HTTPException(
             status_code=502,
             detail=(
-                "Mobile Sentrix returned an " "unexpected product detail response."
+                "Mobile Sentrix returned an unexpected " "product detail response."
             ),
         )
 
     product = MobileSentrixDetailedProduct.from_api_item(result)
 
     return product.to_api_dict()
+
+
+# ======================================================
+# Service Pricing Preview
+# ======================================================
+
+
+def get_pricing_rule_provider() -> PricingRuleProvider:
+    """
+    Return the runtime pricing-rule provider.
+
+    The production provider intentionally starts empty.
+
+    Review-local workbook rules, proposed STY identifiers, and
+    governance artifacts must not be promoted into runtime authority
+    merely by starting the API.
+    """
+
+    return PricingRuleProvider()
+
+
+def get_service_pricing_service() -> ServicePricingService:
+    """
+    Build the read-only service pricing preview service.
+
+    The service combines:
+    - Nocturnix catalog device identity;
+    - an explicitly supplied runtime pricing-rule provider;
+    - the pure PricingEngine calculation layer.
+
+    No pricing records are written or approved here.
+    """
+
+    return ServicePricingService(
+        catalog_database=get_catalog_database(),
+        pricing_rule_provider=get_pricing_rule_provider(),
+    )
+
+
+@app.post(
+    "/api/v1/pricing/preview",
+    response_model=ServicePricingPreviewResponse,
+)
+def service_pricing_preview(
+    request: ServicePricingPreviewRequest,
+) -> ServicePricingPreviewResponse:
+    """
+    Calculate a read-only Nocturnix service pricing preview.
+
+    The caller supplies:
+    - Nocturnix Device ID;
+    - governed Service Type ID;
+    - selected Mobile Sentrix product/entity ID;
+    - optional shipping and consumables.
+
+    Labor rules, margins, reserves, and other pricing policy are
+    resolved internally by Nocturnix.
+
+    This endpoint does not approve, publish, persist, procure, or
+    place supplier orders.
+    """
+
+    supplier_product_id = request.supplier_product_id.strip()
+
+    if not supplier_product_id:
+        raise HTTPException(
+            status_code=422,
+            detail=("Mobile Sentrix supplier_product_id " "must not be empty."),
+        )
+
+    client = get_mobilesentrix_client()
+
+    try:
+        raw_product = client.get_product(
+            product_id=supplier_product_id,
+        )
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except MobileSentrixApiError as exc:
+        raise_mobilesentrix_http_error(exc)
+
+    if not isinstance(raw_product, dict):
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "Mobile Sentrix returned an unexpected " "product detail response."
+            ),
+        )
+
+    product = MobileSentrixDetailedProduct.from_api_item(raw_product)
+
+    pricing_service = get_service_pricing_service()
+
+    try:
+        preview = pricing_service.preview(
+            device_id=request.device_id,
+            service_type_id=request.service_type_id,
+            product=product,
+            shipping=request.shipping,
+            consumables=request.consumables,
+        )
+
+    except ServicePricingValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except ServicePricingNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except PricingRuleNotFoundError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "No approved runtime pricing rule is available "
+                f"for {request.service_type_id.strip()}."
+            ),
+        ) from exc
+
+    return ServicePricingPreviewResponse(
+        device_id=preview.device_id,
+        device_model=preview.device_model,
+        manufacturer_id=preview.manufacturer_id,
+        manufacturer=preview.manufacturer,
+        service_type_id=preview.service_type_id,
+        service_type=preview.service_type,
+        service_category_id=preview.service_category_id,
+        supplier=preview.supplier,
+        supplier_product_id=preview.supplier_product_id,
+        supplier_sku=preview.supplier_sku,
+        part_name=preview.part_name,
+        part_cost=float(preview.part_cost),
+        supplier_in_stock=preview.supplier_in_stock,
+        supplier_stock_qty=preview.supplier_stock_qty,
+        default_labor_hours=float(preview.default_labor_hours),
+        labor_profile_id=preview.labor_profile_id,
+        labor_tier=preview.labor_tier,
+        hourly_rate=float(preview.hourly_rate),
+        minimum_charge=float(preview.minimum_charge),
+        calculated_labor_cost=float(preview.calculated_labor_cost),
+        billable_labor_cost=float(preview.billable_labor_cost),
+        shipping=float(preview.shipping),
+        consumables=float(preview.consumables),
+        base_direct_cost=float(preview.base_direct_cost),
+        overhead_rate=float(preview.overhead_rate),
+        overhead_reserve=float(preview.overhead_reserve),
+        warranty_rate=float(preview.warranty_rate),
+        warranty_reserve=float(preview.warranty_reserve),
+        risk_rate=float(preview.risk_rate),
+        risk_reserve=float(preview.risk_reserve),
+        processing_rate=float(preview.processing_rate),
+        processing_reserve=float(preview.processing_reserve),
+        total_internal_cost=float(preview.total_internal_cost),
+        target_margin=float(preview.target_margin),
+        minimum_margin=float(preview.minimum_margin),
+        raw_retail_price=float(preview.raw_retail_price),
+        recommended_retail_price=float(preview.recommended_retail_price),
+        gross_profit=float(preview.gross_profit),
+        gross_margin=float(preview.gross_margin),
+        pricing_status=preview.pricing_status,
+        market_low=(
+            float(preview.market_low) if preview.market_low is not None else None
+        ),
+        market_average=(
+            float(preview.market_average)
+            if preview.market_average is not None
+            else None
+        ),
+        market_high=(
+            float(preview.market_high) if preview.market_high is not None else None
+        ),
+        market_sample_count=preview.market_sample_count,
+        market_position=preview.market_position,
+    )
 
 
 # ======================================================
@@ -3148,12 +3331,16 @@ def get_ifixit_client() -> IFixitClient:
 
     try:
         timeout_seconds = float(timeout_value)
+
     except ValueError as exc:
         raise RuntimeError(
             "NOCTURNIX_IFIXIT_TIMEOUT_SECONDS must be a number."
         ) from exc
 
-    return IFixitClient(base_url=base_url, timeout_seconds=timeout_seconds)
+    return IFixitClient(
+        base_url=base_url,
+        timeout_seconds=timeout_seconds,
+    )
 
 
 def get_ifixit_matching_service(
@@ -3166,15 +3353,22 @@ def ifixit_attribution() -> IFixitAttributionResponse:
     return IFixitAttributionResponse()
 
 
-def ifixit_upstream_error(exc: IFixitApiError) -> HTTPException:
+def ifixit_upstream_error(
+    exc: IFixitApiError,
+) -> HTTPException:
     if exc.timed_out:
         status_code = 504
+
     elif exc.status_code == 429:
         status_code = 503
+
     else:
         status_code = 502
 
-    return HTTPException(status_code=status_code, detail=str(exc))
+    return HTTPException(
+        status_code=status_code,
+        detail=str(exc),
+    )
 
 
 @app.get(
@@ -3182,13 +3376,22 @@ def ifixit_upstream_error(exc: IFixitApiError) -> HTTPException:
     response_model=IFixitDeviceSearchResponse,
 )
 def ifixit_device_search(
-    q: str = Query(..., min_length=1, max_length=200),
+    q: str = Query(
+        ...,
+        min_length=1,
+        max_length=200,
+    ),
     client: IFixitClient = Depends(get_ifixit_client),
 ) -> IFixitDeviceSearchResponse:
     try:
         results = client.search_devices(query=q)
+
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
     except IFixitApiError as exc:
         raise ifixit_upstream_error(exc) from exc
 
@@ -3196,6 +3399,7 @@ def ifixit_device_search(
         IFixitDeviceResultResponse.model_validate(item.to_api_dict())
         for item in results
     ]
+
     return IFixitDeviceSearchResponse(
         query=q,
         returned_items=len(items),
@@ -3209,13 +3413,22 @@ def ifixit_device_search(
     response_model=IFixitGuideSearchResponse,
 )
 def ifixit_guide_search(
-    q: str = Query(..., min_length=1, max_length=200),
+    q: str = Query(
+        ...,
+        min_length=1,
+        max_length=200,
+    ),
     client: IFixitClient = Depends(get_ifixit_client),
 ) -> IFixitGuideSearchResponse:
     try:
         results = client.search_guides(query=q)
+
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
     except IFixitApiError as exc:
         raise ifixit_upstream_error(exc) from exc
 
@@ -3223,6 +3436,7 @@ def ifixit_guide_search(
         IFixitGuideMetadataResponse.model_validate(item.to_api_dict())
         for item in results
     ]
+
     return IFixitGuideSearchResponse(
         query=q,
         returned_items=len(items),
@@ -3241,13 +3455,21 @@ def get_ifixit_guide(
 ) -> IFixitGuideResponse:
     try:
         guide = client.get_guide_metadata(guide_id=guide_id)
+
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
     except IFixitApiError as exc:
         raise ifixit_upstream_error(exc) from exc
 
     if guide is None:
-        raise HTTPException(status_code=404, detail="iFixit guide was not found.")
+        raise HTTPException(
+            status_code=404,
+            detail="iFixit guide was not found.",
+        )
 
     return IFixitGuideResponse(
         guide=IFixitGuideMetadataResponse.model_validate(guide.to_api_dict()),
@@ -3260,8 +3482,16 @@ def get_ifixit_guide(
     response_model=IFixitDeviceGuideMatchResponse,
 )
 def match_ifixit_device_guides(
-    manufacturer: str = Query(..., min_length=1, max_length=100),
-    model: str = Query(..., min_length=1, max_length=200),
+    manufacturer: str = Query(
+        ...,
+        min_length=1,
+        max_length=100,
+    ),
+    model: str = Query(
+        ...,
+        min_length=1,
+        max_length=200,
+    ),
     ifixit_device_override: str | None = Query(
         default=None,
         min_length=1,
@@ -3275,11 +3505,17 @@ def match_ifixit_device_guides(
             model=model,
             ifixit_device_override=ifixit_device_override,
         )
+
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
     except IFixitApiError as exc:
         raise ifixit_upstream_error(exc) from exc
 
     payload = result.to_api_dict()
     payload["attribution"] = ifixit_attribution().model_dump()
+
     return IFixitDeviceGuideMatchResponse.model_validate(payload)
