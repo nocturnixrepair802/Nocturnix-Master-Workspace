@@ -1408,6 +1408,40 @@ class OperationsDatabase:
 
         return dict(row)
 
+    def get_service_pricing_record_by_identity(
+        self,
+        *,
+        catalog_device_id: str,
+        service_type_id: str,
+        variant_key: str,
+        supplier: str,
+        supplier_product_id: str,
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM service_pricing_catalog
+                WHERE catalog_device_id = ?
+                  AND service_type_id = ?
+                  AND variant_key = ?
+                  AND supplier = ?
+                  AND supplier_product_id = ?
+                """,
+                (
+                    catalog_device_id,
+                    service_type_id,
+                    variant_key.strip().upper(),
+                    supplier,
+                    supplier_product_id,
+                ),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
     def list_service_pricing_records(
         self,
         *,
@@ -1457,6 +1491,73 @@ class OperationsDatabase:
             ).fetchall()
 
         return [dict(row) for row in rows]
+
+    def update_service_pricing_record(
+        self,
+        pricing_record_id: str,
+        updates: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        allowed_columns = {
+            "service_type",
+            "service_category_id",
+            "variant_name",
+            "supplier_sku",
+            "part_name",
+            "part_cost_cents",
+            "supplier_in_stock",
+            "supplier_stock_qty",
+            "supplier_observed_at",
+            "default_labor_hours",
+            "labor_profile_id",
+            "labor_tier",
+            "hourly_rate_cents",
+            "minimum_charge_cents",
+            "target_margin",
+            "minimum_margin",
+            "overhead_rate",
+            "warranty_rate",
+            "risk_rate",
+            "processing_rate",
+            "rounding_rule",
+            "billable_labor_cost_cents",
+            "shipping_cents",
+            "consumables_cents",
+            "base_direct_cost_cents",
+            "total_internal_cost_cents",
+            "recommended_price_cents",
+            "gross_profit_cents",
+            "gross_margin",
+            "pricing_status",
+            "updated_at",
+        }
+
+        filtered_updates = {
+            key: value for key, value in updates.items() if key in allowed_columns
+        }
+
+        if not filtered_updates:
+            return self.get_service_pricing_record(pricing_record_id)
+
+        assignments = ", ".join(f"{column} = ?" for column in filtered_updates)
+
+        parameters = list(filtered_updates.values())
+
+        parameters.append(pricing_record_id)
+
+        with self.connect() as connection:
+            cursor = connection.execute(
+                f"""
+                UPDATE service_pricing_catalog
+                SET {assignments}
+                WHERE pricing_record_id = ?
+                """,
+                parameters,
+            )
+
+            if cursor.rowcount == 0:
+                return None
+
+        return self.get_service_pricing_record(pricing_record_id)
 
     def counts(
         self,

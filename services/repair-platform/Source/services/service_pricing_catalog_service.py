@@ -120,6 +120,94 @@ class ServicePricingCatalogService:
 
         return self._record_from_storage(record)
 
+    def save_from_preview(
+        self,
+        preview: ServicePricingPreview,
+        *,
+        supplier_observed_at: datetime | None = None,
+        now: datetime | None = None,
+    ) -> ServicePricingCatalogRecord:
+        timestamp = now if now is not None else datetime.now(UTC)
+
+        if timestamp.tzinfo is None:
+            raise ServicePricingCatalogValidationError("now must be timezone-aware.")
+
+        if supplier_observed_at is not None and supplier_observed_at.tzinfo is None:
+            raise ServicePricingCatalogValidationError(
+                "supplier_observed_at must be timezone-aware."
+            )
+
+        existing = self.operations_database.get_service_pricing_record_by_identity(
+            catalog_device_id=preview.device_id,
+            service_type_id=preview.service_type_id,
+            variant_key=preview.variant_key,
+            supplier=preview.supplier,
+            supplier_product_id=(preview.supplier_product_id),
+        )
+
+        if existing is None:
+            return self.create_from_preview(
+                preview,
+                supplier_observed_at=(supplier_observed_at),
+                now=timestamp,
+            )
+
+        updates = {
+            "service_type": preview.service_type,
+            "service_category_id": (preview.service_category_id),
+            "variant_name": preview.variant_name,
+            "supplier_sku": preview.supplier_sku,
+            "part_name": preview.part_name,
+            "part_cost_cents": self._money_to_cents(preview.part_cost),
+            "supplier_in_stock": (
+                None
+                if preview.supplier_in_stock is None
+                else int(preview.supplier_in_stock)
+            ),
+            "supplier_stock_qty": (preview.supplier_stock_qty),
+            "supplier_observed_at": (self._datetime_to_text(supplier_observed_at)),
+            "default_labor_hours": (self._decimal_to_text(preview.default_labor_hours)),
+            "labor_profile_id": (preview.labor_profile_id),
+            "labor_tier": preview.labor_tier,
+            "hourly_rate_cents": self._money_to_cents(preview.hourly_rate),
+            "minimum_charge_cents": (self._money_to_cents(preview.minimum_charge)),
+            "target_margin": self._decimal_to_text(preview.target_margin),
+            "minimum_margin": self._decimal_to_text(preview.minimum_margin),
+            "overhead_rate": self._decimal_to_text(preview.overhead_rate),
+            "warranty_rate": self._decimal_to_text(preview.warranty_rate),
+            "risk_rate": self._decimal_to_text(preview.risk_rate),
+            "processing_rate": self._decimal_to_text(preview.processing_rate),
+            "rounding_rule": preview.rounding_rule,
+            "billable_labor_cost_cents": (
+                self._money_to_cents(preview.billable_labor_cost)
+            ),
+            "shipping_cents": self._money_to_cents(preview.shipping),
+            "consumables_cents": self._money_to_cents(preview.consumables),
+            "base_direct_cost_cents": (self._money_to_cents(preview.base_direct_cost)),
+            "total_internal_cost_cents": (
+                self._money_to_cents(preview.total_internal_cost)
+            ),
+            "recommended_price_cents": (
+                self._money_to_cents(preview.recommended_retail_price)
+            ),
+            "gross_profit_cents": (self._money_to_cents(preview.gross_profit)),
+            "gross_margin": self._decimal_to_text(preview.gross_margin),
+            "pricing_status": preview.pricing_status,
+            "updated_at": self._datetime_to_text(timestamp),
+        }
+
+        stored = self.operations_database.update_service_pricing_record(
+            str(existing["pricing_record_id"]),
+            updates,
+        )
+
+        if stored is None:
+            raise ServicePricingCatalogValidationError(
+                "Existing pricing record disappeared during refresh."
+            )
+
+        return self._record_from_storage(stored)
+
     @staticmethod
     def _money_to_cents(
         value: Decimal,

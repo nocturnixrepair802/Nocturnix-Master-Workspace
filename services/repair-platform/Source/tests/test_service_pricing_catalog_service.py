@@ -63,6 +63,122 @@ def pricing_preview() -> ServicePricingPreview:
     )
 
 
+def test_save_from_preview_refreshes_existing_identity(
+    tmp_path: Path,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    first = service.save_from_preview(
+        pricing_preview(),
+        supplier_observed_at=datetime(
+            2026,
+            9,
+            3,
+            18,
+            0,
+            tzinfo=UTC,
+        ),
+        now=datetime(
+            2026,
+            9,
+            3,
+            19,
+            0,
+            tzinfo=UTC,
+        ),
+    )
+
+    refreshed_preview = replace(
+        pricing_preview(),
+        part_cost=Decimal("50.00"),
+        recommended_retail_price=Decimal("279.99"),
+        gross_profit=Decimal("89.99"),
+    )
+
+    second = service.save_from_preview(
+        refreshed_preview,
+        supplier_observed_at=datetime(
+            2026,
+            9,
+            3,
+            20,
+            0,
+            tzinfo=UTC,
+        ),
+        now=datetime(
+            2026,
+            9,
+            3,
+            20,
+            5,
+            tzinfo=UTC,
+        ),
+    )
+
+    assert first.pricing_record_id == "PRC000001"
+    assert second.pricing_record_id == "PRC000001"
+
+    assert second.part_cost == Decimal("50.00")
+    assert second.recommended_price == Decimal("279.99")
+
+    assert second.supplier_observed_at == datetime(
+        2026,
+        9,
+        3,
+        20,
+        0,
+        tzinfo=UTC,
+    )
+
+    assert second.updated_at == datetime(
+        2026,
+        9,
+        3,
+        20,
+        5,
+        tzinfo=UTC,
+    )
+
+
+def test_save_from_preview_creates_new_identity(
+    tmp_path: Path,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    first = service.save_from_preview(
+        pricing_preview(),
+        now=datetime(
+            2026,
+            9,
+            3,
+            19,
+            0,
+            tzinfo=UTC,
+        ),
+    )
+
+    second_preview = replace(
+        pricing_preview(),
+        supplier_product_id="249691",
+        supplier_sku="107082999998",
+    )
+
+    second = service.save_from_preview(
+        second_preview,
+        now=datetime(
+            2026,
+            9,
+            3,
+            19,
+            5,
+            tzinfo=UTC,
+        ),
+    )
+
+    assert first.pricing_record_id == "PRC000001"
+    assert second.pricing_record_id == "PRC000002"
+
+
 def catalog_service(
     tmp_path: Path,
 ) -> ServicePricingCatalogService:

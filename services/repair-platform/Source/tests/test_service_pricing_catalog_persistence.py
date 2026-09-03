@@ -195,3 +195,34 @@ def test_same_service_can_have_distinct_variant(
     )
 
     assert len(records) == 2
+
+
+def test_refresh_update_cannot_modify_approval_fields(
+    tmp_path: Path,
+) -> None:
+    database = OperationsDatabase(tmp_path / "operations.sqlite3")
+
+    database.create_service_pricing_record(pricing_record())
+
+    updated = database.update_service_pricing_record(
+        "PRC000001",
+        {
+            "recommended_price_cents": 29999,
+            "approved_price_cents": 28999,
+            "approval_status": "APPROVED",
+            "approved_by": "Someone",
+            "approved_at": "2026-09-03T20:00:00Z",
+            "updated_at": "2026-09-03T20:00:00Z",
+        },
+    )
+
+    assert updated is not None
+
+    assert updated["recommended_price_cents"] == 29999
+
+    assert updated["approved_price_cents"] is None
+
+    assert updated["approval_status"] == "DRAFT"
+
+    assert updated["approved_by"] is None
+    assert updated["approved_at"] is None
