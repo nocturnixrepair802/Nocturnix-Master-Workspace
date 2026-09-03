@@ -1,0 +1,272 @@
+from __future__ import annotations
+
+import json
+from decimal import Decimal
+from pathlib import Path
+
+import pytest
+
+from services.pricing_rule_loader import (
+    PricingRuleApprovalError,
+    PricingRuleFileNotFoundError,
+    PricingRuleFormatError,
+    PricingRuleLoader,
+)
+
+
+def valid_rule() -> dict[str, object]:
+    return {
+        "service_type_id": "STY000001",
+        "service_type": "Screen Replacement",
+        "service_category_id": "SC000010",
+        "default_labor_hours": "1.00",
+        "labor_profile_id": "LAB000002",
+        "labor_tier": "L2 Standard",
+        "hourly_rate": "100.00",
+        "minimum_charge": "85.00",
+        "target_margin": "0.30",
+        "minimum_margin": "0.20",
+        "overhead_rate": "0.12",
+        "warranty_rate": "0.05",
+        "risk_rate": "0.04",
+        "processing_rate": "0.03",
+        "rounding_rule": "End in .99",
+    }
+
+
+def write_artifact(
+    path: Path,
+    *,
+    status: str = "APPROVED",
+    schema_version: str = "1.0",
+    rules: list[dict[str, object]] | None = None,
+) -> None:
+    payload = {
+        "schema_version": schema_version,
+        "rule_set_id": "PRSET000001",
+        "status": status,
+        "rules": (rules if rules is not None else [valid_rule()]),
+    }
+
+    path.write_text(
+        json.dumps(payload),
+        encoding="utf-8",
+    )
+
+
+def test_load_approved_artifact(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    write_artifact(path)
+
+    rules = PricingRuleLoader(path).load()
+
+    assert len(rules) == 1
+
+    rule = rules[0]
+
+    assert rule.service_type_id == "STY000001"
+    assert rule.service_type == "Screen Replacement"
+    assert rule.service_category_id == "SC000010"
+
+    assert rule.default_labor_hours == Decimal("1.00")
+    assert rule.hourly_rate == Decimal("100.00")
+    assert rule.minimum_charge == Decimal("85.00")
+
+    assert rule.target_margin == Decimal("0.30")
+    assert rule.minimum_margin == Decimal("0.20")
+
+    assert rule.overhead_rate == Decimal("0.12")
+    assert rule.warranty_rate == Decimal("0.05")
+    assert rule.risk_rate == Decimal("0.04")
+    assert rule.processing_rate == Decimal("0.03")
+
+
+def test_missing_artifact_is_rejected(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "missing.json"
+
+    with pytest.raises(
+        PricingRuleFileNotFoundError,
+        match="missing.json",
+    ):
+        PricingRuleLoader(path).load()
+
+
+def test_invalid_json_is_rejected(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    path.write_text(
+        "{bad json",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        PricingRuleFormatError,
+        match="valid JSON",
+    ):
+        PricingRuleLoader(path).load()
+
+
+def test_unapproved_artifact_is_rejected(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    write_artifact(
+        path,
+        status="PENDING REVIEW",
+    )
+
+    with pytest.raises(
+        PricingRuleApprovalError,
+        match="APPROVED",
+    ):
+        PricingRuleLoader(path).load()
+
+
+def test_unsupported_schema_version_is_rejected(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    write_artifact(
+        path,
+        schema_version="2.0",
+    )
+
+    with pytest.raises(
+        PricingRuleFormatError,
+        match="schema_version",
+    ):
+        PricingRuleLoader(path).load()
+
+
+def test_duplicate_service_type_is_rejected(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    write_artifact(
+        path,
+        rules=[
+            valid_rule(),
+            valid_rule(),
+        ],
+    )
+
+    with pytest.raises(
+        PricingRuleFormatError,
+        match="Duplicate pricing rule",
+    ):
+        PricingRuleLoader(path).load()
+
+
+@pytest.mark.parametrize(
+    "service_type_id",
+    [
+        "",
+        "SVC000001",
+        "STY1",
+        "STYABC001",
+    ],
+)
+def test_invalid_service_type_identity_is_rejected(
+    tmp_path: Path,
+    service_type_id: str,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    rule = valid_rule()
+    rule["service_type_id"] = service_type_id
+
+    write_artifact(
+        path,
+        rules=[rule],
+    )
+
+    with pytest.raises(
+        PricingRuleFormatError,
+        match="service_type_id",
+    ):
+        PricingRuleLoader(path).load()
+
+
+def test_invalid_category_identity_is_rejected(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    rule = valid_rule()
+    rule["service_category_id"] = "CATEGORY"
+
+    write_artifact(
+        path,
+        rules=[rule],
+    )
+
+    with pytest.raises(
+        PricingRuleFormatError,
+        match="service_category_id",
+    ):
+        PricingRuleLoader(path).load()
+
+
+def test_invalid_labor_identity_is_rejected(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    rule = valid_rule()
+    rule["labor_profile_id"] = "NSLC-001"
+
+    write_artifact(
+        path,
+        rules=[rule],
+    )
+
+    with pytest.raises(
+        PricingRuleFormatError,
+        match="labor_profile_id",
+    ):
+        PricingRuleLoader(path).load()
+
+
+def test_non_numeric_rate_is_rejected(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    rule = valid_rule()
+    rule["hourly_rate"] = "not-a-number"
+
+    write_artifact(
+        path,
+        rules=[rule],
+    )
+
+    with pytest.raises(
+        PricingRuleFormatError,
+        match="hourly_rate",
+    ):
+        PricingRuleLoader(path).load()
+
+
+def test_empty_rule_set_is_allowed(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "pricing_rules.json"
+
+    write_artifact(
+        path,
+        rules=[],
+    )
+
+    rules = PricingRuleLoader(path).load()
+
+    assert rules == ()
