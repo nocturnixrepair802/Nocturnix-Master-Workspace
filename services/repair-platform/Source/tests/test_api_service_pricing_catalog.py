@@ -452,3 +452,49 @@ def test_catalog_save_fails_closed_without_rule(
     assert response.json()["detail"] == (
         "No approved runtime pricing rule is available for STY000001."
     )
+
+
+def test_approved_catalog_record_cannot_be_refreshed(
+    pricing_catalog_client: tuple[
+        TestClient,
+        OperationsDatabase,
+    ],
+) -> None:
+    client, database = pricing_catalog_client
+
+    save_pricing_record(client)
+
+    approval = client.post(
+        "/api/v1/pricing/catalog/PRC000001/approve",
+        json={
+            "approved_price": 399.99,
+            "approved_by": "Ryan Brown",
+        },
+    )
+
+    assert approval.status_code == 200
+
+    refresh = client.post(
+        "/api/v1/pricing/catalog",
+        json={
+            "device_id": "DEV000093",
+            "service_type_id": "STY000001",
+            "variant_key": "BASE",
+            "supplier_product_id": "249690",
+            "shipping": 10.00,
+            "consumables": 5.00,
+        },
+    )
+
+    assert refresh.status_code == 409
+
+    assert refresh.json()["detail"] == (
+        "Approved pricing records cannot be refreshed. "
+        "A new pricing revision is required."
+    )
+
+    stored = database.get_service_pricing_record("PRC000001")
+
+    assert stored is not None
+    assert stored["approval_status"] == "APPROVED"
+    assert stored["approved_price_cents"] == 39999

@@ -160,6 +160,11 @@ class ServicePricingCatalogService:
                 now=timestamp,
             )
 
+        if existing["approval_status"] != "DRAFT":
+            raise ServicePricingCatalogApprovalError(
+                "Approved pricing records cannot be refreshed. "
+                "A new pricing revision is required."
+            )
         updates = {
             "service_type": preview.service_type,
             "service_category_id": (preview.service_category_id),

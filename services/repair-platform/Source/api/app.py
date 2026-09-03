@@ -3441,7 +3441,9 @@ def save_service_pricing_catalog(
     resolved internally before the resulting snapshot is persisted.
 
     Repeated saves for the same catalog identity refresh the existing
-    pricing record rather than creating a duplicate PRC record.
+    DRAFT pricing record rather than creating a duplicate PRC record.
+
+    Approved pricing records are frozen and cannot be refreshed.
     """
 
     supplier_product_id = request.supplier_product_id.strip()
@@ -3484,7 +3486,7 @@ def save_service_pricing_catalog(
     try:
         preview = pricing_service.preview(
             device_id=request.device_id,
-            service_type_id=(request.service_type_id),
+            service_type_id=request.service_type_id,
             variant_key=request.variant_key,
             product=product,
             shipping=request.shipping,
@@ -3527,6 +3529,12 @@ def save_service_pricing_catalog(
             detail=str(exc),
         ) from exc
 
+    except ServicePricingCatalogApprovalError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
     return service_pricing_catalog_response(record)
 
 
@@ -3553,7 +3561,7 @@ def list_service_pricing_catalog(
 ) -> list[ServicePricingCatalogResponse]:
     try:
         records = catalog_service.list_records(
-            catalog_device_id=(catalog_device_id),
+            catalog_device_id=catalog_device_id,
             service_type_id=service_type_id,
             variant_key=variant_key,
             approval_status=approval_status,

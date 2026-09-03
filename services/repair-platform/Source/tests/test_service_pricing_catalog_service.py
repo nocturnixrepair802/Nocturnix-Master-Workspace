@@ -632,3 +632,73 @@ def test_approve_rejects_naive_timestamp(
                 0,
             ),
         )
+
+
+def test_approved_record_cannot_be_refreshed(
+    tmp_path: Path,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    created = service.save_from_preview(
+        pricing_preview(),
+        now=datetime(
+            2026,
+            9,
+            3,
+            19,
+            0,
+            tzinfo=UTC,
+        ),
+    )
+
+    approved = service.approve(
+        created.pricing_record_id,
+        approved_price=Decimal("259.99"),
+        approved_by="Ryan Brown",
+        approved_at=datetime(
+            2026,
+            9,
+            3,
+            20,
+            0,
+            tzinfo=UTC,
+        ),
+    )
+
+    refreshed_preview = replace(
+        pricing_preview(),
+        part_cost=Decimal("55.00"),
+        recommended_retail_price=Decimal("289.99"),
+    )
+
+    with pytest.raises(
+        ServicePricingCatalogApprovalError,
+        match="cannot be refreshed",
+    ):
+        service.save_from_preview(
+            refreshed_preview,
+            now=datetime(
+                2026,
+                9,
+                3,
+                21,
+                0,
+                tzinfo=UTC,
+            ),
+        )
+
+    stored = service.operations_database.get_service_pricing_record(
+        created.pricing_record_id
+    )
+
+    assert stored is not None
+
+    assert stored["part_cost_cents"] == 4500
+
+    assert stored["recommended_price_cents"] == 26599
+
+    assert stored["approved_price_cents"] == 25999
+
+    assert stored["approval_status"] == "APPROVED"
+
+    assert approved.approval_status == "APPROVED"
