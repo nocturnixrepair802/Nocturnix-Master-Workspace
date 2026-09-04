@@ -56,6 +56,8 @@ from api.schemas import (
     RepairEventResponse,
     RepairPaymentResponse,
     RepairPaymentSummaryResponse,
+    RepairPricingItemResponse,
+    RepairPricingSelectionRequest,
     RepairQueueItemResponse,
     RepairResponse,
     RepairUpdateRequest,
@@ -102,6 +104,12 @@ from services.procurement_service import (
     ProcurementService,
     ProcurementStateError,
     ProcurementValidationError,
+)
+from services.repair_pricing_service import (
+    RepairPricingNotFoundError,
+    RepairPricingService,
+    RepairPricingStateError,
+    RepairPricingValidationError,
 )
 from services.service_pricing_catalog_service import (
     ServicePricingCatalogApprovalError,
@@ -198,6 +206,12 @@ def get_wpforms_mapper() -> WPFormsMapper:
 
 def get_procurement_service() -> ProcurementService:
     return ProcurementService()
+
+
+def get_repair_pricing_service() -> RepairPricingService:
+    return RepairPricingService(
+        operations_database=get_database(),
+    )
 
 
 # ======================================================
@@ -387,13 +401,54 @@ def repair_response(
     )
 
 
+def repair_pricing_item_response(
+    item: dict[str, Any],
+) -> RepairPricingItemResponse:
+    return RepairPricingItemResponse(
+        repair_pricing_item_id=str(item["repair_pricing_item_id"]),
+        repair_id=str(item["repair_id"]),
+        pricing_record_id=str(item["pricing_record_id"]),
+        service_type_id=str(item["service_type_id"]),
+        variant_key=str(item["variant_key"]),
+        service_type=str(item["service_type"]),
+        quality_class=(
+            None if item["quality_class"] is None else str(item["quality_class"])
+        ),
+        customer_facing_tier=(
+            None
+            if item["customer_facing_tier"] is None
+            else str(item["customer_facing_tier"])
+        ),
+        supplier=str(item["supplier"]),
+        supplier_product_id=str(item["supplier_product_id"]),
+        supplier_sku=str(item["supplier_sku"]),
+        part_name=str(item["part_name"]),
+        quoted_unit_price_cents=int(item["quoted_unit_price_cents"]),
+        quantity=int(item["quantity"]),
+        line_total_cents=int(item["line_total_cents"]),
+        pricing_snapshot_at=str(item["pricing_snapshot_at"]),
+        created_at=str(item["created_at"]),
+        updated_at=str(item["updated_at"]),
+    )
+
+
 def repair_workspace_response(
     repair: dict[str, Any],
     customer: dict[str, Any],
     device: dict[str, Any],
+    pricing_items: list[dict[str, Any]] | None = None,
 ) -> RepairWorkspaceResponse:
     estimated_cost = repair.get("estimated_cost")
     final_cost = repair.get("final_cost")
+    resolved_pricing_items = pricing_items or []
+
+    pricing_item_responses = [
+        repair_pricing_item_response(item) for item in resolved_pricing_items
+    ]
+
+    quoted_total_cents = sum(
+        int(item["line_total_cents"]) for item in resolved_pricing_items
+    )
 
     return RepairWorkspaceResponse(
         id=str(repair["ticket_id"]),
@@ -603,6 +658,8 @@ def repair_workspace_response(
             )
             or ""
         ),
+        pricing_items=pricing_item_responses,
+        quoted_total_cents=quoted_total_cents,
     )
 
 
@@ -1901,6 +1958,69 @@ def get_repair(
     return repair_response(record)
 
 
+@app.post(
+    "/api/repairs/{repair_id}/pricing-items",
+    response_model=RepairPricingItemResponse,
+)
+def select_repair_pricing_item(
+    repair_id: str,
+    request: RepairPricingSelectionRequest,
+    repair_pricing_service: RepairPricingService = Depends(get_repair_pricing_service),
+) -> RepairPricingItemResponse:
+    try:
+        item = repair_pricing_service.select_pricing_record(
+            repair_id,
+            request.pricing_record_id,
+            quantity=request.quantity,
+        )
+
+    except RepairPricingNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except RepairPricingValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except RepairPricingStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    return repair_pricing_item_response(item)
+
+
+@app.get(
+    "/api/repairs/{repair_id}/pricing-items",
+    response_model=list[RepairPricingItemResponse],
+)
+def list_repair_pricing_items(
+    repair_id: str,
+    repair_pricing_service: RepairPricingService = Depends(get_repair_pricing_service),
+) -> list[RepairPricingItemResponse]:
+    try:
+        items = repair_pricing_service.list_items(repair_id)
+
+    except RepairPricingNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except RepairPricingValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    return [repair_pricing_item_response(item) for item in items]
+
+
 @app.get(
     "/api/repairs/{repair_id}/workspace",
     response_model=RepairWorkspaceResponse,
@@ -1936,11 +2056,12 @@ def get_repair_workspace(
             status_code=404,
             detail=("Repair device not found."),
         )
-
+    pricing_items = database.list_repair_pricing_items(repair_id)
     return repair_workspace_response(
         repair,
         customer,
         device,
+        pricing_items,
     )
 
 

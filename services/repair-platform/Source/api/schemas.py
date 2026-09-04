@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CustomerCreateRequest(BaseModel):
@@ -120,6 +120,8 @@ class RepairWorkspaceResponse(BaseModel):
     color: str = ""
     storage: str = ""
     carrier: str = ""
+    pricing_items: list[RepairPricingItemResponse] = Field(default_factory=list)
+    quoted_total_cents: int = 0
 
 
 class RepairQueueItemResponse(BaseModel):
@@ -690,3 +692,34 @@ class ServicePricingCatalogResponse(BaseModel):
 
     created_at: datetime
     updated_at: datetime
+
+
+class RepairPricingSelectionRequest(BaseModel):
+    pricing_record_id: str
+    quantity: int = 1
+
+
+class RepairPricingItemResponse(BaseModel):
+    repair_pricing_item_id: str
+    repair_id: str
+    pricing_record_id: str
+
+    service_type_id: str
+    variant_key: str
+    service_type: str
+
+    quality_class: str | None
+    customer_facing_tier: str | None
+
+    supplier: str
+    supplier_product_id: str
+    supplier_sku: str
+    part_name: str
+
+    quoted_unit_price_cents: int
+    quantity: int
+    line_total_cents: int
+
+    pricing_snapshot_at: str
+    created_at: str
+    updated_at: str

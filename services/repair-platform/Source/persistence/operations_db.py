@@ -95,6 +95,112 @@ class OperationsDatabase:
 
         return record.copy()
 
+    def create_repair_pricing_item(
+        self,
+        record: dict[str, Any],
+    ) -> dict[str, Any]:
+        with self.connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO repair_pricing_items (
+                    repair_pricing_item_id,
+                    repair_id,
+                    pricing_record_id,
+                    service_type_id,
+                    variant_key,
+                    service_type,
+                    quality_class,
+                    customer_facing_tier,
+                    supplier,
+                    supplier_product_id,
+                    supplier_sku,
+                    part_name,
+                    quoted_unit_price_cents,
+                    quantity,
+                    line_total_cents,
+                    pricing_snapshot_at,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    :repair_pricing_item_id,
+                    :repair_id,
+                    :pricing_record_id,
+                    :service_type_id,
+                    :variant_key,
+                    :service_type,
+                    :quality_class,
+                    :customer_facing_tier,
+                    :supplier,
+                    :supplier_product_id,
+                    :supplier_sku,
+                    :part_name,
+                    :quoted_unit_price_cents,
+                    :quantity,
+                    :line_total_cents,
+                    :pricing_snapshot_at,
+                    :created_at,
+                    :updated_at
+                )
+                """,
+                record,
+            )
+
+        return record.copy()
+
+    def get_repair_pricing_item(
+        self,
+        repair_pricing_item_id: str,
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM repair_pricing_items
+                WHERE repair_pricing_item_id = ?
+                """,
+                (repair_pricing_item_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def list_repair_pricing_items(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT *
+                FROM repair_pricing_items
+                WHERE repair_id = ?
+                ORDER BY
+                    created_at,
+                    repair_pricing_item_id
+                """,
+                (repair_id,),
+            ).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def delete_repair_pricing_item(
+        self,
+        repair_pricing_item_id: str,
+    ) -> bool:
+        with self.connect() as connection:
+            cursor = connection.execute(
+                """
+                DELETE FROM repair_pricing_items
+                WHERE repair_pricing_item_id = ?
+                """,
+                (repair_pricing_item_id,),
+            )
+
+        return cursor.rowcount > 0
+
     def initialize(
         self,
     ) -> None:
@@ -431,6 +537,63 @@ class OperationsDatabase:
                     ON service_pricing_catalog(
                         approval_status
                     );
+
+                CREATE TABLE IF NOT EXISTS repair_pricing_items (
+                    repair_pricing_item_id TEXT PRIMARY KEY,
+
+                    repair_id TEXT NOT NULL,
+                    pricing_record_id TEXT NOT NULL,
+
+                    service_type_id TEXT NOT NULL,
+                    variant_key TEXT NOT NULL DEFAULT 'BASE',
+
+                    service_type TEXT NOT NULL,
+                    quality_class TEXT,
+                    customer_facing_tier TEXT,
+
+                    supplier TEXT NOT NULL,
+                    supplier_product_id TEXT NOT NULL,
+                    supplier_sku TEXT NOT NULL,
+                    part_name TEXT NOT NULL DEFAULT '',
+
+                    quoted_unit_price_cents INTEGER NOT NULL,
+                    quantity INTEGER NOT NULL DEFAULT 1,
+                    line_total_cents INTEGER NOT NULL,
+
+                    pricing_snapshot_at TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+
+                    FOREIGN KEY(repair_id)
+                        REFERENCES repair_tickets(ticket_id)
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE,
+
+                    FOREIGN KEY(pricing_record_id)
+                        REFERENCES service_pricing_catalog(pricing_record_id)
+                        ON UPDATE CASCADE
+                        ON DELETE RESTRICT,
+
+                    UNIQUE (
+                        repair_id,
+                        pricing_record_id
+                    )
+                );
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_pricing_items_repair
+                    ON repair_pricing_items(repair_id);
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_pricing_items_pricing_record
+                    ON repair_pricing_items(pricing_record_id);
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_pricing_items_service
+                    ON repair_pricing_items(
+                        repair_id,
+                        service_type_id
+                    );
                 """)
 
             self._migrate_customer_devices(connection)
@@ -556,6 +719,7 @@ class OperationsDatabase:
             ("repair_events", "event_id"),
             ("wpforms_submissions", "submission_id"),
             ("service_pricing_catalog", "pricing_record_id"),
+            ("repair_pricing_items", "repair_pricing_item_id"),
         }
 
         if (table, column) not in allowed_targets:
