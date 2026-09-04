@@ -723,3 +723,40 @@ class RepairPricingItemResponse(BaseModel):
     pricing_snapshot_at: str
     created_at: str
     updated_at: str
+
+
+class RepairAuthorizationCreateRequest(BaseModel):
+    repair_pricing_item_ids: list[str]
+    terms_document_id: str = ""
+    terms_version: str = ""
+
+
+class RepairAuthorizationDecisionRequest(BaseModel):
+    customer_name: str
+    authorization_method: str
+
+
+class RepairAuthorizationResponse(BaseModel):
+    authorization_id: str
+    repair_id: str
+
+    authorization_type: str
+    authorization_status: str
+
+    quoted_total_cents: int
+    currency: str
+
+    terms_document_id: str
+    terms_version: str
+
+    customer_name: str
+    authorization_method: str
+
+    authorized_at: str | None
+    declined_at: str | None
+
+    created_at: str
+    updated_at: str
+    created_by: str
+
+    repair_pricing_item_ids: list[str] = Field(default_factory=list)

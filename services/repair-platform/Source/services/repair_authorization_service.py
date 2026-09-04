@@ -126,6 +126,24 @@ class RepairAuthorizationService:
             [str(item["repair_pricing_item_id"]) for item in pricing_items],
         )
 
+    def list_authorizations(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        normalized_repair_id = repair_id.strip()
+
+        if not normalized_repair_id:
+            raise RepairAuthorizationValidationError("repair_id is required.")
+
+        repair = self.operations_database.get_repair(normalized_repair_id)
+
+        if repair is None:
+            raise RepairAuthorizationNotFoundError(
+                f"Repair {normalized_repair_id!r} was not found."
+            )
+
+        return self.operations_database.list_repair_authorizations(normalized_repair_id)
+
     def authorize(
         self,
         authorization_id: str,

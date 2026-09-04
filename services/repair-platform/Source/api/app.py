@@ -49,6 +49,9 @@ from api.schemas import (
     ProcurementReceiveRequest,
     ProcurementResponse,
     ProcurementSummaryResponse,
+    RepairAuthorizationCreateRequest,
+    RepairAuthorizationDecisionRequest,
+    RepairAuthorizationResponse,
     RepairCheckinCreateRequest,
     RepairCheckinResponse,
     RepairCheckinUpdateRequest,
@@ -104,6 +107,12 @@ from services.procurement_service import (
     ProcurementService,
     ProcurementStateError,
     ProcurementValidationError,
+)
+from services.repair_authorization_service import (
+    RepairAuthorizationNotFoundError,
+    RepairAuthorizationService,
+    RepairAuthorizationStateError,
+    RepairAuthorizationValidationError,
 )
 from services.repair_pricing_service import (
     RepairPricingNotFoundError,
@@ -208,6 +217,12 @@ def get_procurement_service() -> ProcurementService:
     return ProcurementService()
 
 
+def get_repair_authorization_service() -> RepairAuthorizationService:
+    return RepairAuthorizationService(
+        operations_database=get_database(),
+    )
+
+
 def get_repair_pricing_service() -> RepairPricingService:
     return RepairPricingService(
         operations_database=get_database(),
@@ -226,6 +241,38 @@ def utc_now() -> str:
 # ======================================================
 # Response Serialization
 # ======================================================
+def repair_authorization_response(
+    record: dict[str, Any],
+    repair_pricing_item_ids: list[str] | None = None,
+) -> RepairAuthorizationResponse:
+    return RepairAuthorizationResponse(
+        authorization_id=str(record["authorization_id"]),
+        repair_id=str(record["repair_id"]),
+        authorization_type=str(record["authorization_type"]),
+        authorization_status=str(record["authorization_status"]),
+        quoted_total_cents=int(record["quoted_total_cents"]),
+        currency=str(record["currency"]),
+        terms_document_id=str(record.get("terms_document_id", "")),
+        terms_version=str(record.get("terms_version", "")),
+        customer_name=str(record.get("customer_name", "")),
+        authorization_method=str(record.get("authorization_method", "")),
+        authorized_at=(
+            str(record["authorized_at"])
+            if record.get("authorized_at") is not None
+            else None
+        ),
+        declined_at=(
+            str(record["declined_at"])
+            if record.get("declined_at") is not None
+            else None
+        ),
+        created_at=str(record["created_at"]),
+        updated_at=str(record["updated_at"]),
+        created_by=str(record.get("created_by", "")),
+        repair_pricing_item_ids=(
+            repair_pricing_item_ids if repair_pricing_item_ids is not None else []
+        ),
+    )
 
 
 def customer_response(
@@ -2019,6 +2066,178 @@ def list_repair_pricing_items(
         ) from exc
 
     return [repair_pricing_item_response(item) for item in items]
+
+
+@app.post(
+    "/api/repairs/{repair_id}/authorizations",
+    response_model=RepairAuthorizationResponse,
+)
+def create_repair_authorization(
+    repair_id: str,
+    request: RepairAuthorizationCreateRequest,
+    repair_authorization_service: RepairAuthorizationService = Depends(
+        get_repair_authorization_service
+    ),
+) -> RepairAuthorizationResponse:
+    try:
+        authorization = repair_authorization_service.create(
+            repair_id,
+            request.repair_pricing_item_ids,
+            terms_document_id=request.terms_document_id,
+            terms_version=request.terms_version,
+        )
+
+    except RepairAuthorizationNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except RepairAuthorizationValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    items = get_database().list_repair_authorization_items(
+        str(authorization["authorization_id"])
+    )
+
+    return repair_authorization_response(
+        authorization,
+        [str(item["repair_pricing_item_id"]) for item in items],
+    )
+
+
+@app.get(
+    "/api/repairs/{repair_id}/authorizations",
+    response_model=list[RepairAuthorizationResponse],
+)
+def list_repair_authorizations(
+    repair_id: str,
+    repair_authorization_service: RepairAuthorizationService = Depends(
+        get_repair_authorization_service
+    ),
+) -> list[RepairAuthorizationResponse]:
+    try:
+        authorizations = repair_authorization_service.list_authorizations(repair_id)
+
+    except RepairAuthorizationNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except RepairAuthorizationValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    database = get_database()
+
+    responses: list[RepairAuthorizationResponse] = []
+
+    for authorization in authorizations:
+        authorization_id = str(authorization["authorization_id"])
+
+        items = database.list_repair_authorization_items(authorization_id)
+
+        responses.append(
+            repair_authorization_response(
+                authorization,
+                [str(item["repair_pricing_item_id"]) for item in items],
+            )
+        )
+
+    return responses
+
+
+@app.post(
+    "/api/authorizations/{authorization_id}/authorize",
+    response_model=RepairAuthorizationResponse,
+)
+def authorize_repair_authorization(
+    authorization_id: str,
+    request: RepairAuthorizationDecisionRequest,
+    repair_authorization_service: RepairAuthorizationService = Depends(
+        get_repair_authorization_service
+    ),
+) -> RepairAuthorizationResponse:
+    try:
+        authorization = repair_authorization_service.authorize(
+            authorization_id,
+            customer_name=request.customer_name,
+            authorization_method=request.authorization_method,
+        )
+
+    except RepairAuthorizationNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except RepairAuthorizationValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except RepairAuthorizationStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    items = get_database().list_repair_authorization_items(
+        str(authorization["authorization_id"])
+    )
+
+    return repair_authorization_response(
+        authorization,
+        [str(item["repair_pricing_item_id"]) for item in items],
+    )
+
+
+@app.post(
+    "/api/authorizations/{authorization_id}/decline",
+    response_model=RepairAuthorizationResponse,
+)
+def decline_repair_authorization(
+    authorization_id: str,
+    repair_authorization_service: RepairAuthorizationService = Depends(
+        get_repair_authorization_service
+    ),
+) -> RepairAuthorizationResponse:
+    try:
+        authorization = repair_authorization_service.decline(authorization_id)
+
+    except RepairAuthorizationNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except RepairAuthorizationValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except RepairAuthorizationStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    items = get_database().list_repair_authorization_items(
+        str(authorization["authorization_id"])
+    )
+
+    return repair_authorization_response(
+        authorization,
+        [str(item["repair_pricing_item_id"]) for item in items],
+    )
 
 
 @app.get(

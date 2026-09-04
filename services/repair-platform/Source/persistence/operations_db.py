@@ -270,61 +270,6 @@ class OperationsDatabase:
 
         return dict(row)
 
-    def update_repair_authorization_status(
-        self,
-        authorization_id: str,
-        *,
-        expected_status: str,
-        authorization_status: str,
-        customer_name: str,
-        authorization_method: str,
-        authorized_at: str | None,
-        declined_at: str | None,
-        updated_at: str,
-    ) -> dict[str, Any] | None:
-        with self.connect() as connection:
-            cursor = connection.execute(
-                """
-                UPDATE repair_authorizations
-                SET
-                    authorization_status = ?,
-                    customer_name = ?,
-                    authorization_method = ?,
-                    authorized_at = ?,
-                    declined_at = ?,
-                    updated_at = ?
-                WHERE authorization_id = ?
-                  AND authorization_status = ?
-                """,
-                (
-                    authorization_status,
-                    customer_name,
-                    authorization_method,
-                    authorized_at,
-                    declined_at,
-                    updated_at,
-                    authorization_id,
-                    expected_status,
-                ),
-            )
-
-            if cursor.rowcount == 0:
-                return None
-
-            row = connection.execute(
-                """
-                SELECT *
-                FROM repair_authorizations
-                WHERE authorization_id = ?
-                """,
-                (authorization_id,),
-            ).fetchone()
-
-        if row is None:
-            return None
-
-        return dict(row)
-
     def transition_repair_authorization_status(
         self,
         authorization_id: str,
