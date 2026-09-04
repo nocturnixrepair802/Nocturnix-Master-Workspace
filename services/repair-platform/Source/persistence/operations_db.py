@@ -186,6 +186,130 @@ class OperationsDatabase:
 
         return [dict(row) for row in rows]
 
+    def create_repair_authorization(
+        self,
+        record: dict[str, Any],
+    ) -> dict[str, Any]:
+        with self.connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO repair_authorizations (
+                    authorization_id,
+                    repair_id,
+                    authorization_type,
+                    authorization_status,
+                    quoted_total_cents,
+                    currency,
+                    terms_document_id,
+                    terms_version,
+                    customer_name,
+                    authorization_method,
+                    authorized_at,
+                    declined_at,
+                    created_at,
+                    updated_at,
+                    created_by
+                )
+                VALUES (
+                    :authorization_id,
+                    :repair_id,
+                    :authorization_type,
+                    :authorization_status,
+                    :quoted_total_cents,
+                    :currency,
+                    :terms_document_id,
+                    :terms_version,
+                    :customer_name,
+                    :authorization_method,
+                    :authorized_at,
+                    :declined_at,
+                    :created_at,
+                    :updated_at,
+                    :created_by
+                )
+                """,
+                record,
+            )
+
+        return record.copy()
+
+    def add_repair_authorization_item(
+        self,
+        authorization_id: str,
+        repair_pricing_item_id: str,
+    ) -> None:
+        with self.connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO repair_authorization_items (
+                    authorization_id,
+                    repair_pricing_item_id
+                )
+                VALUES (?, ?)
+                """,
+                (
+                    authorization_id,
+                    repair_pricing_item_id,
+                ),
+            )
+
+    def get_repair_authorization(
+        self,
+        authorization_id: str,
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM repair_authorizations
+                WHERE authorization_id = ?
+                """,
+                (authorization_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def list_repair_authorizations(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT *
+                FROM repair_authorizations
+                WHERE repair_id = ?
+                ORDER BY
+                    created_at,
+                    authorization_id
+                """,
+                (repair_id,),
+            ).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def list_repair_authorization_items(
+        self,
+        authorization_id: str,
+    ) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    authorization_id,
+                    repair_pricing_item_id
+                FROM repair_authorization_items
+                WHERE authorization_id = ?
+                ORDER BY repair_pricing_item_id
+                """,
+                (authorization_id,),
+            ).fetchall()
+
+        return [dict(row) for row in rows]
+
     def delete_repair_pricing_item(
         self,
         repair_pricing_item_id: str,
@@ -594,6 +718,79 @@ class OperationsDatabase:
                         repair_id,
                         service_type_id
                     );
+
+                CREATE TABLE IF NOT EXISTS repair_authorizations (
+                    authorization_id TEXT PRIMARY KEY,
+
+                    repair_id TEXT NOT NULL,
+
+                    authorization_type TEXT NOT NULL
+                        DEFAULT 'REPAIR_QUOTE',
+                    authorization_status TEXT NOT NULL
+                        DEFAULT 'PENDING',
+
+                    quoted_total_cents INTEGER NOT NULL,
+                    currency TEXT NOT NULL DEFAULT 'USD',
+
+                    terms_document_id TEXT NOT NULL DEFAULT '',
+                    terms_version TEXT NOT NULL DEFAULT '',
+
+                    customer_name TEXT NOT NULL DEFAULT '',
+                    authorization_method TEXT NOT NULL DEFAULT '',
+
+                    authorized_at TEXT,
+                    declined_at TEXT,
+
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    created_by TEXT NOT NULL DEFAULT 'Ryan Brown',
+
+                    FOREIGN KEY(repair_id)
+                        REFERENCES repair_tickets(ticket_id)
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE
+                );
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_authorizations_repair
+                    ON repair_authorizations(repair_id);
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_authorizations_status
+                    ON repair_authorizations(
+                        repair_id,
+                        authorization_status
+                    );
+
+                CREATE TABLE IF NOT EXISTS repair_authorization_items (
+                    authorization_id TEXT NOT NULL,
+                    repair_pricing_item_id TEXT NOT NULL,
+
+                    PRIMARY KEY (
+                        authorization_id,
+                        repair_pricing_item_id
+                    ),
+
+                    FOREIGN KEY(authorization_id)
+                        REFERENCES repair_authorizations(
+                            authorization_id
+                        )
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE,
+
+                    FOREIGN KEY(repair_pricing_item_id)
+                        REFERENCES repair_pricing_items(
+                            repair_pricing_item_id
+                        )
+                        ON UPDATE CASCADE
+                        ON DELETE RESTRICT
+                );
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_authorization_items_pricing_item
+                    ON repair_authorization_items(
+                        repair_pricing_item_id
+                    );
                 """)
 
             self._migrate_customer_devices(connection)
@@ -720,6 +917,7 @@ class OperationsDatabase:
             ("wpforms_submissions", "submission_id"),
             ("service_pricing_catalog", "pricing_record_id"),
             ("repair_pricing_items", "repair_pricing_item_id"),
+            ("repair_authorizations", "authorization_id"),
         }
 
         if (table, column) not in allowed_targets:
