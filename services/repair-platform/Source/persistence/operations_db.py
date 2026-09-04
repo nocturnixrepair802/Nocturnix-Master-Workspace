@@ -347,6 +347,12 @@ class OperationsDatabase:
                     supplier_sku TEXT NOT NULL,
                     part_name TEXT NOT NULL DEFAULT '',
 
+                    quality_class TEXT,
+                    quality_rank INTEGER,
+                    customer_facing_tier TEXT,
+                    commercial_selection_status TEXT,
+                    recommended_action TEXT,
+
                     part_cost_cents INTEGER NOT NULL,
 
                     supplier_in_stock INTEGER,
@@ -428,8 +434,8 @@ class OperationsDatabase:
                 """)
 
             self._migrate_customer_devices(connection)
-
             self._migrate_repair_tickets(connection)
+            self._migrate_service_pricing_catalog(connection)
 
     @staticmethod
     def _migrate_customer_devices(
@@ -505,6 +511,34 @@ class OperationsDatabase:
                 idx_repair_tickets_due_date
                 ON repair_tickets(due_date)
             """)
+
+    @staticmethod
+    def _migrate_service_pricing_catalog(
+        connection: sqlite3.Connection,
+    ) -> None:
+        columns = {
+            str(row["name"])
+            for row in connection.execute("""
+                PRAGMA table_info(service_pricing_catalog)
+                """).fetchall()
+        }
+
+        additions = {
+            "quality_class": "TEXT",
+            "quality_rank": "INTEGER",
+            "customer_facing_tier": "TEXT",
+            "commercial_selection_status": "TEXT",
+            "recommended_action": "TEXT",
+        }
+
+        for column_name, column_type in additions.items():
+            if column_name in columns:
+                continue
+
+            connection.execute(f"""
+                ALTER TABLE service_pricing_catalog
+                ADD COLUMN {column_name} {column_type}
+                """)
 
     def next_id(
         self,
@@ -1292,6 +1326,14 @@ class OperationsDatabase:
         self,
         record: dict[str, Any],
     ) -> dict[str, Any]:
+        stored_record = record.copy()
+
+        stored_record.setdefault("quality_class", None)
+        stored_record.setdefault("quality_rank", None)
+        stored_record.setdefault("customer_facing_tier", None)
+        stored_record.setdefault("commercial_selection_status", None)
+        stored_record.setdefault("recommended_action", None)
+
         with self.connect() as connection:
             connection.execute(
                 """
@@ -1307,6 +1349,11 @@ class OperationsDatabase:
                     supplier_product_id,
                     supplier_sku,
                     part_name,
+                    quality_class,
+                    quality_rank,
+                    customer_facing_tier,
+                    commercial_selection_status,
+                    recommended_action,
                     part_cost_cents,
                     supplier_in_stock,
                     supplier_stock_qty,
@@ -1351,6 +1398,11 @@ class OperationsDatabase:
                     :supplier_product_id,
                     :supplier_sku,
                     :part_name,
+                    :quality_class,
+                    :quality_rank,
+                    :customer_facing_tier,
+                    :commercial_selection_status,
+                    :recommended_action,
                     :part_cost_cents,
                     :supplier_in_stock,
                     :supplier_stock_qty,
@@ -1384,10 +1436,10 @@ class OperationsDatabase:
                     :updated_at
                 )
                 """,
-                record,
+                stored_record,
             )
 
-        return record.copy()
+        return stored_record
 
     def get_service_pricing_record(
         self,
@@ -1503,6 +1555,11 @@ class OperationsDatabase:
             "variant_name",
             "supplier_sku",
             "part_name",
+            "quality_class",
+            "quality_rank",
+            "customer_facing_tier",
+            "commercial_selection_status",
+            "recommended_action",
             "part_cost_cents",
             "supplier_in_stock",
             "supplier_stock_qty",

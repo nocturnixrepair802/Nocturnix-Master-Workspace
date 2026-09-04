@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -84,7 +85,7 @@ def screen_rule() -> ServicePricingRule:
 def pricing_catalog_client(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-) -> tuple[TestClient, OperationsDatabase]:
+) -> Iterator[tuple[TestClient, OperationsDatabase]]:
     database = OperationsDatabase(tmp_path / "operations.sqlite3")
 
     fake_mobilesentrix = FakeMobileSentrixClient()
@@ -178,6 +179,11 @@ def test_save_service_pricing_catalog(
     assert payload["supplier"] == "Mobile Sentrix"
     assert payload["supplier_product_id"] == "249690"
     assert payload["supplier_sku"] == "107082080528"
+    assert payload["quality_class"] is None
+    assert payload["quality_rank"] is None
+    assert payload["customer_facing_tier"] is None
+    assert payload["commercial_selection_status"] is None
+    assert payload["recommended_action"] is None
 
     assert payload["part_cost"] == 115.40
     assert payload["supplier_in_stock"] is True
@@ -231,9 +237,22 @@ def test_get_service_pricing_catalog_record(
         OperationsDatabase,
     ],
 ) -> None:
-    client, _ = pricing_catalog_client
+    client, database = pricing_catalog_client
 
     save_pricing_record(client)
+
+    updated = database.update_service_pricing_record(
+        "PRC000001",
+        {
+            "quality_class": "REFURBISHED_OEM",
+            "quality_rank": 3,
+            "customer_facing_tier": "PREFERRED",
+            "commercial_selection_status": "PREFERRED",
+            "recommended_action": "USE",
+        },
+    )
+
+    assert updated is not None
 
     response = client.get("/api/v1/pricing/catalog/PRC000001")
 
@@ -244,6 +263,12 @@ def test_get_service_pricing_catalog_record(
     assert payload["pricing_record_id"] == "PRC000001"
     assert payload["catalog_device_id"] == "DEV000093"
     assert payload["service_type_id"] == "STY000001"
+
+    assert payload["quality_class"] == "REFURBISHED_OEM"
+    assert payload["quality_rank"] == 3
+    assert payload["customer_facing_tier"] == "PREFERRED"
+    assert payload["commercial_selection_status"] == "PREFERRED"
+    assert payload["recommended_action"] == "USE"
 
 
 def test_get_unknown_service_pricing_catalog_record(
@@ -423,6 +448,97 @@ def test_approval_requires_approver(
     assert response.status_code == 422
 
 
+def test_classify_service_pricing_catalog_record(
+    pricing_catalog_client: tuple[
+        TestClient,
+        OperationsDatabase,
+    ],
+) -> None:
+    client, database = pricing_catalog_client
+
+    save_pricing_record(client)
+
+    response = client.post(
+        "/api/v1/pricing/catalog/PRC000001/classify",
+        json={
+            "quality_class": "refurbished_oem",
+            "quality_rank": 3,
+            "customer_facing_tier": "preferred",
+            "commercial_selection_status": "preferred",
+            "recommended_action": "use",
+        },
+    )
+
+    assert response.status_code == 200
+
+    payload = response.json()
+
+    assert payload["pricing_record_id"] == "PRC000001"
+    assert payload["approval_status"] == "DRAFT"
+
+    assert payload["quality_class"] == "REFURBISHED_OEM"
+    assert payload["quality_rank"] == 3
+    assert payload["customer_facing_tier"] == "PREFERRED"
+    assert payload["commercial_selection_status"] == "PREFERRED"
+    assert payload["recommended_action"] == "USE"
+
+    stored = database.get_service_pricing_record("PRC000001")
+
+    assert stored is not None
+    assert stored["quality_class"] == "REFURBISHED_OEM"
+    assert stored["quality_rank"] == 3
+    assert stored["customer_facing_tier"] == "PREFERRED"
+    assert stored["commercial_selection_status"] == "PREFERRED"
+    assert stored["recommended_action"] == "USE"
+
+
+def test_classify_unknown_service_pricing_record(
+    pricing_catalog_client: tuple[
+        TestClient,
+        OperationsDatabase,
+    ],
+) -> None:
+    client, _ = pricing_catalog_client
+
+    response = client.post(
+        "/api/v1/pricing/catalog/PRC999999/classify",
+        json={
+            "quality_class": "REFURBISHED_OEM",
+            "quality_rank": 3,
+            "customer_facing_tier": "PREFERRED",
+            "commercial_selection_status": "PREFERRED",
+            "recommended_action": "USE",
+        },
+    )
+
+    assert response.status_code == 404
+
+
+def test_classify_service_pricing_catalog_rejects_invalid_rank(
+    pricing_catalog_client: tuple[
+        TestClient,
+        OperationsDatabase,
+    ],
+) -> None:
+    client, _ = pricing_catalog_client
+
+    save_pricing_record(client)
+
+    response = client.post(
+        "/api/v1/pricing/catalog/PRC000001/classify",
+        json={
+            "quality_class": "REFURBISHED_OEM",
+            "quality_rank": 0,
+            "customer_facing_tier": "PREFERRED",
+            "commercial_selection_status": "PREFERRED",
+            "recommended_action": "USE",
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == ("quality_rank must be greater than zero.")
+
+
 def test_catalog_save_fails_closed_without_rule(
     pricing_catalog_client: tuple[
         TestClient,
@@ -498,3 +614,62 @@ def test_approved_catalog_record_cannot_be_refreshed(
     assert stored is not None
     assert stored["approval_status"] == "APPROVED"
     assert stored["approved_price_cents"] == 39999
+
+
+def test_classify_approved_service_pricing_catalog_record_is_rejected(
+    pricing_catalog_client: tuple[
+        TestClient,
+        OperationsDatabase,
+    ],
+) -> None:
+    client, database = pricing_catalog_client
+
+    save_pricing_record(client)
+
+    classification = client.post(
+        "/api/v1/pricing/catalog/PRC000001/classify",
+        json={
+            "quality_class": "REFURBISHED_OEM",
+            "quality_rank": 3,
+            "customer_facing_tier": "PREFERRED",
+            "commercial_selection_status": "PREFERRED",
+            "recommended_action": "USE",
+        },
+    )
+
+    assert classification.status_code == 200
+
+    approval = client.post(
+        "/api/v1/pricing/catalog/PRC000001/approve",
+        json={
+            "approved_price": 269.99,
+            "approved_by": "Ryan Brown",
+        },
+    )
+
+    assert approval.status_code == 200
+
+    response = client.post(
+        "/api/v1/pricing/catalog/PRC000001/classify",
+        json={
+            "quality_class": "AQ7",
+            "quality_rank": 7,
+            "customer_facing_tier": "VALUE",
+            "commercial_selection_status": "VIABLE_ALTERNATE",
+            "recommended_action": "OFFER_AS_ALTERNATE",
+        },
+    )
+
+    assert response.status_code == 409
+
+    stored = database.get_service_pricing_record("PRC000001")
+
+    assert stored is not None
+    assert stored["approval_status"] == "APPROVED"
+    assert stored["approved_price_cents"] == 26999
+
+    assert stored["quality_class"] == "REFURBISHED_OEM"
+    assert stored["quality_rank"] == 3
+    assert stored["customer_facing_tier"] == "PREFERRED"
+    assert stored["commercial_selection_status"] == "PREFERRED"
+    assert stored["recommended_action"] == "USE"

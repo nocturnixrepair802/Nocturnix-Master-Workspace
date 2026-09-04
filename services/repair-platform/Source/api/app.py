@@ -61,6 +61,7 @@ from api.schemas import (
     RepairUpdateRequest,
     RepairWorkspaceResponse,
     ServicePricingCatalogApprovalRequest,
+    ServicePricingCatalogClassificationRequest,
     ServicePricingCatalogResponse,
     ServicePricingCatalogSaveRequest,
     ServicePricingPreviewRequest,
@@ -104,6 +105,7 @@ from services.procurement_service import (
 )
 from services.service_pricing_catalog_service import (
     ServicePricingCatalogApprovalError,
+    ServicePricingCatalogClassificationError,
     ServicePricingCatalogNotFoundError,
     ServicePricingCatalogService,
     ServicePricingCatalogValidationError,
@@ -3235,6 +3237,11 @@ def service_pricing_catalog_response(
         supplier_product_id=record.supplier_product_id,
         supplier_sku=record.supplier_sku,
         part_name=record.part_name,
+        quality_class=record.quality_class,
+        quality_rank=record.quality_rank,
+        customer_facing_tier=record.customer_facing_tier,
+        commercial_selection_status=record.commercial_selection_status,
+        recommended_action=record.recommended_action,
         part_cost=float(record.part_cost),
         supplier_in_stock=record.supplier_in_stock,
         supplier_stock_qty=record.supplier_stock_qty,
@@ -3600,6 +3607,48 @@ def get_service_pricing_catalog_record(
             status_code=404,
             detail="Service pricing record not found.",
         )
+
+    return service_pricing_catalog_response(record)
+
+
+@app.post(
+    "/api/v1/pricing/catalog/{pricing_record_id}/classify",
+    response_model=ServicePricingCatalogResponse,
+)
+def classify_service_pricing_catalog_record(
+    pricing_record_id: str,
+    request: ServicePricingCatalogClassificationRequest,
+    catalog_service: ServicePricingCatalogService = Depends(
+        get_service_pricing_catalog_service
+    ),
+) -> ServicePricingCatalogResponse:
+    try:
+        record = catalog_service.classify(
+            pricing_record_id,
+            quality_class=request.quality_class,
+            quality_rank=request.quality_rank,
+            customer_facing_tier=request.customer_facing_tier,
+            commercial_selection_status=request.commercial_selection_status,
+            recommended_action=request.recommended_action,
+        )
+
+    except ServicePricingCatalogNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except ServicePricingCatalogValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except ServicePricingCatalogClassificationError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
 
     return service_pricing_catalog_response(record)
 

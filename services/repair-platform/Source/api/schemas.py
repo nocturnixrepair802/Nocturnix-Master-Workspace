@@ -613,6 +613,14 @@ class ServicePricingCatalogSaveRequest(ServicePricingPreviewRequest):
     """
 
 
+class ServicePricingCatalogClassificationRequest(BaseModel):
+    quality_class: str
+    quality_rank: int
+    customer_facing_tier: str
+    commercial_selection_status: str
+    recommended_action: str
+
+
 class ServicePricingCatalogApprovalRequest(BaseModel):
     approved_price: float
     approved_by: str
@@ -634,6 +642,12 @@ class ServicePricingCatalogResponse(BaseModel):
     supplier_product_id: str
     supplier_sku: str
     part_name: str
+
+    quality_class: str | None
+    quality_rank: int | None
+    customer_facing_tier: str | None
+    commercial_selection_status: str | None
+    recommended_action: str | None
 
     part_cost: float
 
