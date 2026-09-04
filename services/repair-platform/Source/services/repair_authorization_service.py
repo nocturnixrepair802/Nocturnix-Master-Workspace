@@ -125,3 +125,151 @@ class RepairAuthorizationService:
             record,
             [str(item["repair_pricing_item_id"]) for item in pricing_items],
         )
+
+    def authorize(
+        self,
+        authorization_id: str,
+        *,
+        customer_name: str,
+        authorization_method: str,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        normalized_authorization_id = authorization_id.strip()
+        normalized_customer_name = customer_name.strip()
+        normalized_authorization_method = authorization_method.strip()
+
+        if not normalized_authorization_id:
+            raise RepairAuthorizationValidationError("authorization_id is required.")
+
+        if not normalized_customer_name:
+            raise RepairAuthorizationValidationError("customer_name is required.")
+
+        if not normalized_authorization_method:
+            raise RepairAuthorizationValidationError(
+                "authorization_method is required."
+            )
+
+        existing = self.operations_database.get_repair_authorization(
+            normalized_authorization_id
+        )
+
+        if existing is None:
+            raise RepairAuthorizationNotFoundError(
+                f"Authorization {normalized_authorization_id!r} was not found."
+            )
+
+        if existing["authorization_status"] != self.STATUS_PENDING:
+            raise RepairAuthorizationStateError(
+                f"Authorization {normalized_authorization_id!r} is not PENDING."
+            )
+
+        timestamp = now if now is not None else datetime.now(UTC)
+
+        if timestamp.tzinfo is None:
+            raise RepairAuthorizationValidationError("now must be timezone-aware.")
+
+        timestamp_text = timestamp.astimezone(UTC).isoformat().replace("+00:00", "Z")
+
+        event_id = self.operations_database.next_id(
+            table="repair_events",
+            column="event_id",
+            prefix="EVT",
+            width=6,
+        )
+
+        updated = self.operations_database.transition_repair_authorization_status(
+            normalized_authorization_id,
+            expected_status=self.STATUS_PENDING,
+            authorization_status=self.STATUS_AUTHORIZED,
+            customer_name=normalized_customer_name,
+            authorization_method=normalized_authorization_method,
+            authorized_at=timestamp_text,
+            declined_at=None,
+            updated_at=timestamp_text,
+            event={
+                "event_id": event_id,
+                "repair_id": str(existing["repair_id"]),
+                "event_type": "authorization_authorized",
+                "old_value": self.STATUS_PENDING,
+                "new_value": self.STATUS_AUTHORIZED,
+                "notes": normalized_authorization_id,
+                "created_at": timestamp_text,
+                "created_by": normalized_customer_name,
+            },
+        )
+
+        if updated is None:
+            raise RepairAuthorizationStateError(
+                f"Authorization {normalized_authorization_id!r} "
+                "could not be authorized from PENDING."
+            )
+
+        return updated
+
+    def decline(
+        self,
+        authorization_id: str,
+        *,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        normalized_authorization_id = authorization_id.strip()
+
+        if not normalized_authorization_id:
+            raise RepairAuthorizationValidationError("authorization_id is required.")
+
+        existing = self.operations_database.get_repair_authorization(
+            normalized_authorization_id
+        )
+
+        if existing is None:
+            raise RepairAuthorizationNotFoundError(
+                f"Authorization {normalized_authorization_id!r} was not found."
+            )
+
+        if existing["authorization_status"] != self.STATUS_PENDING:
+            raise RepairAuthorizationStateError(
+                f"Authorization {normalized_authorization_id!r} is not PENDING."
+            )
+
+        timestamp = now if now is not None else datetime.now(UTC)
+
+        if timestamp.tzinfo is None:
+            raise RepairAuthorizationValidationError("now must be timezone-aware.")
+
+        timestamp_text = timestamp.astimezone(UTC).isoformat().replace("+00:00", "Z")
+
+        event_id = self.operations_database.next_id(
+            table="repair_events",
+            column="event_id",
+            prefix="EVT",
+            width=6,
+        )
+
+        updated = self.operations_database.transition_repair_authorization_status(
+            normalized_authorization_id,
+            expected_status=self.STATUS_PENDING,
+            authorization_status=self.STATUS_DECLINED,
+            customer_name="",
+            authorization_method="",
+            authorized_at=None,
+            declined_at=timestamp_text,
+            updated_at=timestamp_text,
+            event={
+                "event_id": event_id,
+                "repair_id": str(existing["repair_id"]),
+                "event_type": "authorization_declined",
+                "old_value": self.STATUS_PENDING,
+                "new_value": self.STATUS_DECLINED,
+                "notes": normalized_authorization_id,
+                "created_at": timestamp_text,
+                "created_by": "Ryan Brown",
+            },
+        )
+
+        if updated is None:
+            raise RepairAuthorizationStateError(
+                f"Authorization {normalized_authorization_id!r} "
+                "could not be declined from PENDING."
+            )
+
+        return updated
