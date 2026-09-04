@@ -332,3 +332,57 @@ def test_authorize_unknown_authorization(
     )
 
     assert response.status_code == 404
+
+
+def test_repair_workspace_includes_authorizations(
+    repair_authorization_client: tuple[
+        TestClient,
+        OperationsDatabase,
+    ],
+) -> None:
+    client, _ = repair_authorization_client
+
+    created = client.post(
+        "/api/repairs/RPR000001/authorizations",
+        json={
+            "repair_pricing_item_ids": [
+                "RPI000001",
+            ],
+            "terms_document_id": "NMR-FRM-003",
+            "terms_version": "1.0",
+        },
+    )
+
+    assert created.status_code == 200
+
+    authorized = client.post(
+        "/api/authorizations/AUT000001/authorize",
+        json={
+            "customer_name": "Test Customer",
+            "authorization_method": "IN_PERSON",
+        },
+    )
+
+    assert authorized.status_code == 200
+
+    response = client.get("/api/repairs/RPR000001/workspace")
+
+    assert response.status_code == 200
+
+    payload = response.json()
+
+    assert len(payload["authorizations"]) == 1
+
+    authorization = payload["authorizations"][0]
+
+    assert authorization["authorization_id"] == "AUT000001"
+    assert authorization["repair_id"] == "RPR000001"
+    assert authorization["authorization_status"] == "AUTHORIZED"
+    assert authorization["quoted_total_cents"] == 26999
+    assert authorization["customer_name"] == "Test Customer"
+    assert authorization["authorization_method"] == "IN_PERSON"
+    assert authorization["authorized_at"] is not None
+    assert authorization["declined_at"] is None
+    assert authorization["repair_pricing_item_ids"] == [
+        "RPI000001",
+    ]

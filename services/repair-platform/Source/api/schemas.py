@@ -81,6 +81,32 @@ class RepairResponse(BaseModel):
     due_date: str = ""
 
 
+class RepairAuthorizationResponse(BaseModel):
+    authorization_id: str
+    repair_id: str
+
+    authorization_type: str
+    authorization_status: str
+
+    quoted_total_cents: int
+    currency: str
+
+    terms_document_id: str
+    terms_version: str
+
+    customer_name: str
+    authorization_method: str
+
+    authorized_at: str | None
+    declined_at: str | None
+
+    created_at: str
+    updated_at: str
+    created_by: str
+
+    repair_pricing_item_ids: list[str] = Field(default_factory=list)
+
+
 class RepairWorkspaceResponse(BaseModel):
     id: str
     customer_id: str
@@ -122,6 +148,7 @@ class RepairWorkspaceResponse(BaseModel):
     carrier: str = ""
     pricing_items: list[RepairPricingItemResponse] = Field(default_factory=list)
     quoted_total_cents: int = 0
+    authorizations: list[RepairAuthorizationResponse] = Field(default_factory=list)
 
 
 class RepairQueueItemResponse(BaseModel):
@@ -734,29 +761,3 @@ class RepairAuthorizationCreateRequest(BaseModel):
 class RepairAuthorizationDecisionRequest(BaseModel):
     customer_name: str
     authorization_method: str
-
-
-class RepairAuthorizationResponse(BaseModel):
-    authorization_id: str
-    repair_id: str
-
-    authorization_type: str
-    authorization_status: str
-
-    quoted_total_cents: int
-    currency: str
-
-    terms_document_id: str
-    terms_version: str
-
-    customer_name: str
-    authorization_method: str
-
-    authorized_at: str | None
-    declined_at: str | None
-
-    created_at: str
-    updated_at: str
-    created_by: str
-
-    repair_pricing_item_ids: list[str] = Field(default_factory=list)

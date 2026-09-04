@@ -60,6 +60,18 @@ class FakeOperationsDatabase:
     ) -> list[dict[str, object]]:
         return []
 
+    def list_repair_authorizations(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, object]]:
+        return []
+
+    def list_repair_authorization_items(
+        self,
+        authorization_id: str,
+    ) -> list[dict[str, object]]:
+        return []
+
     def get_customer_device(
         self,
         device_id: str,
@@ -106,6 +118,7 @@ def test_repair_workspace_returns_joined_data(
 
     assert payload["pricing_items"] == []
     assert payload["quoted_total_cents"] == 0
+    assert payload["authorizations"] == []
 
     assert payload["id"] == "RPR000100"
     assert payload["customer_id"] == "CUS000100"

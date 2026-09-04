@@ -484,9 +484,8 @@ def repair_workspace_response(
     customer: dict[str, Any],
     device: dict[str, Any],
     pricing_items: list[dict[str, Any]] | None = None,
+    authorizations: list[RepairAuthorizationResponse] | None = None,
 ) -> RepairWorkspaceResponse:
-    estimated_cost = repair.get("estimated_cost")
-    final_cost = repair.get("final_cost")
     resolved_pricing_items = pricing_items or []
 
     pricing_item_responses = [
@@ -501,212 +500,48 @@ def repair_workspace_response(
         id=str(repair["ticket_id"]),
         customer_id=str(repair["customer_id"]),
         device_id=str(repair["device_id"]),
-        repair_status=str(
-            repair.get(
-                "repair_status",
-                "",
-            )
-            or ""
+        repair_status=str(repair.get("repair_status", "")),
+        problem_description=str(repair.get("problem_description", "")),
+        technician_notes=str(repair.get("notes", "")),
+        estimated_cost=(
+            float(repair["estimated_cost"])
+            if repair.get("estimated_cost") is not None
+            else None
         ),
-        problem_description=str(
-            repair.get(
-                "problem_description",
-                "",
-            )
-            or ""
+        final_cost=(
+            float(repair["final_cost"])
+            if repair.get("final_cost") is not None
+            else None
         ),
-        technician_notes=str(
-            repair.get(
-                "notes",
-                "",
-            )
-            or ""
-        ),
-        estimated_cost=(None if estimated_cost is None else float(estimated_cost)),
-        final_cost=(None if final_cost is None else float(final_cost)),
-        intake_date=str(
-            repair.get(
-                "intake_date",
-                "",
-            )
-            or ""
-        ),
-        technician=str(
-            repair.get(
-                "technician",
-                DEFAULT_TECHNICIAN,
-            )
-            or DEFAULT_TECHNICIAN
-        ),
-        priority=str(
-            repair.get(
-                "priority",
-                "Normal",
-            )
-            or "Normal"
-        ),
-        due_date=str(
-            repair.get(
-                "due_date",
-                "",
-            )
-            or ""
-        ),
-        diagnosis=str(
-            repair.get(
-                "diagnosis",
-                "",
-            )
-            or ""
-        ),
-        date_completed=str(
-            repair.get(
-                "date_completed",
-                "",
-            )
-            or ""
-        ),
-        date_picked_up=str(
-            repair.get(
-                "date_picked_up",
-                "",
-            )
-            or ""
-        ),
-        warranty=bool(
-            repair.get(
-                "warranty",
-                False,
-            )
-        ),
-        notes=str(
-            repair.get(
-                "notes",
-                "",
-            )
-            or ""
-        ),
-        last_modified=str(
-            repair.get(
-                "last_modified",
-                "",
-            )
-            or ""
-        ),
-        customer_type=str(
-            customer.get(
-                "customer_type",
-                "",
-            )
-            or ""
-        ),
-        first_name=str(
-            customer.get(
-                "first_name",
-                "",
-            )
-            or ""
-        ),
-        last_name=str(
-            customer.get(
-                "last_name",
-                "",
-            )
-            or ""
-        ),
-        business_name=str(
-            customer.get(
-                "business_name",
-                "",
-            )
-            or ""
-        ),
-        email=str(
-            customer.get(
-                "email",
-                "",
-            )
-            or ""
-        ),
-        mobile_phone=str(
-            customer.get(
-                "mobile_phone",
-                "",
-            )
-            or ""
-        ),
-        preferred_contact=str(
-            customer.get(
-                "preferred_contact",
-                "",
-            )
-            or ""
-        ),
-        catalog_device_id=str(
-            device.get(
-                "catalog_device_id",
-                "",
-            )
-            or ""
-        ),
-        manufacturer=str(
-            device.get(
-                "manufacturer",
-                "",
-            )
-            or ""
-        ),
-        device_family=str(
-            device.get(
-                "device_family",
-                "",
-            )
-            or ""
-        ),
-        device_model=str(
-            device.get(
-                "device_model",
-                "",
-            )
-            or ""
-        ),
-        serial_number=str(
-            device.get(
-                "serial_number",
-                "",
-            )
-            or ""
-        ),
-        imei_service_tag=str(
-            device.get(
-                "imei_service_tag",
-                "",
-            )
-            or ""
-        ),
-        color=str(
-            device.get(
-                "color",
-                "",
-            )
-            or ""
-        ),
-        storage=str(
-            device.get(
-                "storage",
-                "",
-            )
-            or ""
-        ),
-        carrier=str(
-            device.get(
-                "carrier",
-                "",
-            )
-            or ""
-        ),
+        intake_date=str(repair.get("intake_date", "")),
+        technician=str(repair.get("technician", "")),
+        priority=str(repair.get("priority", "Normal")),
+        due_date=str(repair.get("due_date", "")),
+        diagnosis=str(repair.get("diagnosis", "")),
+        date_completed=str(repair.get("date_completed", "")),
+        date_picked_up=str(repair.get("date_picked_up", "")),
+        warranty=bool(repair.get("warranty", False)),
+        notes=str(repair.get("notes", "")),
+        last_modified=str(repair.get("last_modified", "")),
+        customer_type=str(customer.get("customer_type", "")),
+        first_name=str(customer.get("first_name", "")),
+        last_name=str(customer.get("last_name", "")),
+        business_name=str(customer.get("business_name", "")),
+        email=str(customer.get("email", "")),
+        mobile_phone=str(customer.get("mobile_phone", "")),
+        preferred_contact=str(customer.get("preferred_contact", "")),
+        catalog_device_id=str(device.get("catalog_device_id", "")),
+        manufacturer=str(device.get("manufacturer", "")),
+        device_family=str(device.get("device_family", "")),
+        device_model=str(device.get("device_model", "")),
+        serial_number=str(device.get("serial_number", "")),
+        imei_service_tag=str(device.get("imei_service_tag", "")),
+        color=str(device.get("color", "")),
+        storage=str(device.get("storage", "")),
+        carrier=str(device.get("carrier", "")),
         pricing_items=pricing_item_responses,
         quoted_total_cents=quoted_total_cents,
+        authorizations=(authorizations if authorizations is not None else []),
     )
 
 
@@ -2276,11 +2111,29 @@ def get_repair_workspace(
             detail=("Repair device not found."),
         )
     pricing_items = database.list_repair_pricing_items(repair_id)
+
+    authorization_records = database.list_repair_authorizations(repair_id)
+
+    authorizations: list[RepairAuthorizationResponse] = []
+
+    for authorization in authorization_records:
+        authorization_id = str(authorization["authorization_id"])
+
+        authorization_items = database.list_repair_authorization_items(authorization_id)
+
+        authorizations.append(
+            repair_authorization_response(
+                authorization,
+                [str(item["repair_pricing_item_id"]) for item in authorization_items],
+            )
+        )
+
     return repair_workspace_response(
         repair,
         customer,
         device,
         pricing_items,
+        authorizations,
     )
 
 
