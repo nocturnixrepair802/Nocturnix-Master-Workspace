@@ -95,6 +95,316 @@ class OperationsDatabase:
 
         return record.copy()
 
+    def create_repair_pricing_item(
+        self,
+        record: dict[str, Any],
+    ) -> dict[str, Any]:
+        with self.connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO repair_pricing_items (
+                    repair_pricing_item_id,
+                    repair_id,
+                    pricing_record_id,
+                    service_type_id,
+                    variant_key,
+                    service_type,
+                    quality_class,
+                    customer_facing_tier,
+                    supplier,
+                    supplier_product_id,
+                    supplier_sku,
+                    part_name,
+                    quoted_unit_price_cents,
+                    quantity,
+                    line_total_cents,
+                    pricing_snapshot_at,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    :repair_pricing_item_id,
+                    :repair_id,
+                    :pricing_record_id,
+                    :service_type_id,
+                    :variant_key,
+                    :service_type,
+                    :quality_class,
+                    :customer_facing_tier,
+                    :supplier,
+                    :supplier_product_id,
+                    :supplier_sku,
+                    :part_name,
+                    :quoted_unit_price_cents,
+                    :quantity,
+                    :line_total_cents,
+                    :pricing_snapshot_at,
+                    :created_at,
+                    :updated_at
+                )
+                """,
+                record,
+            )
+
+        return record.copy()
+
+    def get_repair_pricing_item(
+        self,
+        repair_pricing_item_id: str,
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM repair_pricing_items
+                WHERE repair_pricing_item_id = ?
+                """,
+                (repair_pricing_item_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def list_repair_pricing_items(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT *
+                FROM repair_pricing_items
+                WHERE repair_id = ?
+                ORDER BY
+                    created_at,
+                    repair_pricing_item_id
+                """,
+                (repair_id,),
+            ).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def create_repair_authorization(
+        self,
+        record: dict[str, Any],
+        repair_pricing_item_ids: list[str],
+    ) -> dict[str, Any]:
+        with self.connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO repair_authorizations (
+                    authorization_id,
+                    repair_id,
+                    authorization_type,
+                    authorization_status,
+                    quoted_total_cents,
+                    currency,
+                    terms_document_id,
+                    terms_version,
+                    customer_name,
+                    authorization_method,
+                    authorized_at,
+                    declined_at,
+                    created_at,
+                    updated_at,
+                    created_by
+                )
+                VALUES (
+                    :authorization_id,
+                    :repair_id,
+                    :authorization_type,
+                    :authorization_status,
+                    :quoted_total_cents,
+                    :currency,
+                    :terms_document_id,
+                    :terms_version,
+                    :customer_name,
+                    :authorization_method,
+                    :authorized_at,
+                    :declined_at,
+                    :created_at,
+                    :updated_at,
+                    :created_by
+                )
+                """,
+                record,
+            )
+
+            connection.executemany(
+                """
+                INSERT INTO repair_authorization_items (
+                    authorization_id,
+                    repair_pricing_item_id
+                )
+                VALUES (?, ?)
+                """,
+                [
+                    (
+                        record["authorization_id"],
+                        repair_pricing_item_id,
+                    )
+                    for repair_pricing_item_id in repair_pricing_item_ids
+                ],
+            )
+
+        return record.copy()
+
+    def get_repair_authorization(
+        self,
+        authorization_id: str,
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM repair_authorizations
+                WHERE authorization_id = ?
+                """,
+                (authorization_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def transition_repair_authorization_status(
+        self,
+        authorization_id: str,
+        *,
+        expected_status: str,
+        authorization_status: str,
+        customer_name: str,
+        authorization_method: str,
+        authorized_at: str | None,
+        declined_at: str | None,
+        updated_at: str,
+        event: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            cursor = connection.execute(
+                """
+                UPDATE repair_authorizations
+                SET
+                    authorization_status = ?,
+                    customer_name = ?,
+                    authorization_method = ?,
+                    authorized_at = ?,
+                    declined_at = ?,
+                    updated_at = ?
+                WHERE authorization_id = ?
+                  AND authorization_status = ?
+                """,
+                (
+                    authorization_status,
+                    customer_name,
+                    authorization_method,
+                    authorized_at,
+                    declined_at,
+                    updated_at,
+                    authorization_id,
+                    expected_status,
+                ),
+            )
+
+            if cursor.rowcount == 0:
+                return None
+
+            connection.execute(
+                """
+                INSERT INTO repair_events (
+                    event_id,
+                    repair_id,
+                    event_type,
+                    old_value,
+                    new_value,
+                    notes,
+                    created_at,
+                    created_by
+                )
+                VALUES (
+                    :event_id,
+                    :repair_id,
+                    :event_type,
+                    :old_value,
+                    :new_value,
+                    :notes,
+                    :created_at,
+                    :created_by
+                )
+                """,
+                event,
+            )
+
+            row = connection.execute(
+                """
+                SELECT *
+                FROM repair_authorizations
+                WHERE authorization_id = ?
+                """,
+                (authorization_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return dict(row)
+
+    def list_repair_authorizations(
+        self,
+        repair_id: str,
+    ) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT *
+                FROM repair_authorizations
+                WHERE repair_id = ?
+                ORDER BY
+                    created_at,
+                    authorization_id
+                """,
+                (repair_id,),
+            ).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def list_repair_authorization_items(
+        self,
+        authorization_id: str,
+    ) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    authorization_id,
+                    repair_pricing_item_id
+                FROM repair_authorization_items
+                WHERE authorization_id = ?
+                ORDER BY repair_pricing_item_id
+                """,
+                (authorization_id,),
+            ).fetchall()
+
+        return [dict(row) for row in rows]
+
+    def delete_repair_pricing_item(
+        self,
+        repair_pricing_item_id: str,
+    ) -> bool:
+        with self.connect() as connection:
+            cursor = connection.execute(
+                """
+                DELETE FROM repair_pricing_items
+                WHERE repair_pricing_item_id = ?
+                """,
+                (repair_pricing_item_id,),
+            )
+
+        return cursor.rowcount > 0
+
     def initialize(
         self,
     ) -> None:
@@ -347,6 +657,12 @@ class OperationsDatabase:
                     supplier_sku TEXT NOT NULL,
                     part_name TEXT NOT NULL DEFAULT '',
 
+                    quality_class TEXT,
+                    quality_rank INTEGER,
+                    customer_facing_tier TEXT,
+                    commercial_selection_status TEXT,
+                    recommended_action TEXT,
+
                     part_cost_cents INTEGER NOT NULL,
 
                     supplier_in_stock INTEGER,
@@ -425,11 +741,141 @@ class OperationsDatabase:
                     ON service_pricing_catalog(
                         approval_status
                     );
+
+                CREATE TABLE IF NOT EXISTS repair_pricing_items (
+                    repair_pricing_item_id TEXT PRIMARY KEY,
+
+                    repair_id TEXT NOT NULL,
+                    pricing_record_id TEXT NOT NULL,
+
+                    service_type_id TEXT NOT NULL,
+                    variant_key TEXT NOT NULL DEFAULT 'BASE',
+
+                    service_type TEXT NOT NULL,
+                    quality_class TEXT,
+                    customer_facing_tier TEXT,
+
+                    supplier TEXT NOT NULL,
+                    supplier_product_id TEXT NOT NULL,
+                    supplier_sku TEXT NOT NULL,
+                    part_name TEXT NOT NULL DEFAULT '',
+
+                    quoted_unit_price_cents INTEGER NOT NULL,
+                    quantity INTEGER NOT NULL DEFAULT 1,
+                    line_total_cents INTEGER NOT NULL,
+
+                    pricing_snapshot_at TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+
+                    FOREIGN KEY(repair_id)
+                        REFERENCES repair_tickets(ticket_id)
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE,
+
+                    FOREIGN KEY(pricing_record_id)
+                        REFERENCES service_pricing_catalog(pricing_record_id)
+                        ON UPDATE CASCADE
+                        ON DELETE RESTRICT,
+
+                    UNIQUE (
+                        repair_id,
+                        pricing_record_id
+                    )
+                );
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_pricing_items_repair
+                    ON repair_pricing_items(repair_id);
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_pricing_items_pricing_record
+                    ON repair_pricing_items(pricing_record_id);
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_pricing_items_service
+                    ON repair_pricing_items(
+                        repair_id,
+                        service_type_id
+                    );
+
+                CREATE TABLE IF NOT EXISTS repair_authorizations (
+                    authorization_id TEXT PRIMARY KEY,
+
+                    repair_id TEXT NOT NULL,
+
+                    authorization_type TEXT NOT NULL
+                        DEFAULT 'REPAIR_QUOTE',
+                    authorization_status TEXT NOT NULL
+                        DEFAULT 'PENDING',
+
+                    quoted_total_cents INTEGER NOT NULL,
+                    currency TEXT NOT NULL DEFAULT 'USD',
+
+                    terms_document_id TEXT NOT NULL DEFAULT '',
+                    terms_version TEXT NOT NULL DEFAULT '',
+
+                    customer_name TEXT NOT NULL DEFAULT '',
+                    authorization_method TEXT NOT NULL DEFAULT '',
+
+                    authorized_at TEXT,
+                    declined_at TEXT,
+
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    created_by TEXT NOT NULL DEFAULT 'Ryan Brown',
+
+                    FOREIGN KEY(repair_id)
+                        REFERENCES repair_tickets(ticket_id)
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE
+                );
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_authorizations_repair
+                    ON repair_authorizations(repair_id);
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_authorizations_status
+                    ON repair_authorizations(
+                        repair_id,
+                        authorization_status
+                    );
+
+                CREATE TABLE IF NOT EXISTS repair_authorization_items (
+                    authorization_id TEXT NOT NULL,
+                    repair_pricing_item_id TEXT NOT NULL,
+
+                    PRIMARY KEY (
+                        authorization_id,
+                        repair_pricing_item_id
+                    ),
+
+                    FOREIGN KEY(authorization_id)
+                        REFERENCES repair_authorizations(
+                            authorization_id
+                        )
+                        ON UPDATE CASCADE
+                        ON DELETE CASCADE,
+
+                    FOREIGN KEY(repair_pricing_item_id)
+                        REFERENCES repair_pricing_items(
+                            repair_pricing_item_id
+                        )
+                        ON UPDATE CASCADE
+                        ON DELETE RESTRICT
+                );
+
+                CREATE INDEX IF NOT EXISTS
+                    idx_repair_authorization_items_pricing_item
+                    ON repair_authorization_items(
+                        repair_pricing_item_id
+                    );
                 """)
 
             self._migrate_customer_devices(connection)
-
             self._migrate_repair_tickets(connection)
+            self._migrate_service_pricing_catalog(connection)
 
     @staticmethod
     def _migrate_customer_devices(
@@ -506,6 +952,34 @@ class OperationsDatabase:
                 ON repair_tickets(due_date)
             """)
 
+    @staticmethod
+    def _migrate_service_pricing_catalog(
+        connection: sqlite3.Connection,
+    ) -> None:
+        columns = {
+            str(row["name"])
+            for row in connection.execute("""
+                PRAGMA table_info(service_pricing_catalog)
+                """).fetchall()
+        }
+
+        additions = {
+            "quality_class": "TEXT",
+            "quality_rank": "INTEGER",
+            "customer_facing_tier": "TEXT",
+            "commercial_selection_status": "TEXT",
+            "recommended_action": "TEXT",
+        }
+
+        for column_name, column_type in additions.items():
+            if column_name in columns:
+                continue
+
+            connection.execute(f"""
+                ALTER TABLE service_pricing_catalog
+                ADD COLUMN {column_name} {column_type}
+                """)
+
     def next_id(
         self,
         *,
@@ -522,6 +996,8 @@ class OperationsDatabase:
             ("repair_events", "event_id"),
             ("wpforms_submissions", "submission_id"),
             ("service_pricing_catalog", "pricing_record_id"),
+            ("repair_pricing_items", "repair_pricing_item_id"),
+            ("repair_authorizations", "authorization_id"),
         }
 
         if (table, column) not in allowed_targets:
@@ -1292,6 +1768,14 @@ class OperationsDatabase:
         self,
         record: dict[str, Any],
     ) -> dict[str, Any]:
+        stored_record = record.copy()
+
+        stored_record.setdefault("quality_class", None)
+        stored_record.setdefault("quality_rank", None)
+        stored_record.setdefault("customer_facing_tier", None)
+        stored_record.setdefault("commercial_selection_status", None)
+        stored_record.setdefault("recommended_action", None)
+
         with self.connect() as connection:
             connection.execute(
                 """
@@ -1307,6 +1791,11 @@ class OperationsDatabase:
                     supplier_product_id,
                     supplier_sku,
                     part_name,
+                    quality_class,
+                    quality_rank,
+                    customer_facing_tier,
+                    commercial_selection_status,
+                    recommended_action,
                     part_cost_cents,
                     supplier_in_stock,
                     supplier_stock_qty,
@@ -1351,6 +1840,11 @@ class OperationsDatabase:
                     :supplier_product_id,
                     :supplier_sku,
                     :part_name,
+                    :quality_class,
+                    :quality_rank,
+                    :customer_facing_tier,
+                    :commercial_selection_status,
+                    :recommended_action,
                     :part_cost_cents,
                     :supplier_in_stock,
                     :supplier_stock_qty,
@@ -1384,10 +1878,10 @@ class OperationsDatabase:
                     :updated_at
                 )
                 """,
-                record,
+                stored_record,
             )
 
-        return record.copy()
+        return stored_record
 
     def get_service_pricing_record(
         self,
@@ -1503,6 +1997,11 @@ class OperationsDatabase:
             "variant_name",
             "supplier_sku",
             "part_name",
+            "quality_class",
+            "quality_rank",
+            "customer_facing_tier",
+            "commercial_selection_status",
+            "recommended_action",
             "part_cost_cents",
             "supplier_in_stock",
             "supplier_stock_qty",

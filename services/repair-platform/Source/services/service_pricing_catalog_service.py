@@ -20,6 +20,10 @@ class ServicePricingCatalogApprovalError(RuntimeError):
     """Raised when a pricing catalog record cannot be approved."""
 
 
+class ServicePricingCatalogClassificationError(Exception):
+    """Raised when pricing-record classification is not permitted."""
+
+
 class ServicePricingCatalogService:
     """
     Persist calculated service-pricing snapshots.
@@ -81,6 +85,11 @@ class ServicePricingCatalogService:
             "supplier_product_id": (preview.supplier_product_id),
             "supplier_sku": preview.supplier_sku,
             "part_name": preview.part_name,
+            "quality_class": None,
+            "quality_rank": None,
+            "customer_facing_tier": None,
+            "commercial_selection_status": None,
+            "recommended_action": None,
             "part_cost_cents": self._money_to_cents(preview.part_cost),
             "supplier_in_stock": (
                 None
@@ -254,6 +263,79 @@ class ServicePricingCatalogService:
 
         return [self._record_from_storage(record) for record in records]
 
+    def classify(
+        self,
+        pricing_record_id: str,
+        *,
+        quality_class: str,
+        quality_rank: int,
+        customer_facing_tier: str,
+        commercial_selection_status: str,
+        recommended_action: str,
+    ) -> ServicePricingCatalogRecord:
+        record_id = pricing_record_id.strip()
+
+        if not record_id:
+            raise ServicePricingCatalogValidationError("pricing_record_id is required.")
+
+        normalized_quality_class = quality_class.strip().upper()
+        normalized_customer_facing_tier = customer_facing_tier.strip().upper()
+        normalized_selection_status = commercial_selection_status.strip().upper()
+        normalized_recommended_action = recommended_action.strip().upper()
+
+        if not normalized_quality_class:
+            raise ServicePricingCatalogValidationError("quality_class is required.")
+
+        if quality_rank <= 0:
+            raise ServicePricingCatalogValidationError(
+                "quality_rank must be greater than zero."
+            )
+
+        if not normalized_customer_facing_tier:
+            raise ServicePricingCatalogValidationError(
+                "customer_facing_tier is required."
+            )
+
+        if not normalized_selection_status:
+            raise ServicePricingCatalogValidationError(
+                "commercial_selection_status is required."
+            )
+
+        if not normalized_recommended_action:
+            raise ServicePricingCatalogValidationError(
+                "recommended_action is required."
+            )
+
+        existing = self.operations_database.get_service_pricing_record(record_id)
+
+        if existing is None:
+            raise ServicePricingCatalogNotFoundError(
+                f"Pricing record {record_id!r} was not found."
+            )
+
+        if existing["approval_status"] != "DRAFT":
+            raise ServicePricingCatalogClassificationError(
+                f"Pricing record {record_id!r} is not in DRAFT status."
+            )
+
+        stored = self.operations_database.update_service_pricing_record(
+            record_id,
+            {
+                "quality_class": normalized_quality_class,
+                "quality_rank": quality_rank,
+                "customer_facing_tier": normalized_customer_facing_tier,
+                "commercial_selection_status": normalized_selection_status,
+                "recommended_action": normalized_recommended_action,
+            },
+        )
+
+        if stored is None:
+            raise ServicePricingCatalogClassificationError(
+                f"Pricing record {record_id!r} could not be classified."
+            )
+
+        return self._record_from_storage(stored)
+
     def approve(
         self,
         pricing_record_id: str,
@@ -380,6 +462,31 @@ class ServicePricingCatalogService:
             supplier_product_id=str(record["supplier_product_id"]),
             supplier_sku=str(record["supplier_sku"]),
             part_name=str(record["part_name"]),
+            quality_class=(
+                None
+                if record.get("quality_class") is None
+                else str(record["quality_class"])
+            ),
+            quality_rank=(
+                None
+                if record.get("quality_rank") is None
+                else int(record["quality_rank"])
+            ),
+            customer_facing_tier=(
+                None
+                if record.get("customer_facing_tier") is None
+                else str(record["customer_facing_tier"])
+            ),
+            commercial_selection_status=(
+                None
+                if record.get("commercial_selection_status") is None
+                else str(record["commercial_selection_status"])
+            ),
+            recommended_action=(
+                None
+                if record.get("recommended_action") is None
+                else str(record["recommended_action"])
+            ),
             part_cost=Decimal(record["part_cost_cents"]) / Decimal("100"),
             supplier_in_stock=(
                 None

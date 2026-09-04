@@ -39,6 +39,12 @@ class ServicePricingCatalogRecord:
     supplier_sku: str
     part_name: str
 
+    quality_class: str | None
+    quality_rank: int | None
+    customer_facing_tier: str | None
+    commercial_selection_status: str | None
+    recommended_action: str | None
+
     part_cost: Decimal
 
     supplier_in_stock: bool | None

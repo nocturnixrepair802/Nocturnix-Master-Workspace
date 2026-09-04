@@ -11,6 +11,7 @@ from models.service_pricing import ServicePricingPreview
 from persistence.operations_db import OperationsDatabase
 from services.service_pricing_catalog_service import (
     ServicePricingCatalogApprovalError,
+    ServicePricingCatalogClassificationError,
     ServicePricingCatalogNotFoundError,
     ServicePricingCatalogService,
     ServicePricingCatalogValidationError,
@@ -140,6 +141,72 @@ def test_save_from_preview_refreshes_existing_identity(
         5,
         tzinfo=UTC,
     )
+
+
+def test_refresh_preserves_quality_metadata(
+    tmp_path: Path,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    created = service.save_from_preview(
+        pricing_preview(),
+        now=datetime(
+            2026,
+            9,
+            3,
+            20,
+            0,
+            tzinfo=UTC,
+        ),
+    )
+
+    updated = service.operations_database.update_service_pricing_record(
+        created.pricing_record_id,
+        {
+            "quality_class": "REFURBISHED_OEM",
+            "quality_rank": 3,
+            "customer_facing_tier": "PREFERRED",
+            "commercial_selection_status": "PREFERRED",
+            "recommended_action": "USE",
+        },
+    )
+
+    assert updated is not None
+
+    refreshed_preview = replace(
+        pricing_preview(),
+        part_cost=Decimal("55.00"),
+        recommended_retail_price=Decimal("289.99"),
+    )
+
+    refreshed = service.save_from_preview(
+        refreshed_preview,
+        now=datetime(
+            2026,
+            9,
+            3,
+            21,
+            0,
+            tzinfo=UTC,
+        ),
+    )
+
+    assert refreshed.quality_class == "REFURBISHED_OEM"
+    assert refreshed.quality_rank == 3
+    assert refreshed.customer_facing_tier == "PREFERRED"
+    assert refreshed.commercial_selection_status == "PREFERRED"
+    assert refreshed.recommended_action == "USE"
+
+    stored = service.operations_database.get_service_pricing_record(
+        created.pricing_record_id
+    )
+
+    assert stored is not None
+    assert stored["quality_class"] == "REFURBISHED_OEM"
+    assert stored["quality_rank"] == 3
+    assert stored["customer_facing_tier"] == "PREFERRED"
+    assert stored["commercial_selection_status"] == "PREFERRED"
+    assert stored["recommended_action"] == "USE"
 
 
 def test_save_from_preview_creates_new_identity(
@@ -554,6 +621,107 @@ def test_approve_rejects_second_approval(
                 tzinfo=UTC,
             ),
         )
+
+
+def test_classify_draft_service_pricing_record(
+    tmp_path: Path,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    created = service.save_from_preview(
+        pricing_preview(),
+    )
+
+    classified = service.classify(
+        created.pricing_record_id,
+        quality_class="refurbished_oem",
+        quality_rank=3,
+        customer_facing_tier="preferred",
+        commercial_selection_status="preferred",
+        recommended_action="use",
+    )
+
+    assert classified.pricing_record_id == created.pricing_record_id
+    assert classified.approval_status == "DRAFT"
+
+    assert classified.quality_class == "REFURBISHED_OEM"
+    assert classified.quality_rank == 3
+    assert classified.customer_facing_tier == "PREFERRED"
+    assert classified.commercial_selection_status == "PREFERRED"
+    assert classified.recommended_action == "USE"
+
+
+def test_classify_rejects_invalid_quality_rank(
+    tmp_path: Path,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    created = service.save_from_preview(
+        pricing_preview(),
+    )
+
+    with pytest.raises(
+        ServicePricingCatalogValidationError,
+        match="quality_rank must be greater than zero",
+    ):
+        service.classify(
+            created.pricing_record_id,
+            quality_class="REFURBISHED_OEM",
+            quality_rank=0,
+            customer_facing_tier="PREFERRED",
+            commercial_selection_status="PREFERRED",
+            recommended_action="USE",
+        )
+
+
+def test_classify_rejects_approved_service_pricing_record(
+    tmp_path: Path,
+) -> None:
+    service = catalog_service(tmp_path)
+
+    created = service.save_from_preview(
+        pricing_preview(),
+    )
+
+    service.classify(
+        created.pricing_record_id,
+        quality_class="REFURBISHED_OEM",
+        quality_rank=3,
+        customer_facing_tier="PREFERRED",
+        commercial_selection_status="PREFERRED",
+        recommended_action="USE",
+    )
+
+    service.approve(
+        created.pricing_record_id,
+        approved_price=Decimal("269.99"),
+        approved_by="Ryan Brown",
+    )
+
+    with pytest.raises(
+        ServicePricingCatalogClassificationError,
+        match="is not in DRAFT status",
+    ):
+        service.classify(
+            created.pricing_record_id,
+            quality_class="AQ7",
+            quality_rank=7,
+            customer_facing_tier="VALUE",
+            commercial_selection_status="VIABLE_ALTERNATE",
+            recommended_action="OFFER_AS_ALTERNATE",
+        )
+
+    stored = service.get(created.pricing_record_id)
+
+    assert stored is not None
+    assert stored.approval_status == "APPROVED"
+    assert stored.approved_price == Decimal("269.99")
+
+    assert stored.quality_class == "REFURBISHED_OEM"
+    assert stored.quality_rank == 3
+    assert stored.customer_facing_tier == "PREFERRED"
+    assert stored.commercial_selection_status == "PREFERRED"
+    assert stored.recommended_action == "USE"
 
 
 @pytest.mark.parametrize(

@@ -49,6 +49,9 @@ from api.schemas import (
     ProcurementReceiveRequest,
     ProcurementResponse,
     ProcurementSummaryResponse,
+    RepairAuthorizationCreateRequest,
+    RepairAuthorizationDecisionRequest,
+    RepairAuthorizationResponse,
     RepairCheckinCreateRequest,
     RepairCheckinResponse,
     RepairCheckinUpdateRequest,
@@ -56,11 +59,14 @@ from api.schemas import (
     RepairEventResponse,
     RepairPaymentResponse,
     RepairPaymentSummaryResponse,
+    RepairPricingItemResponse,
+    RepairPricingSelectionRequest,
     RepairQueueItemResponse,
     RepairResponse,
     RepairUpdateRequest,
     RepairWorkspaceResponse,
     ServicePricingCatalogApprovalRequest,
+    ServicePricingCatalogClassificationRequest,
     ServicePricingCatalogResponse,
     ServicePricingCatalogSaveRequest,
     ServicePricingPreviewRequest,
@@ -102,8 +108,21 @@ from services.procurement_service import (
     ProcurementStateError,
     ProcurementValidationError,
 )
+from services.repair_authorization_service import (
+    RepairAuthorizationNotFoundError,
+    RepairAuthorizationService,
+    RepairAuthorizationStateError,
+    RepairAuthorizationValidationError,
+)
+from services.repair_pricing_service import (
+    RepairPricingNotFoundError,
+    RepairPricingService,
+    RepairPricingStateError,
+    RepairPricingValidationError,
+)
 from services.service_pricing_catalog_service import (
     ServicePricingCatalogApprovalError,
+    ServicePricingCatalogClassificationError,
     ServicePricingCatalogNotFoundError,
     ServicePricingCatalogService,
     ServicePricingCatalogValidationError,
@@ -198,6 +217,18 @@ def get_procurement_service() -> ProcurementService:
     return ProcurementService()
 
 
+def get_repair_authorization_service() -> RepairAuthorizationService:
+    return RepairAuthorizationService(
+        operations_database=get_database(),
+    )
+
+
+def get_repair_pricing_service() -> RepairPricingService:
+    return RepairPricingService(
+        operations_database=get_database(),
+    )
+
+
 # ======================================================
 # Date / Time
 # ======================================================
@@ -210,6 +241,38 @@ def utc_now() -> str:
 # ======================================================
 # Response Serialization
 # ======================================================
+def repair_authorization_response(
+    record: dict[str, Any],
+    repair_pricing_item_ids: list[str] | None = None,
+) -> RepairAuthorizationResponse:
+    return RepairAuthorizationResponse(
+        authorization_id=str(record["authorization_id"]),
+        repair_id=str(record["repair_id"]),
+        authorization_type=str(record["authorization_type"]),
+        authorization_status=str(record["authorization_status"]),
+        quoted_total_cents=int(record["quoted_total_cents"]),
+        currency=str(record["currency"]),
+        terms_document_id=str(record.get("terms_document_id", "")),
+        terms_version=str(record.get("terms_version", "")),
+        customer_name=str(record.get("customer_name", "")),
+        authorization_method=str(record.get("authorization_method", "")),
+        authorized_at=(
+            str(record["authorized_at"])
+            if record.get("authorized_at") is not None
+            else None
+        ),
+        declined_at=(
+            str(record["declined_at"])
+            if record.get("declined_at") is not None
+            else None
+        ),
+        created_at=str(record["created_at"]),
+        updated_at=str(record["updated_at"]),
+        created_by=str(record.get("created_by", "")),
+        repair_pricing_item_ids=(
+            repair_pricing_item_ids if repair_pricing_item_ids is not None else []
+        ),
+    )
 
 
 def customer_response(
@@ -385,222 +448,100 @@ def repair_response(
     )
 
 
+def repair_pricing_item_response(
+    item: dict[str, Any],
+) -> RepairPricingItemResponse:
+    return RepairPricingItemResponse(
+        repair_pricing_item_id=str(item["repair_pricing_item_id"]),
+        repair_id=str(item["repair_id"]),
+        pricing_record_id=str(item["pricing_record_id"]),
+        service_type_id=str(item["service_type_id"]),
+        variant_key=str(item["variant_key"]),
+        service_type=str(item["service_type"]),
+        quality_class=(
+            None if item["quality_class"] is None else str(item["quality_class"])
+        ),
+        customer_facing_tier=(
+            None
+            if item["customer_facing_tier"] is None
+            else str(item["customer_facing_tier"])
+        ),
+        supplier=str(item["supplier"]),
+        supplier_product_id=str(item["supplier_product_id"]),
+        supplier_sku=str(item["supplier_sku"]),
+        part_name=str(item["part_name"]),
+        quoted_unit_price_cents=int(item["quoted_unit_price_cents"]),
+        quantity=int(item["quantity"]),
+        line_total_cents=int(item["line_total_cents"]),
+        pricing_snapshot_at=str(item["pricing_snapshot_at"]),
+        created_at=str(item["created_at"]),
+        updated_at=str(item["updated_at"]),
+    )
+
+
 def repair_workspace_response(
     repair: dict[str, Any],
     customer: dict[str, Any],
     device: dict[str, Any],
+    pricing_items: list[dict[str, Any]] | None = None,
+    authorizations: list[RepairAuthorizationResponse] | None = None,
 ) -> RepairWorkspaceResponse:
-    estimated_cost = repair.get("estimated_cost")
-    final_cost = repair.get("final_cost")
+    resolved_pricing_items = pricing_items or []
+
+    pricing_item_responses = [
+        repair_pricing_item_response(item) for item in resolved_pricing_items
+    ]
+
+    quoted_total_cents = sum(
+        int(item["line_total_cents"]) for item in resolved_pricing_items
+    )
 
     return RepairWorkspaceResponse(
         id=str(repair["ticket_id"]),
         customer_id=str(repair["customer_id"]),
         device_id=str(repair["device_id"]),
-        repair_status=str(
-            repair.get(
-                "repair_status",
-                "",
-            )
-            or ""
+        repair_status=str(repair.get("repair_status", "")),
+        problem_description=str(repair.get("problem_description", "")),
+        technician_notes=str(repair.get("notes", "")),
+        estimated_cost=(
+            float(repair["estimated_cost"])
+            if repair.get("estimated_cost") is not None
+            else None
         ),
-        problem_description=str(
-            repair.get(
-                "problem_description",
-                "",
-            )
-            or ""
+        final_cost=(
+            float(repair["final_cost"])
+            if repair.get("final_cost") is not None
+            else None
         ),
-        technician_notes=str(
-            repair.get(
-                "notes",
-                "",
-            )
-            or ""
-        ),
-        estimated_cost=(None if estimated_cost is None else float(estimated_cost)),
-        final_cost=(None if final_cost is None else float(final_cost)),
-        intake_date=str(
-            repair.get(
-                "intake_date",
-                "",
-            )
-            or ""
-        ),
-        technician=str(
-            repair.get(
-                "technician",
-                DEFAULT_TECHNICIAN,
-            )
-            or DEFAULT_TECHNICIAN
-        ),
-        priority=str(
-            repair.get(
-                "priority",
-                "Normal",
-            )
-            or "Normal"
-        ),
-        due_date=str(
-            repair.get(
-                "due_date",
-                "",
-            )
-            or ""
-        ),
-        diagnosis=str(
-            repair.get(
-                "diagnosis",
-                "",
-            )
-            or ""
-        ),
-        date_completed=str(
-            repair.get(
-                "date_completed",
-                "",
-            )
-            or ""
-        ),
-        date_picked_up=str(
-            repair.get(
-                "date_picked_up",
-                "",
-            )
-            or ""
-        ),
-        warranty=bool(
-            repair.get(
-                "warranty",
-                False,
-            )
-        ),
-        notes=str(
-            repair.get(
-                "notes",
-                "",
-            )
-            or ""
-        ),
-        last_modified=str(
-            repair.get(
-                "last_modified",
-                "",
-            )
-            or ""
-        ),
-        customer_type=str(
-            customer.get(
-                "customer_type",
-                "",
-            )
-            or ""
-        ),
-        first_name=str(
-            customer.get(
-                "first_name",
-                "",
-            )
-            or ""
-        ),
-        last_name=str(
-            customer.get(
-                "last_name",
-                "",
-            )
-            or ""
-        ),
-        business_name=str(
-            customer.get(
-                "business_name",
-                "",
-            )
-            or ""
-        ),
-        email=str(
-            customer.get(
-                "email",
-                "",
-            )
-            or ""
-        ),
-        mobile_phone=str(
-            customer.get(
-                "mobile_phone",
-                "",
-            )
-            or ""
-        ),
-        preferred_contact=str(
-            customer.get(
-                "preferred_contact",
-                "",
-            )
-            or ""
-        ),
-        catalog_device_id=str(
-            device.get(
-                "catalog_device_id",
-                "",
-            )
-            or ""
-        ),
-        manufacturer=str(
-            device.get(
-                "manufacturer",
-                "",
-            )
-            or ""
-        ),
-        device_family=str(
-            device.get(
-                "device_family",
-                "",
-            )
-            or ""
-        ),
-        device_model=str(
-            device.get(
-                "device_model",
-                "",
-            )
-            or ""
-        ),
-        serial_number=str(
-            device.get(
-                "serial_number",
-                "",
-            )
-            or ""
-        ),
-        imei_service_tag=str(
-            device.get(
-                "imei_service_tag",
-                "",
-            )
-            or ""
-        ),
-        color=str(
-            device.get(
-                "color",
-                "",
-            )
-            or ""
-        ),
-        storage=str(
-            device.get(
-                "storage",
-                "",
-            )
-            or ""
-        ),
-        carrier=str(
-            device.get(
-                "carrier",
-                "",
-            )
-            or ""
-        ),
+        intake_date=str(repair.get("intake_date", "")),
+        technician=str(repair.get("technician", "")),
+        priority=str(repair.get("priority", "Normal")),
+        due_date=str(repair.get("due_date", "")),
+        diagnosis=str(repair.get("diagnosis", "")),
+        date_completed=str(repair.get("date_completed", "")),
+        date_picked_up=str(repair.get("date_picked_up", "")),
+        warranty=bool(repair.get("warranty", False)),
+        notes=str(repair.get("notes", "")),
+        last_modified=str(repair.get("last_modified", "")),
+        customer_type=str(customer.get("customer_type", "")),
+        first_name=str(customer.get("first_name", "")),
+        last_name=str(customer.get("last_name", "")),
+        business_name=str(customer.get("business_name", "")),
+        email=str(customer.get("email", "")),
+        mobile_phone=str(customer.get("mobile_phone", "")),
+        preferred_contact=str(customer.get("preferred_contact", "")),
+        catalog_device_id=str(device.get("catalog_device_id", "")),
+        manufacturer=str(device.get("manufacturer", "")),
+        device_family=str(device.get("device_family", "")),
+        device_model=str(device.get("device_model", "")),
+        serial_number=str(device.get("serial_number", "")),
+        imei_service_tag=str(device.get("imei_service_tag", "")),
+        color=str(device.get("color", "")),
+        storage=str(device.get("storage", "")),
+        carrier=str(device.get("carrier", "")),
+        pricing_items=pricing_item_responses,
+        quoted_total_cents=quoted_total_cents,
+        authorizations=(authorizations if authorizations is not None else []),
     )
 
 
@@ -1899,6 +1840,241 @@ def get_repair(
     return repair_response(record)
 
 
+@app.post(
+    "/api/repairs/{repair_id}/pricing-items",
+    response_model=RepairPricingItemResponse,
+)
+def select_repair_pricing_item(
+    repair_id: str,
+    request: RepairPricingSelectionRequest,
+    repair_pricing_service: RepairPricingService = Depends(get_repair_pricing_service),
+) -> RepairPricingItemResponse:
+    try:
+        item = repair_pricing_service.select_pricing_record(
+            repair_id,
+            request.pricing_record_id,
+            quantity=request.quantity,
+        )
+
+    except RepairPricingNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except RepairPricingValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except RepairPricingStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    return repair_pricing_item_response(item)
+
+
+@app.get(
+    "/api/repairs/{repair_id}/pricing-items",
+    response_model=list[RepairPricingItemResponse],
+)
+def list_repair_pricing_items(
+    repair_id: str,
+    repair_pricing_service: RepairPricingService = Depends(get_repair_pricing_service),
+) -> list[RepairPricingItemResponse]:
+    try:
+        items = repair_pricing_service.list_items(repair_id)
+
+    except RepairPricingNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except RepairPricingValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    return [repair_pricing_item_response(item) for item in items]
+
+
+@app.post(
+    "/api/repairs/{repair_id}/authorizations",
+    response_model=RepairAuthorizationResponse,
+)
+def create_repair_authorization(
+    repair_id: str,
+    request: RepairAuthorizationCreateRequest,
+    repair_authorization_service: RepairAuthorizationService = Depends(
+        get_repair_authorization_service
+    ),
+) -> RepairAuthorizationResponse:
+    try:
+        authorization = repair_authorization_service.create(
+            repair_id,
+            request.repair_pricing_item_ids,
+            terms_document_id=request.terms_document_id,
+            terms_version=request.terms_version,
+        )
+
+    except RepairAuthorizationNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except RepairAuthorizationValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    items = get_database().list_repair_authorization_items(
+        str(authorization["authorization_id"])
+    )
+
+    return repair_authorization_response(
+        authorization,
+        [str(item["repair_pricing_item_id"]) for item in items],
+    )
+
+
+@app.get(
+    "/api/repairs/{repair_id}/authorizations",
+    response_model=list[RepairAuthorizationResponse],
+)
+def list_repair_authorizations(
+    repair_id: str,
+    repair_authorization_service: RepairAuthorizationService = Depends(
+        get_repair_authorization_service
+    ),
+) -> list[RepairAuthorizationResponse]:
+    try:
+        authorizations = repair_authorization_service.list_authorizations(repair_id)
+
+    except RepairAuthorizationNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except RepairAuthorizationValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    database = get_database()
+
+    responses: list[RepairAuthorizationResponse] = []
+
+    for authorization in authorizations:
+        authorization_id = str(authorization["authorization_id"])
+
+        items = database.list_repair_authorization_items(authorization_id)
+
+        responses.append(
+            repair_authorization_response(
+                authorization,
+                [str(item["repair_pricing_item_id"]) for item in items],
+            )
+        )
+
+    return responses
+
+
+@app.post(
+    "/api/authorizations/{authorization_id}/authorize",
+    response_model=RepairAuthorizationResponse,
+)
+def authorize_repair_authorization(
+    authorization_id: str,
+    request: RepairAuthorizationDecisionRequest,
+    repair_authorization_service: RepairAuthorizationService = Depends(
+        get_repair_authorization_service
+    ),
+) -> RepairAuthorizationResponse:
+    try:
+        authorization = repair_authorization_service.authorize(
+            authorization_id,
+            customer_name=request.customer_name,
+            authorization_method=request.authorization_method,
+        )
+
+    except RepairAuthorizationNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except RepairAuthorizationValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except RepairAuthorizationStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    items = get_database().list_repair_authorization_items(
+        str(authorization["authorization_id"])
+    )
+
+    return repair_authorization_response(
+        authorization,
+        [str(item["repair_pricing_item_id"]) for item in items],
+    )
+
+
+@app.post(
+    "/api/authorizations/{authorization_id}/decline",
+    response_model=RepairAuthorizationResponse,
+)
+def decline_repair_authorization(
+    authorization_id: str,
+    repair_authorization_service: RepairAuthorizationService = Depends(
+        get_repair_authorization_service
+    ),
+) -> RepairAuthorizationResponse:
+    try:
+        authorization = repair_authorization_service.decline(authorization_id)
+
+    except RepairAuthorizationNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except RepairAuthorizationValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except RepairAuthorizationStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
+    items = get_database().list_repair_authorization_items(
+        str(authorization["authorization_id"])
+    )
+
+    return repair_authorization_response(
+        authorization,
+        [str(item["repair_pricing_item_id"]) for item in items],
+    )
+
+
 @app.get(
     "/api/repairs/{repair_id}/workspace",
     response_model=RepairWorkspaceResponse,
@@ -1934,11 +2110,30 @@ def get_repair_workspace(
             status_code=404,
             detail=("Repair device not found."),
         )
+    pricing_items = database.list_repair_pricing_items(repair_id)
+
+    authorization_records = database.list_repair_authorizations(repair_id)
+
+    authorizations: list[RepairAuthorizationResponse] = []
+
+    for authorization in authorization_records:
+        authorization_id = str(authorization["authorization_id"])
+
+        authorization_items = database.list_repair_authorization_items(authorization_id)
+
+        authorizations.append(
+            repair_authorization_response(
+                authorization,
+                [str(item["repair_pricing_item_id"]) for item in authorization_items],
+            )
+        )
 
     return repair_workspace_response(
         repair,
         customer,
         device,
+        pricing_items,
+        authorizations,
     )
 
 
@@ -3235,6 +3430,11 @@ def service_pricing_catalog_response(
         supplier_product_id=record.supplier_product_id,
         supplier_sku=record.supplier_sku,
         part_name=record.part_name,
+        quality_class=record.quality_class,
+        quality_rank=record.quality_rank,
+        customer_facing_tier=record.customer_facing_tier,
+        commercial_selection_status=record.commercial_selection_status,
+        recommended_action=record.recommended_action,
         part_cost=float(record.part_cost),
         supplier_in_stock=record.supplier_in_stock,
         supplier_stock_qty=record.supplier_stock_qty,
@@ -3600,6 +3800,48 @@ def get_service_pricing_catalog_record(
             status_code=404,
             detail="Service pricing record not found.",
         )
+
+    return service_pricing_catalog_response(record)
+
+
+@app.post(
+    "/api/v1/pricing/catalog/{pricing_record_id}/classify",
+    response_model=ServicePricingCatalogResponse,
+)
+def classify_service_pricing_catalog_record(
+    pricing_record_id: str,
+    request: ServicePricingCatalogClassificationRequest,
+    catalog_service: ServicePricingCatalogService = Depends(
+        get_service_pricing_catalog_service
+    ),
+) -> ServicePricingCatalogResponse:
+    try:
+        record = catalog_service.classify(
+            pricing_record_id,
+            quality_class=request.quality_class,
+            quality_rank=request.quality_rank,
+            customer_facing_tier=request.customer_facing_tier,
+            commercial_selection_status=request.commercial_selection_status,
+            recommended_action=request.recommended_action,
+        )
+
+    except ServicePricingCatalogNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except ServicePricingCatalogValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except ServicePricingCatalogClassificationError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
 
     return service_pricing_catalog_response(record)
 

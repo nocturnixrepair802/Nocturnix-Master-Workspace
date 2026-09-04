@@ -117,7 +117,18 @@ def test_create_and_get_service_pricing_record(
 
     created = database.create_service_pricing_record(record)
 
-    assert created == record
+    expected = record.copy()
+    expected.update(
+        {
+            "quality_class": None,
+            "quality_rank": None,
+            "customer_facing_tier": None,
+            "commercial_selection_status": None,
+            "recommended_action": None,
+        }
+    )
+
+    assert created == expected
 
     stored = database.get_service_pricing_record("PRC000001")
 
@@ -126,6 +137,13 @@ def test_create_and_get_service_pricing_record(
     assert stored["service_type_id"] == "STY000001"
     assert stored["variant_key"] == "BASE"
     assert stored["supplier_product_id"] == "249690"
+
+    assert stored["quality_class"] is None
+    assert stored["quality_rank"] is None
+    assert stored["customer_facing_tier"] is None
+    assert stored["commercial_selection_status"] is None
+    assert stored["recommended_action"] is None
+
     assert stored["recommended_price_cents"] == 26599
     assert stored["approval_status"] == "DRAFT"
 
@@ -153,6 +171,69 @@ def test_list_service_pricing_records_filters(
 
     assert len(records) == 1
     assert records[0]["pricing_record_id"] == "PRC000002"
+
+
+def test_service_pricing_record_persists_quality_metadata(
+    tmp_path: Path,
+) -> None:
+    database = OperationsDatabase(tmp_path / "operations.sqlite3")
+
+    record = pricing_record()
+
+    record.update(
+        {
+            "quality_class": "REFURBISHED_OEM",
+            "quality_rank": 3,
+            "customer_facing_tier": "PREFERRED",
+            "commercial_selection_status": "PREFERRED",
+            "recommended_action": "USE",
+        }
+    )
+
+    created = database.create_service_pricing_record(record)
+
+    assert created["quality_class"] == "REFURBISHED_OEM"
+    assert created["quality_rank"] == 3
+    assert created["customer_facing_tier"] == "PREFERRED"
+    assert created["commercial_selection_status"] == "PREFERRED"
+    assert created["recommended_action"] == "USE"
+
+    stored = database.get_service_pricing_record("PRC000001")
+
+    assert stored is not None
+    assert stored["quality_class"] == "REFURBISHED_OEM"
+    assert stored["quality_rank"] == 3
+    assert stored["customer_facing_tier"] == "PREFERRED"
+    assert stored["commercial_selection_status"] == "PREFERRED"
+    assert stored["recommended_action"] == "USE"
+
+
+def test_service_pricing_record_quality_metadata_can_be_updated(
+    tmp_path: Path,
+) -> None:
+    database = OperationsDatabase(tmp_path / "operations.sqlite3")
+
+    database.create_service_pricing_record(pricing_record())
+
+    updated = database.update_service_pricing_record(
+        "PRC000001",
+        {
+            "quality_class": "AQ7",
+            "quality_rank": 7,
+            "customer_facing_tier": "VALUE",
+            "commercial_selection_status": "VIABLE_ALTERNATE",
+            "recommended_action": "OFFER_AS_ALTERNATE",
+        },
+    )
+
+    assert updated is not None
+    assert updated["quality_class"] == "AQ7"
+    assert updated["quality_rank"] == 7
+    assert updated["customer_facing_tier"] == "VALUE"
+    assert updated["commercial_selection_status"] == "VIABLE_ALTERNATE"
+    assert updated["recommended_action"] == "OFFER_AS_ALTERNATE"
+    assert updated["approval_status"] == "DRAFT"
+    assert updated["approved_price_cents"] is None
 
 
 def test_duplicate_catalog_identity_is_rejected(

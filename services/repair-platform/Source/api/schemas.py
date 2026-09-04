@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CustomerCreateRequest(BaseModel):
@@ -81,6 +81,32 @@ class RepairResponse(BaseModel):
     due_date: str = ""
 
 
+class RepairAuthorizationResponse(BaseModel):
+    authorization_id: str
+    repair_id: str
+
+    authorization_type: str
+    authorization_status: str
+
+    quoted_total_cents: int
+    currency: str
+
+    terms_document_id: str
+    terms_version: str
+
+    customer_name: str
+    authorization_method: str
+
+    authorized_at: str | None
+    declined_at: str | None
+
+    created_at: str
+    updated_at: str
+    created_by: str
+
+    repair_pricing_item_ids: list[str] = Field(default_factory=list)
+
+
 class RepairWorkspaceResponse(BaseModel):
     id: str
     customer_id: str
@@ -120,6 +146,9 @@ class RepairWorkspaceResponse(BaseModel):
     color: str = ""
     storage: str = ""
     carrier: str = ""
+    pricing_items: list[RepairPricingItemResponse] = Field(default_factory=list)
+    quoted_total_cents: int = 0
+    authorizations: list[RepairAuthorizationResponse] = Field(default_factory=list)
 
 
 class RepairQueueItemResponse(BaseModel):
@@ -613,6 +642,14 @@ class ServicePricingCatalogSaveRequest(ServicePricingPreviewRequest):
     """
 
 
+class ServicePricingCatalogClassificationRequest(BaseModel):
+    quality_class: str
+    quality_rank: int
+    customer_facing_tier: str
+    commercial_selection_status: str
+    recommended_action: str
+
+
 class ServicePricingCatalogApprovalRequest(BaseModel):
     approved_price: float
     approved_by: str
@@ -634,6 +671,12 @@ class ServicePricingCatalogResponse(BaseModel):
     supplier_product_id: str
     supplier_sku: str
     part_name: str
+
+    quality_class: str | None
+    quality_rank: int | None
+    customer_facing_tier: str | None
+    commercial_selection_status: str | None
+    recommended_action: str | None
 
     part_cost: float
 
@@ -676,3 +719,45 @@ class ServicePricingCatalogResponse(BaseModel):
 
     created_at: datetime
     updated_at: datetime
+
+
+class RepairPricingSelectionRequest(BaseModel):
+    pricing_record_id: str
+    quantity: int = 1
+
+
+class RepairPricingItemResponse(BaseModel):
+    repair_pricing_item_id: str
+    repair_id: str
+    pricing_record_id: str
+
+    service_type_id: str
+    variant_key: str
+    service_type: str
+
+    quality_class: str | None
+    customer_facing_tier: str | None
+
+    supplier: str
+    supplier_product_id: str
+    supplier_sku: str
+    part_name: str
+
+    quoted_unit_price_cents: int
+    quantity: int
+    line_total_cents: int
+
+    pricing_snapshot_at: str
+    created_at: str
+    updated_at: str
+
+
+class RepairAuthorizationCreateRequest(BaseModel):
+    repair_pricing_item_ids: list[str]
+    terms_document_id: str = ""
+    terms_version: str = ""
+
+
+class RepairAuthorizationDecisionRequest(BaseModel):
+    customer_name: str
+    authorization_method: str
