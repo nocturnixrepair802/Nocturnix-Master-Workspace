@@ -189,6 +189,7 @@ class OperationsDatabase:
     def create_repair_authorization(
         self,
         record: dict[str, Any],
+        repair_pricing_item_ids: list[str],
     ) -> dict[str, Any]:
         with self.connect() as connection:
             connection.execute(
@@ -231,15 +232,7 @@ class OperationsDatabase:
                 record,
             )
 
-        return record.copy()
-
-    def add_repair_authorization_item(
-        self,
-        authorization_id: str,
-        repair_pricing_item_id: str,
-    ) -> None:
-        with self.connect() as connection:
-            connection.execute(
+            connection.executemany(
                 """
                 INSERT INTO repair_authorization_items (
                     authorization_id,
@@ -247,11 +240,16 @@ class OperationsDatabase:
                 )
                 VALUES (?, ?)
                 """,
-                (
-                    authorization_id,
-                    repair_pricing_item_id,
-                ),
+                [
+                    (
+                        record["authorization_id"],
+                        repair_pricing_item_id,
+                    )
+                    for repair_pricing_item_id in repair_pricing_item_ids
+                ],
             )
+
+        return record.copy()
 
     def get_repair_authorization(
         self,

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
+
+import pytest
 
 from persistence.operations_db import OperationsDatabase
 from tests.test_repair_pricing_item_persistence import (
@@ -79,7 +82,10 @@ def test_create_get_and_list_repair_authorization(
         "created_by": "Ryan Brown",
     }
 
-    created = database.create_repair_authorization(record)
+    created = database.create_repair_authorization(
+        record,
+        ["RPI000001"],
+    )
 
     assert created == record
 
@@ -95,41 +101,42 @@ def test_create_get_and_list_repair_authorization(
     assert len(listed) == 1
     assert listed[0]["authorization_id"] == "AUT000001"
 
+    items = database.list_repair_authorization_items("AUT000001")
 
-def test_add_and_list_repair_authorization_items(
+    assert len(items) == 1
+    assert items[0]["authorization_id"] == "AUT000001"
+    assert items[0]["repair_pricing_item_id"] == "RPI000001"
+
+
+def test_create_repair_authorization_rolls_back_on_invalid_item(
     tmp_path: Path,
 ) -> None:
     database = OperationsDatabase(tmp_path / "operations.sqlite3")
 
     create_repair_pricing_item(database)
 
-    database.create_repair_authorization(
-        {
-            "authorization_id": "AUT000001",
-            "repair_id": "RPR000001",
-            "authorization_type": "REPAIR_QUOTE",
-            "authorization_status": "PENDING",
-            "quoted_total_cents": 26999,
-            "currency": "USD",
-            "terms_document_id": "",
-            "terms_version": "",
-            "customer_name": "",
-            "authorization_method": "",
-            "authorized_at": None,
-            "declined_at": None,
-            "created_at": "2026-09-04T02:35:00Z",
-            "updated_at": "2026-09-04T02:35:00Z",
-            "created_by": "Ryan Brown",
-        }
-    )
+    record = {
+        "authorization_id": "AUT000001",
+        "repair_id": "RPR000001",
+        "authorization_type": "REPAIR_QUOTE",
+        "authorization_status": "PENDING",
+        "quoted_total_cents": 26999,
+        "currency": "USD",
+        "terms_document_id": "",
+        "terms_version": "",
+        "customer_name": "",
+        "authorization_method": "",
+        "authorized_at": None,
+        "declined_at": None,
+        "created_at": "2026-09-04T02:35:00Z",
+        "updated_at": "2026-09-04T02:35:00Z",
+        "created_by": "Ryan Brown",
+    }
 
-    database.add_repair_authorization_item(
-        "AUT000001",
-        "RPI000001",
-    )
+    with pytest.raises(sqlite3.IntegrityError):
+        database.create_repair_authorization(
+            record,
+            ["RPI999999"],
+        )
 
-    items = database.list_repair_authorization_items("AUT000001")
-
-    assert len(items) == 1
-    assert items[0]["authorization_id"] == "AUT000001"
-    assert items[0]["repair_pricing_item_id"] == "RPI000001"
+    assert database.get_repair_authorization("AUT000001") is None
