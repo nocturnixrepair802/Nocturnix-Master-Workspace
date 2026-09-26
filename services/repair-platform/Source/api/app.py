@@ -1122,12 +1122,12 @@ app.add_middleware(
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    database = get_database()
+    get_database()
 
     return {
         "status": "ok",
         "service": "repair-platform",
-        "database": str(database.database_path),
+        "database": "ok",
     }
 
 

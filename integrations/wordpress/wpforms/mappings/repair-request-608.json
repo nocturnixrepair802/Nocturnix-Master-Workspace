@@ -1,0 +1,47 @@
+{
+  "form_id": "608",
+  "form_title": "Main Page - Short Form Device Repair Request",
+  "version": 1,
+  "fields": {
+    "1": {
+      "wpforms_label": "Name",
+      "nocturnix_field": "customer_name"
+    },
+    "2": {
+      "wpforms_label": "Email Address",
+      "nocturnix_field": "email"
+    },
+    "4": {
+      "wpforms_label": "Phone",
+      "nocturnix_field": "mobile_phone"
+    },
+    "8": {
+      "wpforms_label": "Preferred Contact Method",
+      "nocturnix_field": "preferred_contact"
+    },
+    "74": {
+      "wpforms_label": "Text Messaging Consent",
+      "nocturnix_field": "text_messaging_consent"
+    },
+    "9": {
+      "wpforms_label": "Device Manufacturer",
+      "nocturnix_field": "manufacturer"
+    },
+    "10": {
+      "wpforms_label": "Device Model / Model Number",
+      "nocturnix_field": "device_model"
+    },
+    "56": {
+      "wpforms_label": "Issue Type / Repair Needed",
+      "nocturnix_field": "issue_type"
+    },
+    "63": {
+      "wpforms_label": "Interested in future mail-in repair service?",
+      "nocturnix_field": "mail_in_interest"
+    },
+    "25": {
+      "wpforms_label": "Describe the Problem",
+      "nocturnix_field": "problem_description"
+    }
+  }
+}
