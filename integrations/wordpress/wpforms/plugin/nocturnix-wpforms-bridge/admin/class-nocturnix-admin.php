@@ -82,7 +82,7 @@ final class Nocturnix_Admin {
                             <?php
                             echo esc_html(
                                 (string)
-                                NOCTURNIX_WPFORMS_BRIDGE_ENABLED_FORM_ID
+                                NOCTURNIX_WPFORMS_BRIDGE_ENABLED_FORM_IDS
                             );
                             ?>
                         </td>

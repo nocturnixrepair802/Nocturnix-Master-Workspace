@@ -28,24 +28,44 @@ final class Nocturnix_WPForms_Handler {
             array(
                 'form_id' => $form_id,
                 'entry_id' => $entry_id,
-                'enabled_form_id' => NOCTURNIX_WPFORMS_BRIDGE_ENABLED_FORM_ID,
+                'enabled_form_ids' => $enabled_form_ids,
                 'timestamp' => current_time('mysql', true),
             )
         );
+            $enabled_form_ids = array_filter(
+                array_map(
+                    'intval',
+                    explode(
+                        ',',
+                        (string) NOCTURNIX_WPFORMS_BRIDGE_ENABLED_FORM_IDS
+                    )
+                )
+            );
 
-        if ($form_id !== NOCTURNIX_WPFORMS_BRIDGE_ENABLED_FORM_ID) {
             self::record_event(
-                'form_skipped',
+                'handler_fired',
                 array(
                     'form_id' => $form_id,
                     'entry_id' => $entry_id,
-                    'enabled_form_id' => NOCTURNIX_WPFORMS_BRIDGE_ENABLED_FORM_ID,
+                    'enabled_form_ids' => $enabled_form_ids,
                     'timestamp' => current_time('mysql', true),
                 )
             );
 
-            return;
-        }
+            if (!in_array($form_id, $enabled_form_ids, true)) {
+                self::record_event(
+                    'form_skipped',
+                    array(
+                        'form_id' => $form_id,
+                        'entry_id' => $entry_id,
+                        'enabled_form_ids' => $enabled_form_ids,
+                        'timestamp' => current_time('mysql', true),
+                    )
+                );
+
+                return;
+            }
+
 
         $payload = array(
             'form_id' => (string) $form_id,

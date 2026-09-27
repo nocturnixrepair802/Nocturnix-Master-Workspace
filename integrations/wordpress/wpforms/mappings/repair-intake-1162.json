@@ -1,0 +1,87 @@
+{
+  "form_id": "1162",
+  "form_title": "Customer - Repair Intake",
+  "version": 1,
+  "fields": {
+    "1": {
+      "wpforms_label": "Name",
+      "nocturnix_field": "customer_name"
+    },
+    "2": {
+      "wpforms_label": "Email",
+      "nocturnix_field": "email"
+    },
+    "4": {
+      "wpforms_label": "Phone",
+      "nocturnix_field": "mobile_phone"
+    },
+    "8": {
+      "wpforms_label": "Preferred Contact Method",
+      "nocturnix_field": "preferred_contact"
+    },
+    "37": {
+      "wpforms_label": "Best Time to Contact",
+      "nocturnix_field": "best_contact_time"
+    },
+    "56": {
+      "wpforms_label": "Repair Service Method",
+      "nocturnix_field": "service_method"
+    },
+    "9": {
+      "wpforms_label": "Manufacturer",
+      "nocturnix_field": "manufacturer"
+    },
+    "10": {
+      "wpforms_label": "Device Model",
+      "nocturnix_field": "device_model"
+    },
+    "11": {
+      "wpforms_label": "Carrier",
+      "nocturnix_field": "carrier"
+    },
+    "12": {
+      "wpforms_label": "Device Color",
+      "nocturnix_field": "color"
+    },
+    "32": {
+      "wpforms_label": "Storage Size",
+      "nocturnix_field": "storage"
+    },
+    "14": {
+      "wpforms_label": "IMEI",
+      "nocturnix_field": "imei"
+    },
+    "15": {
+      "wpforms_label": "Serial Number",
+      "nocturnix_field": "serial_number"
+    },
+    "62": {
+      "wpforms_label": "Approximate Purchase Date",
+      "nocturnix_field": "purchase_date"
+    },
+    "38": {
+      "wpforms_label": "Will you be providing your device passcode?",
+      "nocturnix_field": "passcode_available"
+    },
+    "40": {
+      "wpforms_label": "Does the device power on?",
+      "nocturnix_field": "powers_on"
+    },
+    "42": {
+      "wpforms_label": "Face ID / Fingerprint Works",
+      "nocturnix_field": "face_id_touch_id"
+    },
+    "45": {
+      "wpforms_label": "Water Exposure",
+      "nocturnix_field": "liquid_damage"
+    },
+    "18": {
+      "wpforms_label": "Repair Needed",
+      "nocturnix_field": "repair_needed"
+    },
+    "25": {
+      "wpforms_label": "Describe the Problem",
+      "nocturnix_field": "problem_description"
+    }
+  }
+}

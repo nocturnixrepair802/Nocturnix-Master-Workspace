@@ -2,18 +2,21 @@
 /**
  * Plugin Name: Nocturnix WPForms Bridge
  * Description: Securely forwards approved WPForms repair intake submissions to the Nocturnix Repair Platform API.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: Nocturnix Repair
  * Requires at least: 6.0
  * Requires PHP: 8.0
  */
 if (!defined('ABSPATH')) { exit; }
 
-define('NOCTURNIX_WPFORMS_BRIDGE_VERSION', '1.0.3');
+define('NOCTURNIX_WPFORMS_BRIDGE_VERSION', '1.0.4');
 define('NOCTURNIX_WPFORMS_BRIDGE_DEBUG', false);
 define('NOCTURNIX_WPFORMS_BRIDGE_DIR', plugin_dir_path(__FILE__));
-if ( ! defined( 'NOCTURNIX_WPFORMS_BRIDGE_ENABLED_FORM_ID' ) ) {
-    define( 'NOCTURNIX_WPFORMS_BRIDGE_ENABLED_FORM_ID', 608 );
+if ( ! defined( 'NOCTURNIX_WPFORMS_BRIDGE_ENABLED_FORM_IDS' ) ) {
+    define(
+        'NOCTURNIX_WPFORMS_BRIDGE_ENABLED_FORM_IDS',
+        '608,1162'
+    );
 }
 
 require_once NOCTURNIX_WPFORMS_BRIDGE_DIR . 'includes/class-nocturnix-logger.php';

@@ -6,7 +6,7 @@ Fixes:
 - Sends the Repair Platform request model exactly as:
   `form_id`, `entry_id`, `fields`.
 - Uses WPForms form 608 as the default enabled form.
-- The enabled form ID can be overridden in wp-config.php with NOCTURNIX_WPFORMS_BRIDGE_ENABLED_FORM_ID.
+The enabled form IDs can be overridden in wp-config.php with NOCTURNIX_WPFORMS_BRIDGE_ENABLED_FORM_IDS using a comma-separated list, for example: 608,1162.
 
 Required `wp-config.php` values:
 
